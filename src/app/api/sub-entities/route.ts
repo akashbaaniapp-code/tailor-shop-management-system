@@ -21,12 +21,12 @@ export async function POST(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
   const body = await request.json()
-  const { name, entityId, description } = body
+  const { name, entityId, description, address, contactNumber } = body
   if (!name || !entityId) {
     return NextResponse.json({ error: 'Name and entity required' }, { status: 400 })
   }
   const item = await db.subEntity.create({
-    data: { name, entityId, description },
+    data: { name, entityId, description, address, contactNumber },
     include: { entity: true }
   })
   return NextResponse.json({ item })
@@ -36,11 +36,11 @@ export async function PUT(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
   const body = await request.json()
-  const { id, name, entityId, description } = body
+  const { id, name, entityId, description, address, contactNumber } = body
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
   const item = await db.subEntity.update({
     where: { id },
-    data: { name, entityId, description },
+    data: { name, entityId, description, address, contactNumber },
     include: { entity: true }
   })
   return NextResponse.json({ item })

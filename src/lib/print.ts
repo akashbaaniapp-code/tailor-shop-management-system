@@ -50,7 +50,20 @@ export function printHtml(html: string, title: string = 'Print') {
       margin: 0 0 4px 0;
       letter-spacing: -0.5px;
     }
+    .shop-name-text {
+      font-size: 26px;
+      font-weight: 800;
+      color: #059669;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.5px;
+    }
     .shop-tagline { color: #64748b; font-size: 12px; margin: 0; }
+    .shop-address {
+      color: #475569;
+      font-size: 12px;
+      margin: 4px 0 0 0;
+      font-weight: 500;
+    }
     .doc-info { text-align: right; }
     .doc-title {
       font-size: 18px;

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, Trash2, Edit, Layers, ChevronRight, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, Edit, Layers, ChevronRight, ChevronDown, MapPin, Phone } from 'lucide-react'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
 
@@ -18,6 +18,8 @@ interface Entity {
   id: string
   name: string
   description?: string | null
+  address?: string | null
+  contactNumber?: string | null
   subEntities?: SubEntity[]
 }
 
@@ -25,6 +27,8 @@ interface SubEntity {
   id: string
   name: string
   description?: string | null
+  address?: string | null
+  contactNumber?: string | null
   entityId: string
   entity?: { id: string; name: string } | null
 }
@@ -40,6 +44,8 @@ export default function SetupEntity() {
   const [editEntity, setEditEntity] = useState<Entity | null>(null)
   const [entityName, setEntityName] = useState('')
   const [entityDesc, setEntityDesc] = useState('')
+  const [entityAddress, setEntityAddress] = useState('')
+  const [entityContact, setEntityContact] = useState('')
 
   // Sub-entity form
   const [showSubForm, setShowSubForm] = useState(false)
@@ -47,6 +53,8 @@ export default function SetupEntity() {
   const [subName, setSubName] = useState('')
   const [subEntityId, setSubEntityId] = useState('')
   const [subDesc, setSubDesc] = useState('')
+  const [subAddress, setSubAddress] = useState('')
+  const [subContact, setSubContact] = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -72,19 +80,27 @@ export default function SetupEntity() {
 
   // --- Entity handlers ---
   function openCreateEntity() {
-    setEditEntity(null); setEntityName(''); setEntityDesc(''); setShowEntityForm(true)
+    setEditEntity(null); setEntityName(''); setEntityDesc(''); setEntityAddress(''); setEntityContact(''); setShowEntityForm(true)
   }
   function openEditEntity(e: Entity) {
-    setEditEntity(e); setEntityName(e.name); setEntityDesc(e.description || ''); setShowEntityForm(true)
+    setEditEntity(e); setEntityName(e.name); setEntityDesc(e.description || '')
+    setEntityAddress(e.address || ''); setEntityContact(e.contactNumber || '')
+    setShowEntityForm(true)
   }
   async function handleSaveEntity() {
     if (!entityName.trim()) { toast.error('Name required'); return }
     try {
+      const data = {
+        name: entityName.trim(),
+        description: entityDesc,
+        address: entityAddress,
+        contactNumber: entityContact
+      }
       if (editEntity) {
-        await api.updateEntity({ id: editEntity.id, name: entityName.trim(), description: entityDesc })
+        await api.updateEntity({ id: editEntity.id, ...data })
         toast.success('Entity updated')
       } else {
-        await api.createEntity({ name: entityName.trim(), description: entityDesc })
+        await api.createEntity(data)
         toast.success('Entity created')
       }
       setShowEntityForm(false); load()
@@ -99,22 +115,30 @@ export default function SetupEntity() {
   // --- Sub-entity handlers ---
   function openCreateSub(entityId?: string) {
     if (entities.length === 0) { toast.error('Create an entity first'); return }
-    setEditSub(null); setSubName(''); setSubDesc('')
+    setEditSub(null); setSubName(''); setSubDesc(''); setSubAddress(''); setSubContact('')
     setSubEntityId(entityId || entities[0].id); setShowSubForm(true)
   }
   function openEditSub(s: SubEntity) {
     setEditSub(s); setSubName(s.name); setSubDesc(s.description || '')
+    setSubAddress(s.address || ''); setSubContact(s.contactNumber || '')
     setSubEntityId(s.entityId); setShowSubForm(true)
   }
   async function handleSaveSub() {
     if (!subName.trim()) { toast.error('Name required'); return }
     if (!subEntityId) { toast.error('Entity required'); return }
     try {
+      const data = {
+        name: subName.trim(),
+        entityId: subEntityId,
+        description: subDesc,
+        address: subAddress,
+        contactNumber: subContact
+      }
       if (editSub) {
-        await api.updateSubEntity({ id: editSub.id, name: subName.trim(), entityId: subEntityId, description: subDesc })
+        await api.updateSubEntity({ id: editSub.id, ...data })
         toast.success('Sub-entity updated')
       } else {
-        await api.createSubEntity({ name: subName.trim(), entityId: subEntityId, description: subDesc })
+        await api.createSubEntity(data)
         toast.success('Sub-entity created')
       }
       setShowSubForm(false); load()
@@ -181,9 +205,21 @@ export default function SetupEntity() {
                       >
                         {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       </button>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-900">{ent.name}</p>
                         {ent.description && <p className="text-xs text-slate-500">{ent.description}</p>}
+                        <div className="flex flex-wrap gap-3 mt-1 text-xs">
+                          {ent.address && (
+                            <span className="flex items-center gap-1 text-slate-600">
+                              <MapPin className="w-3 h-3" /> {ent.address}
+                            </span>
+                          )}
+                          {ent.contactNumber && (
+                            <span className="flex items-center gap-1 text-slate-600">
+                              <Phone className="w-3 h-3" /> {ent.contactNumber}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <Badge variant="secondary" className="bg-slate-100 text-slate-600">
                         {subEntities.length} sub-entit{subEntities.length === 1 ? 'y' : 'ies'}
@@ -205,10 +241,22 @@ export default function SetupEntity() {
                           <p className="text-xs text-slate-400 italic">No sub-entities. Click + to add one.</p>
                         ) : (
                           subEntities.map(s => (
-                            <div key={s.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-                              <div className="flex-1">
+                            <div key={s.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded">
+                              <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-slate-800">{s.name}</p>
                                 {s.description && <p className="text-xs text-slate-500">{s.description}</p>}
+                                <div className="flex flex-wrap gap-3 mt-1 text-xs">
+                                  {s.address && (
+                                    <span className="flex items-center gap-1 text-slate-600">
+                                      <MapPin className="w-3 h-3" /> {s.address}
+                                    </span>
+                                  )}
+                                  {s.contactNumber && (
+                                    <span className="flex items-center gap-1 text-slate-600">
+                                      <Phone className="w-3 h-3" /> {s.contactNumber}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <Button size="sm" variant="ghost" onClick={() => openEditSub(s)}>
                                 <Edit className="w-3 h-3" />
@@ -243,6 +291,14 @@ export default function SetupEntity() {
                 <Label className="text-xs">Description (optional)</Label>
                 <Textarea rows={2} value={entityDesc} onChange={e => setEntityDesc(e.target.value)} />
               </div>
+              <div>
+                <Label className="text-xs">Address (optional)</Label>
+                <Textarea rows={2} value={entityAddress} onChange={e => setEntityAddress(e.target.value)} placeholder="House, road, area, city" />
+              </div>
+              <div>
+                <Label className="text-xs">Contact Number (optional)</Label>
+                <Input value={entityContact} onChange={e => setEntityContact(e.target.value)} placeholder="01XXXXXXXXX" />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowEntityForm(false)}>Cancel</Button>
@@ -276,6 +332,14 @@ export default function SetupEntity() {
               <div>
                 <Label className="text-xs">Description (optional)</Label>
                 <Textarea rows={2} value={subDesc} onChange={e => setSubDesc(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Address (optional)</Label>
+                <Textarea rows={2} value={subAddress} onChange={e => setSubAddress(e.target.value)} placeholder="House, road, area, city" />
+              </div>
+              <div>
+                <Label className="text-xs">Contact Number (optional)</Label>
+                <Input value={subContact} onChange={e => setSubContact(e.target.value)} placeholder="01XXXXXXXXX" />
               </div>
             </div>
             <DialogFooter>

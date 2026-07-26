@@ -27,3 +27,32 @@ export function getLogoUrl(): string {
   }
   return BRAND.logoPath
 }
+
+/**
+ * Build the shop header HTML block for print documents (invoice, challan).
+ *
+ * Behavior:
+ * - If the logo image loads successfully, show the logo (img tag).
+ * - If the logo fails to load (file missing, 404, etc.), automatically hide
+ *   the img and show the company name as large text instead.
+ * - Below the logo (or company name text), always show: tagline, address, phone.
+ *
+ * Uses an <img onerror> handler that swaps visibility without any external JS.
+ */
+export function buildShopHeaderHtml(): string {
+  const logoUrl = getLogoUrl()
+  return `
+    <img
+      src="${logoUrl}"
+      alt="${BRAND.name}"
+      class="shop-logo"
+      onload="this.style.display='inline-block'; var t=document.getElementById('shop-name-text-fallback'); if(t) t.style.display='none';"
+      onerror="this.style.display='none'; var t=document.getElementById('shop-name-text-fallback'); if(t) t.style.display='block';"
+    />
+    <h1 class="shop-name-text" id="shop-name-text-fallback" style="display:none;">${BRAND.name}</h1>
+    <p class="shop-tagline" style="font-weight:600;color:#059669;">${BRAND.tagline}</p>
+    <p class="shop-address">${BRAND.address}</p>
+    <p class="shop-tagline">Phone: ${BRAND.phone}</p>
+  `
+}
+

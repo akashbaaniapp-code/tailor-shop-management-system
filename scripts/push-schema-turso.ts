@@ -84,6 +84,10 @@ const statements = [
     "updatedAt" DATETIME NOT NULL
   )`,
 
+  // Add address + contactNumber columns to Entity if not exist
+  `ALTER TABLE "Entity" ADD COLUMN "address" TEXT`,
+  `ALTER TABLE "Entity" ADD COLUMN "contactNumber" TEXT`,
+
   `CREATE TABLE IF NOT EXISTS "SubEntity" (
     "id" TEXT PRIMARY KEY NOT NULL,
     "name" TEXT NOT NULL,
@@ -93,6 +97,10 @@ const statements = [
     "updatedAt" DATETIME NOT NULL,
     FOREIGN KEY ("entityId") REFERENCES "Entity"("id") ON UPDATE CASCADE ON DELETE CASCADE
   )`,
+
+  // Add address + contactNumber columns to SubEntity if not exist
+  `ALTER TABLE "SubEntity" ADD COLUMN "address" TEXT`,
+  `ALTER TABLE "SubEntity" ADD COLUMN "contactNumber" TEXT`,
 
   `CREATE TABLE IF NOT EXISTS "SalesOrder" (
     "id" TEXT PRIMARY KEY NOT NULL,

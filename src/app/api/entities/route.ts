@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
   const body = await request.json()
-  const { name, description } = body
+  const { name, description, address, contactNumber } = body
   if (!name) return NextResponse.json({ error: 'Name required' }, { status: 400 })
   try {
-    const item = await db.entity.create({ data: { name, description } })
+    const item = await db.entity.create({ data: { name, description, address, contactNumber } })
     return NextResponse.json({ item })
   } catch (err: any) {
     if (err?.message?.includes('UNIQUE') || err?.message?.includes('unique')) {
@@ -33,11 +33,11 @@ export async function PUT(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
   const body = await request.json()
-  const { id, name, description } = body
+  const { id, name, description, address, contactNumber } = body
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
   const item = await db.entity.update({
     where: { id },
-    data: { name, description }
+    data: { name, description, address, contactNumber }
   })
   return NextResponse.json({ item })
 }

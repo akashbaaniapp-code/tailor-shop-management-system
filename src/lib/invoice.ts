@@ -1,6 +1,6 @@
 import { printHtml } from './print'
 import { formatCurrency, formatDate } from './api'
-import { BRAND, getLogoUrl } from './brand'
+import { BRAND, buildShopHeaderHtml } from './brand'
 
 interface InvoiceItem {
   item: { name: string }
@@ -62,9 +62,6 @@ function numberToWords(num: number): string {
 }
 
 const SHOP_NAME = BRAND.name
-const SHOP_ADDRESS = BRAND.address
-const SHOP_PHONE = BRAND.phone
-const SHOP_TAGLINE = BRAND.tagline
 
 export function printInvoice(order: InvoiceOrder) {
   const statusLabel = order.status === 'full_delivered' ? 'Delivered'
@@ -90,16 +87,10 @@ export function printInvoice(order: InvoiceOrder) {
     </tr>
   `).join('')
 
-  const logoUrl = getLogoUrl()
-
   const html = `
     <div class="header">
       <div class="shop-info">
-        <img src="${logoUrl}" alt="${SHOP_NAME}" class="shop-logo" />
-        <h1 class="shop-name">${SHOP_NAME}</h1>
-        <p class="shop-tagline">${SHOP_TAGLINE}</p>
-        <p class="shop-tagline">${SHOP_ADDRESS}</p>
-        <p class="shop-tagline">Phone: ${SHOP_PHONE}</p>
+        ${buildShopHeaderHtml()}
       </div>
       <div class="doc-info">
         <h2 class="doc-title">Invoice</h2>
