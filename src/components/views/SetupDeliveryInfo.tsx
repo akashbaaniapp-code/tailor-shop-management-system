@@ -1,13 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, Trash2, FileText } from 'lucide-react'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
@@ -55,63 +49,128 @@ export default function SetupDeliveryInfo() {
     }
   }
 
-  return (
-    <div className="space-y-4">
-      <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-slate-600">Save reusable delivery information templates (e.g. home delivery, office pickup)</p>
-            <Button onClick={() => setShowForm(true)} className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="w-4 h-4 mr-1" /> Add Info
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    background: '#0b0d0f',
+    border: '1px solid #2a2d33',
+    borderRadius: 10,
+    padding: '8px 12px',
+    color: '#fff',
+    fontSize: 14,
+    outline: 'none',
+  }
 
-      <Card className="border-slate-200">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="p-4 space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
-          ) : items.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <p className="text-slate-500">No saved delivery info yet</p>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: '#14161a', border: '1px solid #2a2d33', borderRadius: 16, padding: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <p style={{ fontSize: 14, color: '#666' }}>Save reusable delivery information templates (e.g. home delivery, office pickup)</p>
+          <button
+            onClick={() => setShowForm(true)}
+            style={{ background: '#1db954', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <Plus size={16} /> Add Info
+          </button>
+        </div>
+      </div>
+
+      <div style={{ background: '#14161a', border: '1px solid #2a2d33', borderRadius: 16, overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} style={{ height: 40, background: '#1f2227', borderRadius: 8 }} />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 56, height: 56, border: '2px solid #2a2d33', borderRadius: 12, marginBottom: 8 }}>
+              <FileText size={24} color="#666" />
             </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {items.map(it => (
-                <div key={it.id} className="p-4 flex items-start justify-between gap-3 hover:bg-slate-50">
-                  <div>
-                    <p className="font-semibold text-slate-900">{it.label}</p>
-                    <p className="text-sm text-slate-600 mt-0.5">{it.note}</p>
-                  </div>
-                  <Button size="sm" variant="ghost" onClick={() => handleDelete(it.id)}>
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </Button>
+            <p style={{ color: '#888' }}>No saved delivery info yet</p>
+          </div>
+        ) : (
+          <div>
+            {items.map((it, idx) => (
+              <div
+                key={it.id}
+                style={{
+                  padding: 16,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  borderBottom: idx === items.length - 1 ? 'none' : '1px solid #1f2227',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <div>
+                  <p style={{ color: '#fff', fontWeight: 600 }}>{it.label}</p>
+                  <p style={{ fontSize: 14, color: '#888', marginTop: 2 }}>{it.note}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <button
+                  onClick={() => handleDelete(it.id)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 4, display: 'inline-flex' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {showForm && (
         <Dialog open onOpenChange={setShowForm}>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Add Delivery Info</DialogTitle></DialogHeader>
-            <div className="space-y-3">
+          <DialogContent style={{ background: '#1a1c1e', border: '1px solid #2a2d33', maxWidth: 400 }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: '#fff' }}>Add Delivery Info</DialogTitle>
+            </DialogHeader>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <Label className="text-xs">Label *</Label>
-                <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Home Delivery" autoFocus />
+                <label style={{ color: '#888', fontSize: 13, display: 'block', marginBottom: 6 }}>
+                  Label <span style={{ color: '#ff6b6b' }}>*</span>
+                </label>
+                <input
+                  value={label}
+                  onChange={e => setLabel(e.target.value)}
+                  placeholder="e.g. Home Delivery"
+                  autoFocus
+                  style={inputStyle}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#d4df3a')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#2a2d33')}
+                />
               </div>
               <div>
-                <Label className="text-xs">Note *</Label>
-                <Textarea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="Delivery instructions/details..." />
+                <label style={{ color: '#888', fontSize: 13, display: 'block', marginBottom: 6 }}>
+                  Note <span style={{ color: '#ff6b6b' }}>*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  placeholder="Delivery instructions/details..."
+                  style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#d4df3a')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#2a2d33')}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">Save</Button>
+              <button
+                onClick={() => setShowForm(false)}
+                style={{ background: 'transparent', border: '1px solid #2a2d33', color: '#fff', borderRadius: 10, padding: '8px 14px', fontSize: 14, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                style={{ background: '#1db954', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+              >
+                Save
+              </button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -1,13 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, Trash2, Edit, Tag } from 'lucide-react'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
@@ -73,85 +67,142 @@ export default function SetupExpenseHead() {
     }
   }
 
-  return (
-    <div className="space-y-4">
-      <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-slate-600">Create expense heads (categories) for organizing your expenses</p>
-              <p className="text-xs text-slate-500 mt-1">Examples: Rent, Salary, Utility Bill, Fabric Purchase, Electricity, Transport</p>
-            </div>
-            <Button onClick={openCreate} className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="w-4 h-4 mr-1" /> Add Head
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    background: '#0b0d0f',
+    border: '1px solid #2a2d33',
+    borderRadius: 10,
+    padding: '8px 12px',
+    color: '#fff',
+    fontSize: 14,
+    outline: 'none',
+  }
 
-      <Card className="border-slate-200">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="p-4 space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
-          ) : items.length === 0 ? (
-            <div className="text-center py-12">
-              <Tag className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <p className="text-slate-500">No expense heads yet</p>
-              <p className="text-xs text-slate-400 mt-1">Create one to start categorizing your expenses</p>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: '#14161a', border: '1px solid #2a2d33', borderRadius: 16, padding: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <p style={{ fontSize: 14, color: '#666' }}>Create expense heads (categories) for organizing your expenses</p>
+            <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Examples: Rent, Salary, Utility Bill, Fabric Purchase, Electricity, Transport</p>
+          </div>
+          <button
+            onClick={openCreate}
+            style={{ background: '#1db954', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <Plus size={16} /> Add Head
+          </button>
+        </div>
+      </div>
+
+      <div style={{ background: '#14161a', border: '1px solid #2a2d33', borderRadius: 16, overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} style={{ height: 40, background: '#1f2227', borderRadius: 8 }} />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 56, height: 56, border: '2px solid #2a2d33', borderRadius: 12, marginBottom: 8 }}>
+              <Tag size={24} color="#666" />
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="text-left px-4 py-2.5 font-medium text-slate-600">Name</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-slate-600">Description</th>
-                    <th className="text-center px-4 py-2.5 font-medium text-slate-600">Action</th>
+            <p style={{ color: '#888' }}>No expense heads yet</p>
+            <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Create one to start categorizing your expenses</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: 14, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#1f2227' }}>
+                  <th style={{ textAlign: 'left', padding: '10px 16px', color: '#888', fontWeight: 500, borderBottom: '1px solid #2a2d33' }}>Name</th>
+                  <th style={{ textAlign: 'left', padding: '10px 16px', color: '#888', fontWeight: 500, borderBottom: '1px solid #2a2d33' }}>Description</th>
+                  <th style={{ textAlign: 'center', padding: '10px 16px', color: '#888', fontWeight: 500, borderBottom: '1px solid #2a2d33' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map(it => (
+                  <tr key={it.id} style={{ borderBottom: '1px solid #1f2227' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td style={{ padding: '10px 16px', color: '#fff', fontWeight: 500 }}>{it.name}</td>
+                    <td style={{ padding: '10px 16px', color: '#888' }}>{it.description || '-'}</td>
+                    <td style={{ padding: '10px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                        <button
+                          onClick={() => openEdit(it)}
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 4, display: 'inline-flex' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = '#3498db')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(it.id)}
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 4, display: 'inline-flex' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {items.map(it => (
-                    <tr key={it.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-4 py-2.5 font-medium text-slate-900">{it.name}</td>
-                      <td className="px-4 py-2.5 text-slate-600">{it.description || '-'}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => openEdit(it)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDelete(it.id)}>
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {showForm && (
         <Dialog open onOpenChange={setShowForm}>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>{editItem ? 'Edit Expense Head' : 'Add Expense Head'}</DialogTitle></DialogHeader>
-            <div className="space-y-3">
+          <DialogContent style={{ background: '#1a1c1e', border: '1px solid #2a2d33', maxWidth: 400 }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: '#fff' }}>{editItem ? 'Edit Expense Head' : 'Add Expense Head'}</DialogTitle>
+            </DialogHeader>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <Label className="text-xs">Name * (unique)</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Rent" autoFocus />
+                <label style={{ color: '#888', fontSize: 13, display: 'block', marginBottom: 6 }}>
+                  Name <span style={{ color: '#ff6b6b' }}>*</span> (unique)
+                </label>
+                <input
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="e.g. Rent"
+                  autoFocus
+                  style={inputStyle}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#d4df3a')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#2a2d33')}
+                />
               </div>
               <div>
-                <Label className="text-xs">Description (optional)</Label>
-                <Textarea rows={2} value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief description..." />
+                <label style={{ color: '#888', fontSize: 13, display: 'block', marginBottom: 6 }}>Description (optional)</label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="Brief description..."
+                  style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#d4df3a')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#2a2d33')}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
+              <button
+                onClick={() => setShowForm(false)}
+                style={{ background: 'transparent', border: '1px solid #2a2d33', color: '#fff', borderRadius: 10, padding: '8px 14px', fontSize: 14, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                style={{ background: '#1db954', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+              >
                 {editItem ? 'Update' : 'Create'}
-              </Button>
+              </button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
