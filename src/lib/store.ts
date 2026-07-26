@@ -94,6 +94,18 @@ interface AppState {
   // ['*'] means all menus (admin). Empty array means none (will be refetched).
   accessibleMenus: string[]
   setAccessibleMenus: (menus: string[]) => void
+  // Entities + sub-entities the user has access to
+  accessibleEntities: any[]
+  accessibleSubEntities: any[]
+  setAccessibleEntities: (entities: any[], subEntities: any[]) => void
+  // Currently selected entity/sub-entity (set after entity selection screen)
+  // null means 'all' — show data across all accessible entities
+  selectedEntity: any | null
+  selectedSubEntity: any | null
+  setSelectedEntityContext: (entity: any | null, subEntity: any | null) => void
+  // Whether user has passed the entity selection screen
+  entityContextConfirmed: boolean
+  setEntityContextConfirmed: (v: boolean) => void
 }
 
 function getInitialView(): ViewKey {
@@ -122,7 +134,17 @@ export const useAppStore = create<AppState>((set) => ({
   selectedUserId: null,
   setSelectedUserId: (id) => set({ selectedUserId: id }),
   accessibleMenus: ['*'], // default to all; will be overridden after /api/auth/me
-  setAccessibleMenus: (menus) => set({ accessibleMenus: menus })
+  setAccessibleMenus: (menus) => set({ accessibleMenus: menus }),
+  accessibleEntities: [],
+  accessibleSubEntities: [],
+  setAccessibleEntities: (entities, subEntities) =>
+    set({ accessibleEntities: entities, accessibleSubEntities: subEntities }),
+  selectedEntity: null,
+  selectedSubEntity: null,
+  setSelectedEntityContext: (entity, subEntity) =>
+    set({ selectedEntity: entity, selectedSubEntity: subEntity }),
+  entityContextConfirmed: false,
+  setEntityContextConfirmed: (v) => set({ entityContextConfirmed: v })
 }))
 
 // Listen for browser back/forward to update the store

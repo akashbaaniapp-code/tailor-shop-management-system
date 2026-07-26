@@ -121,6 +121,32 @@ export async function getUserAccessibleMenus(userId: string): Promise<string[]> 
   return Array.from(menus)
 }
 
+/**
+ * Get all permission rows for a user (parsed, with menuAccess as array
+ * and canView/canCreate/canEdit/canDelete as booleans).
+ * Used by /api/auth/login to send to the client for entity selection screen.
+ */
+export async function getUserPermissions(userId: string): Promise<any[]> {
+  const user = await db.user.findUnique({ where: { id: userId } })
+  if (!user) return []
+  if (user.role === 'admin') return [] // admin has no restrictions
+
+  const permissions = await db.userPermission.findMany({
+    where: { userId }
+  })
+
+  return permissions.map((p: any) => ({
+    ...p,
+    menuAccess: p.menuAccess ? (() => {
+      try { return JSON.parse(p.menuAccess) } catch { return [] }
+    })() : [],
+    canView: !!p.canView,
+    canCreate: !!p.canCreate,
+    canEdit: !!p.canEdit,
+    canDelete: !!p.canDelete
+  }))
+}
+
 export async function ensureSeedUser() {
   // Check if admin user already exists
   const existing = await db.user.findUnique({ where: { username: 'admin' } })

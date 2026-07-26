@@ -151,6 +151,9 @@ export default function AppShell() {
     clearToken()
     setUser(null)
     useAppStore.getState().setAccessibleMenus(['*'])
+    useAppStore.getState().setAccessibleEntities([], [])
+    useAppStore.getState().setSelectedEntityContext(null, null)
+    useAppStore.getState().setEntityContextConfirmed(false)
     toast.success('Logged out')
   }
 
