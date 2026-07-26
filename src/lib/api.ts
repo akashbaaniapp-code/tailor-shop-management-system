@@ -1,13 +1,35 @@
-// Frontend API client
+// Frontend API client — optimized for speed with multi-tier caching
 
 const TOKEN_KEY = 'tsms_token'
 const USER_KEY = 'tsms_user'
 
-// Simple in-memory cache for GET requests.
-// Setup data (UoM, items, tailors, customers, delivery-info) changes rarely,
-// so we cache for 60 seconds. Mutations invalidate the relevant cache.
-const cache = new Map<string, { data: any; expires: number }>()
-const CACHE_TTL = 60 * 1000 // 60 seconds
+// Multi-tier cache:
+// - Setup data (UoM, items, tailors, etc.): 5 minutes — changes rarely
+// - Transaction data (orders, deliveries, bills): 30 seconds — changes often
+// - Report data (dashboard, P&L): 60 seconds — heavy queries
+// - All cached responses serve stale data immediately while refreshing in background
+const cache = new Map<string, { data: any; expires: number; refreshing?: boolean }>()
+
+// Path-based TTL configuration
+function getCacheTTL(path: string): number {
+  // Setup data — long cache (5 min)
+  if (path.includes('/api/uom') || path.includes('/api/items') ||
+      path.includes('/api/tailors') || path.includes('/api/customers') ||
+      path.includes('/api/expense-heads') || path.includes('/api/delivery-info') ||
+      path.includes('/api/entities') || path.includes('/api/sub-entities')) {
+    return 5 * 60 * 1000 // 5 minutes
+  }
+  // Reports — medium cache (60s)
+  if (path.includes('/api/reports/')) {
+    return 60 * 1000 // 60 seconds
+  }
+  // Transaction data — short cache (30s)
+  return 30 * 1000 // 30 seconds
+}
+
+// In-flight request deduplication — if the same URL is requested twice
+// within 2 seconds, both callers get the same Promise (1 network request)
+const inflightRequests = new Map<string, Promise<any>>()
 
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null
@@ -24,6 +46,7 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
   cache.clear()
+  inflightRequests.clear()
 }
 
 export function setUser(user: any) {
@@ -50,11 +73,8 @@ export async function apiFetch<T = any>(
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  // Attach entity context headers from global store (if available)
-  // This ensures all transaction APIs filter by the user's selected entity
+  // Attach entity context headers
   if (typeof window !== 'undefined') {
-    // Access the store directly without importing (circular dep avoidance)
-    // We use a global variable set by the store
     const entityCtx = (window as any).__entityContext
     if (entityCtx) {
       if (entityCtx.entityId) headers['X-Entity-Id'] = entityCtx.entityId
@@ -64,17 +84,67 @@ export async function apiFetch<T = any>(
 
   const method = (options.method || 'GET').toUpperCase()
 
-  // Cache GET requests
+  // ===== CACHE CHECK (GET only) =====
   if (method === 'GET') {
     const cached = cache.get(path)
-    if (cached && cached.expires > Date.now()) {
+    if (cached) {
+      if (cached.expires > Date.now()) {
+        // Fresh cache — return immediately (0ms latency)
+        return cached.data as T
+      }
+      // Stale cache — return immediately AND refresh in background
+      // (stale-while-revalidate pattern)
+      if (!cached.refreshing) {
+        cached.refreshing = true
+        // Fire-and-forget background refresh
+        doFetch(path, headers).then(data => {
+          cache.set(path, { data, expires: Date.now() + getCacheTTL(path) })
+        }).catch(() => {}).finally(() => {
+          if (cached) cached.refreshing = false
+        })
+      }
       return cached.data as T
+    }
+
+    // ===== REQUEST DEDUPLICATION =====
+    // If this URL is already being fetched, wait for the same Promise
+    const inflight = inflightRequests.get(path)
+    if (inflight) {
+      return inflight as Promise<T>
     }
   }
 
+  // ===== ACTUAL FETCH =====
+  if (method === 'GET') {
+    const promise = doFetch<T>(path, headers)
+    inflightRequests.set(path, promise)
+    try {
+      const data = await promise
+      // Cache the result
+      cache.set(path, { data, expires: Date.now() + getCacheTTL(path) })
+      return data
+    } finally {
+      inflightRequests.delete(path)
+    }
+  } else {
+    // Non-GET: just fetch
+    const data = await doFetch<T>(path, headers, options)
+    // Invalidate cache entries that match the path prefix
+    const basePath = path.split('?')[0]
+    for (const key of cache.keys()) {
+      if (key.startsWith(basePath)) {
+        cache.delete(key)
+      }
+    }
+    return data
+  }
+}
+
+// Internal fetch function
+async function doFetch<T>(path: string, headers: Record<string, string>, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...options,
-    headers
+    headers: { ...headers, ...(options?.headers as Record<string, string> || {}) }
   })
   if (res.status === 401) {
     clearToken()
@@ -87,22 +157,7 @@ export async function apiFetch<T = any>(
   if (!res.ok) {
     throw new Error(data.error || 'Request failed')
   }
-
-  // Cache successful GET responses
-  if (method === 'GET') {
-    cache.set(path, { data, expires: Date.now() + CACHE_TTL })
-  } else {
-    // For mutations, invalidate cache entries that match the path prefix
-    // E.g. POST /api/tailors should invalidate GET /api/tailors
-    const basePath = path.split('?')[0]
-    for (const key of cache.keys()) {
-      if (key.startsWith(basePath)) {
-        cache.delete(key)
-      }
-    }
-  }
-
-  return data
+  return data as T
 }
 
 // Manually invalidate a specific cache path (e.g. after complex mutations)
@@ -112,6 +167,26 @@ export function invalidateCache(pathPrefix: string) {
       cache.delete(key)
     }
   }
+}
+
+/**
+ * Prefetch a URL in the background (no await needed).
+ * Useful for warming the cache before the user navigates to a page.
+ * Example: prefetch('/api/sales-orders') while user is on Dashboard
+ */
+export function prefetch(path: string) {
+  if (typeof window === 'undefined') return
+  const cached = cache.get(path)
+  if (cached && cached.expires > Date.now()) return // already fresh
+  // Fire and forget
+  apiFetch(path).catch(() => {})
+}
+
+/**
+ * Prefetch multiple URLs in parallel.
+ */
+export function prefetchAll(paths: string[]) {
+  paths.forEach(p => prefetch(p))
 }
 
 export const api = {

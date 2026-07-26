@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TrendingUp, TrendingDown, ShoppingCart, Wallet, Users, AlertCircle } from 'lucide-react'
-import { api, formatCurrency } from '@/lib/api'
+import { api, formatCurrency, prefetchAll } from '@/lib/api'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -42,6 +42,16 @@ export default function Dashboard() {
     api.dashboard().then(d => {
       setData(d)
       setLoading(false)
+      // Prefetch next likely pages in background (stale-while-revalidate)
+      // User on dashboard will likely go to Sales Orders or Delivery next
+      setTimeout(() => {
+        prefetchAll([
+          '/api/sales-orders',
+          '/api/customers',
+          '/api/items',
+          '/api/tailors'
+        ])
+      }, 1000) // 1s delay so dashboard renders first
     }).catch(() => setLoading(false))
   }, [])
 
