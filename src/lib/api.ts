@@ -342,7 +342,17 @@ export const api = {
     if (params?.status) q.set('status', params.status)
     if (params?.search) q.set('search', params.search)
     return apiFetch(`/api/reports/delivery${q.toString() ? `?${q}` : ''}`)
-  }
+  },
+
+  // Money Receipts
+  listMoneyReceipts: (params?: { from?: string; to?: string; search?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.from) q.set('from', params.from)
+    if (params?.to) q.set('to', params.to)
+    if (params?.search) q.set('search', params.search)
+    return apiFetch(`/api/money-receipts${q.toString() ? `?${q}` : ''}`)
+  },
+  createMoneyReceipt: (data: any) => apiFetch('/api/money-receipts', { method: 'POST', body: JSON.stringify(data) }),
 }
 
 export function formatCurrency(amount: number): string {

@@ -63,6 +63,7 @@ const ReportPayable = dynamic(() => import('@/components/views/ReportPayable'))
 const ReportOrders = dynamic(() => import('@/components/views/ReportOrders'))
 const ReportExpense = dynamic(() => import('@/components/views/ReportExpense'))
 const ReportDelivery = dynamic(() => import('@/components/views/ReportDelivery'))
+const ReportBillCollection = dynamic(() => import('@/components/views/ReportBillCollection'))
 
 interface NavGroup {
   label: string
@@ -101,7 +102,8 @@ const navGroups: NavGroup[] = [
       { key: 'report-payable', label: 'Payable', icon: Wallet },
       { key: 'report-orders', label: 'Order Report', icon: BarChart3 },
       { key: 'report-expense', label: 'Expense Report', icon: TrendingDown },
-      { key: 'report-delivery', label: 'Delivery Report', icon: Truck }
+      { key: 'report-delivery', label: 'Delivery Report', icon: Truck },
+      { key: 'report-bill-collection', label: 'Bill Collection', icon: Receipt }
     ]
   }
 ]
@@ -133,7 +135,8 @@ const viewTitles: Record<ViewKey, string> = {
   'report-payable': 'Payable Report',
   'report-orders': 'Order Report',
   'report-expense': 'Expense Report',
-  'report-delivery': 'Delivery Report'
+  'report-delivery': 'Delivery Report',
+  'report-bill-collection': 'Bill Collection Report'
 }
 
 export default function AppShell() {
@@ -160,6 +163,10 @@ export default function AppShell() {
     } catch {}
     clearToken()
     setUser(null)
+    // Clear sessionStorage entity context
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('tsms_entity_context')
+    }
     useAppStore.getState().setAccessibleMenus(['*'])
     useAppStore.getState().setAccessibleEntities([], [])
     useAppStore.getState().setSelectedEntityContext(null, null)
@@ -195,6 +202,7 @@ export default function AppShell() {
       case 'report-orders': return <ReportOrders />
       case 'report-expense': return <ReportExpense />
       case 'report-delivery': return <ReportDelivery />
+      case 'report-bill-collection': return <ReportBillCollection />
       default: return <Dashboard />
     }
   }

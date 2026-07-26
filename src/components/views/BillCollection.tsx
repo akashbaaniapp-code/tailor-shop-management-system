@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  Search, Wallet, Trash2, Receipt, ChevronLeft, ChevronRight, X, Eye
+  Search, Wallet, Trash2, Receipt, ChevronLeft, ChevronRight, X, Eye, Printer
 } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
+import { printMoneyReceipt } from '@/lib/money-receipt'
 import { toast } from 'sonner'
 
 const PAGE_SIZE = 20
@@ -248,7 +249,31 @@ export default function BillCollection() {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-slate-700 mb-2">Payment History</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-slate-700">Payment History</h4>
+                    {bills.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                        onClick={async () => {
+                          try {
+                            const res = await api.createMoneyReceipt({
+                              billIds: bills.map(b => b.id),
+                              method: bills[0]?.method || 'cash',
+                              receiptDate: new Date().toISOString().split('T')[0]
+                            })
+                            toast.success('Money receipt generated')
+                            printMoneyReceipt(res.receipt)
+                          } catch (err: any) {
+                            toast.error(err.message)
+                          }
+                        }}
+                      >
+                        <Printer className="w-3 h-3 mr-1" /> Generate Money Receipt
+                      </Button>
+                    )}
+                  </div>
                   {bills.length === 0 ? (
                     <p className="text-sm text-slate-400 italic">No payments yet</p>
                   ) : (

@@ -255,6 +255,7 @@ const MODEL_CONFIG: Record<string, ModelConfig> = {
   delivery: { name: 'Delivery', dateFields: ['deliveryDate', 'createdAt'] },
   deliveryItem: { name: 'DeliveryItem', dateFields: [] },
   billCollection: { name: 'BillCollection', dateFields: ['collectDate', 'createdAt'] },
+  moneyReceipt: { name: 'MoneyReceipt', dateFields: ['receiptDate', 'createdAt'] },
   expense: { name: 'Expense', dateFields: ['expenseDate', 'createdAt'] },
   income: { name: 'Income', dateFields: ['incomeDate', 'createdAt'] },
   payable: { name: 'Payable', dateFields: ['dueDate', 'createdAt', 'updatedAt'] },
@@ -570,6 +571,7 @@ const RELATIONS: Record<string, Record<string, { model: string; fk: string; isLi
   billCollection: {
     order: { model: 'salesOrder', fk: 'orderId', isList: false, isOptional: false }
   },
+  moneyReceipt: {},
   expense: { head: { model: 'expenseHead', fk: 'expenseHeadId', isList: false, isOptional: true } },
   income: {},
   payable: { payments: { model: 'payablePayment', fk: 'payableId', isList: true, isOptional: false } },
@@ -732,6 +734,7 @@ export const db: any = {
   delivery: makeModel('delivery'),
   deliveryItem: makeModel('deliveryItem'),
   billCollection: makeModel('billCollection'),
+  moneyReceipt: makeModel('moneyReceipt'),
   expense: makeModel('expense'),
   income: makeModel('income'),
   payable: makeModel('payable'),

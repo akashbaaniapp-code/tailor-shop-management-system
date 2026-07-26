@@ -28,6 +28,7 @@ export type ViewKey =
   | 'report-orders'
   | 'report-expense'
   | 'report-delivery'
+  | 'report-bill-collection'
 
 // Map view keys to URL ?view= values (kept short for cleaner URLs)
 const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
@@ -56,7 +57,8 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'report-payable': 'report-payable',
   'report-orders': 'report-orders',
   'report-expense': 'report-expense',
-  'report-delivery': 'report-delivery'
+  'report-delivery': 'report-delivery',
+  'report-bill-collection': 'report-bill-collection'
 }
 
 const URL_TO_VIEW: Record<string, ViewKey> = Object.entries(VIEW_TO_URL).reduce(
@@ -110,6 +112,30 @@ interface AppState {
   setEntityContextConfirmed: (v: boolean) => void
 }
 
+// Read entity context from sessionStorage on initialization
+// This allows new tabs (right-click > Open in New Tab) to inherit
+// the entity context without showing the entity selection screen again
+function getInitialEntityContext() {
+  if (typeof window === 'undefined') {
+    return { entity: null, subEntity: null, confirmed: false }
+  }
+  try {
+    const stored = sessionStorage.getItem('tsms_entity_context')
+    if (stored) {
+      const ctx = JSON.parse(stored)
+      // Restore window.__entityContext for API headers
+      ;(window as any).__entityContext = {
+        entityId: ctx.entity?.id || null,
+        subEntityId: ctx.subEntity?.id || null
+      }
+      return { entity: ctx.entity, subEntity: ctx.subEntity, confirmed: true }
+    }
+  } catch {}
+  return { entity: null, subEntity: null, confirmed: false }
+}
+
+const initialEntityCtx = getInitialEntityContext()
+
 function getInitialView(): ViewKey {
   if (typeof window === 'undefined') return 'dashboard'
   const params = new URLSearchParams(window.location.search)
@@ -141,20 +167,21 @@ export const useAppStore = create<AppState>((set) => ({
   accessibleSubEntities: [],
   setAccessibleEntities: (entities, subEntities) =>
     set({ accessibleEntities: entities, accessibleSubEntities: subEntities }),
-  selectedEntity: null,
-  selectedSubEntity: null,
+  selectedEntity: initialEntityCtx.entity,
+  selectedSubEntity: initialEntityCtx.subEntity,
   setSelectedEntityContext: (entity, subEntity) => {
     // Update the global window variable so apiFetch can read it
-    // without importing the store (avoids circular dependency)
     if (typeof window !== 'undefined') {
       ;(window as any).__entityContext = {
         entityId: entity?.id || null,
         subEntityId: subEntity?.id || null
       }
+      // Persist to sessionStorage so new tabs inherit the same entity
+      sessionStorage.setItem('tsms_entity_context', JSON.stringify({ entity, subEntity }))
     }
     set({ selectedEntity: entity, selectedSubEntity: subEntity })
   },
-  entityContextConfirmed: false,
+  entityContextConfirmed: initialEntityCtx.confirmed,
   setEntityContextConfirmed: (v) => set({ entityContextConfirmed: v })
 }))
 

@@ -135,6 +135,25 @@ const statements = [
   // BillCollection
   `ALTER TABLE "BillCollection" ADD COLUMN "entityId" TEXT`,
   `ALTER TABLE "BillCollection" ADD COLUMN "subEntityId" TEXT`,
+  // BillCollection: link to MoneyReceipt
+  `ALTER TABLE "BillCollection" ADD COLUMN "moneyReceiptId" TEXT`,
+
+  // MoneyReceipt table — groups multiple bill collections into one printable receipt
+  `CREATE TABLE IF NOT EXISTS "MoneyReceipt" (
+    "id" TEXT PRIMARY KEY NOT NULL,
+    "receiptId" TEXT NOT NULL UNIQUE,
+    "customerId" TEXT,
+    "customerName" TEXT NOT NULL,
+    "customerPhone" TEXT,
+    "customerAddress" TEXT,
+    "receiptDate" DATETIME NOT NULL,
+    "totalAmount" REAL NOT NULL,
+    "method" TEXT NOT NULL DEFAULT 'cash',
+    "note" TEXT,
+    "entityId" TEXT,
+    "subEntityId" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
   // Expense
   `ALTER TABLE "Expense" ADD COLUMN "entityId" TEXT`,
   `ALTER TABLE "Expense" ADD COLUMN "subEntityId" TEXT`,
@@ -318,7 +337,11 @@ async function main() {
     `CREATE INDEX IF NOT EXISTS "idx_payable_entityId" ON "Payable"("entityId")`,
     `CREATE INDEX IF NOT EXISTS "idx_income_incomeDate" ON "Income"("incomeDate")`,
     `CREATE INDEX IF NOT EXISTS "idx_payablePayment_payableId" ON "PayablePayment"("payableId")`,
-    `CREATE INDEX IF NOT EXISTS "idx_payable_status" ON "Payable"("status")`
+    `CREATE INDEX IF NOT EXISTS "idx_payable_status" ON "Payable"("status")`,
+    `CREATE INDEX IF NOT EXISTS "idx_moneyReceipt_receiptId" ON "MoneyReceipt"("receiptId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_moneyReceipt_customerId" ON "MoneyReceipt"("customerId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_moneyReceipt_receiptDate" ON "MoneyReceipt"("receiptDate")`,
+    `CREATE INDEX IF NOT EXISTS "idx_billCollection_moneyReceiptId" ON "BillCollection"("moneyReceiptId")`
   ]
 
   for (const sql of indexes) {
