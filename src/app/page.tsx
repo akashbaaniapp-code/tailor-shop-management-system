@@ -84,14 +84,13 @@ export default function Home() {
     return <Login onLogin={handleLogin} />
   }
 
-  // If user is non-admin AND has entity-restricted permissions,
-  // show entity selection screen before allowing access to app.
-  // Admin role OR users with no entity permissions skip this.
-  const hasEntityRestrictions =
-    user.role !== 'admin' &&
-    (user.accessibleEntities?.length > 0 || user.accessibleSubEntities?.length > 0)
+  // Show entity selection screen for:
+  // - Non-admin users with entity-restricted permissions (mandatory — no "All" option)
+  // - Admin users who have entities created (optional — admin gets "All Entities" option)
+  const hasEntities = user.accessibleEntities?.length > 0 || user.accessibleSubEntities?.length > 0
+  const showEntitySelection = hasEntities && !entityContextConfirmed
 
-  if (hasEntityRestrictions && !entityContextConfirmed) {
+  if (showEntitySelection) {
     return <EntitySelection />
   }
 

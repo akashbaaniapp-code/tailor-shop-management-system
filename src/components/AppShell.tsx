@@ -235,24 +235,22 @@ export default function AppShell() {
             {viewTitles[currentView]}
           </h1>
           <div className="flex items-center gap-2">
-            {/* Switch Entity button — only for non-admin users with entity context */}
-            {user?.role !== 'admin' && (selectedEntity || selectedSubEntity) && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                onClick={() => {
-                  setEntityContextConfirmed(false)
-                  toast.info('Select a different entity to switch')
-                }}
-                title="Switch to a different entity"
-              >
-                <Building2 className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline truncate max-w-[120px]">
-                  {selectedSubEntity?.name || selectedEntity?.name || 'Switch'}
-                </span>
-              </Button>
-            )}
+            {/* Switch Entity button — available for all users (admin + non-admin) */}
+            {/* Shows current entity name, or "All Entities" for admin in overview mode */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              onClick={() => {
+                setEntityContextConfirmed(false)
+              }}
+              title="Switch to a different entity"
+            >
+              <Building2 className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline truncate max-w-[140px]">
+                {selectedSubEntity?.name || selectedEntity?.name || 'All Entities'}
+              </span>
+            </Button>
             <Avatar className="w-8 h-8 bg-emerald-100">
               <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-semibold">
                 {userInitials}

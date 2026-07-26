@@ -4,15 +4,20 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Building2, CheckCircle2, Layers, ChevronRight, MapPin, Phone } from 'lucide-react'
+import { Building2, CheckCircle2, Layers, ChevronRight, MapPin, Phone, Globe } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { BRAND } from '@/lib/brand'
 
 export default function EntitySelection() {
   const { user, accessibleEntities, accessibleSubEntities, setSelectedEntityContext, setEntityContextConfirmed } = useAppStore()
-  // Track selection: can be either an entity or a sub-entity
-  // type: 'entity' | 'subEntity', id: string
-  const [selection, setSelection] = useState<{ type: 'entity' | 'subEntity'; id: string } | null>(null)
+  // Track selection: can be 'all' (admin only), an entity, or a sub-entity
+  const [selection, setSelection] = useState<{ type: 'all' | 'entity' | 'subEntity'; id?: string } | null>(null)
+
+  const isAdmin = user?.role === 'admin'
+
+  function handleSelectAll() {
+    setSelection({ type: 'all' })
+  }
 
   function handleSelectEntity(entityId: string) {
     setSelection({ type: 'entity', id: entityId })
@@ -25,7 +30,10 @@ export default function EntitySelection() {
   function handleConfirm() {
     if (!selection) return
 
-    if (selection.type === 'entity') {
+    if (selection.type === 'all') {
+      // Admin sees all data — no entity filter
+      setSelectedEntityContext(null, null)
+    } else if (selection.type === 'entity') {
       const entity = accessibleEntities.find(e => e.id === selection.id) || null
       setSelectedEntityContext(entity, null)
     } else {
@@ -79,11 +87,45 @@ export default function EntitySelection() {
             Welcome, {user?.name || user?.username}!
           </CardTitle>
           <p className="text-sm text-slate-600 mt-2">
-            Click on an entity or sub-entity below to enter and start working.
+            {isAdmin
+              ? 'Select an entity to work in, or choose "All Entities" to see everything.'
+              : 'Click on an entity or sub-entity below to enter and start working.'
+            }
           </p>
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* All Entities option — admin only */}
+          {isAdmin && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Globe className="w-4 h-4 text-blue-600" />
+                <h3 className="text-sm font-semibold text-slate-900">Overview (Admin)</h3>
+              </div>
+              <button
+                onClick={handleSelectAll}
+                className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
+                  selection?.type === 'all'
+                    ? 'border-blue-500 bg-blue-50 shadow-md'
+                    : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50 bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Globe className={`w-6 h-6 ${selection?.type === 'all' ? 'text-blue-600' : 'text-slate-400'}`} />
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">All Entities</p>
+                      <p className="text-xs text-slate-500">View data across all entities (admin overview)</p>
+                    </div>
+                  </div>
+                  {selection?.type === 'all' && (
+                    <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                  )}
+                </div>
+              </button>
+            </div>
+          )}
+
           {/* Entities */}
           {hasEntities && (
             <div>
@@ -190,26 +232,43 @@ export default function EntitySelection() {
           )}
 
           {/* Selection summary + Continue */}
-          <div className="bg-emerald-50 p-3 rounded-lg">
-            <p className="text-xs font-medium text-emerald-900 mb-1">Your selection:</p>
+          <div className={`p-3 rounded-lg ${selection?.type === 'all' ? 'bg-blue-50' : 'bg-emerald-50'}`}>
+            <p className={`text-xs font-medium mb-1 ${selection?.type === 'all' ? 'text-blue-900' : 'text-emerald-900'}`}>
+              Your selection:
+            </p>
             {selection ? (
               <div className="flex items-center gap-2 text-sm">
-                <Badge variant="secondary" className="bg-white text-slate-700">
-                  {selection.type === 'entity'
+                <Badge variant="secondary" className={`${
+                  selection.type === 'all'
+                    ? 'bg-white text-blue-700'
+                    : 'bg-white text-slate-700'
+                }`}>
+                  {selection.type === 'all'
+                    ? 'All Entities (Admin Overview)'
+                    : selection.type === 'entity'
                     ? `Entity: ${accessibleEntities.find(e => e.id === selection.id)?.name || 'Unknown'}`
                     : `Sub-Entity: ${accessibleSubEntities.find(s => s.id === selection.id)?.name || 'Unknown'}`
                   }
                 </Badge>
               </div>
             ) : (
-              <p className="text-xs text-slate-500 italic">Please click on an entity or sub-entity above to select it.</p>
+              <p className="text-xs text-slate-500 italic">
+                {isAdmin
+                  ? 'Choose "All Entities" for overview, or click a specific entity to work in.'
+                  : 'Please click on an entity or sub-entity above to select it.'
+                }
+              </p>
             )}
           </div>
 
           <Button
             onClick={handleConfirm}
             disabled={!selection}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full disabled:opacity-50 disabled:cursor-not-allowed ${
+              selection?.type === 'all'
+                ? 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-emerald-600 hover:bg-emerald-700'
+            }`}
             size="lg"
           >
             Continue <ChevronRight className="w-4 h-4 ml-1" />
