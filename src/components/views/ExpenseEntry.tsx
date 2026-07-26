@@ -4,14 +4,13 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, Receipt, Wallet } from 'lucide-react'
+import { Plus, Trash2, Receipt, Wallet, Edit } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
+import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 
 interface Expense {
@@ -30,16 +29,11 @@ interface ExpenseHead {
 }
 
 export default function ExpenseEntry() {
+  const setView = useAppStore(s => s.setView)
+  const setSelectedExpenseId = useAppStore(s => s.setSelectedExpenseId)
   const [items, setItems] = useState<Expense[]>([])
   const [heads, setHeads] = useState<ExpenseHead[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [title, setTitle] = useState('')
-  const [amount, setAmount] = useState(0)
-  const [expenseHeadId, setExpenseHeadId] = useState('')
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0])
-  const [note, setNote] = useState('')
-  const [saving, setSaving] = useState(false)
   const [filterHeadId, setFilterHeadId] = useState('all')
 
   useEffect(() => { load() }, [])
@@ -57,38 +51,19 @@ export default function ExpenseEntry() {
     }
   }
 
-  function openCreate() {
+  function handleAddNew() {
     if (heads.length === 0) {
       toast.error('Please create at least one expense head first (Setup → Expense Heads)')
+      setView('setup-expense-head')
       return
     }
-    setTitle(''); setAmount(0); setExpenseHeadId(''); setNote('')
-    setExpenseDate(new Date().toISOString().split('T')[0])
-    setShowForm(true)
+    setSelectedExpenseId(null)
+    setView('expense-create')
   }
 
-  async function handleSave() {
-    if (!title.trim()) { toast.error('Title required'); return }
-    if (!amount || amount <= 0) { toast.error('Amount must be greater than zero'); return }
-    if (!expenseHeadId) { toast.error('Please select an expense head'); return }
-
-    setSaving(true)
-    try {
-      await api.createExpense({
-        title: title.trim(),
-        amount,
-        expenseHeadId,
-        expenseDate,
-        note
-      })
-      toast.success('Expense recorded')
-      setShowForm(false)
-      load()
-    } catch (err: any) {
-      toast.error(err.message)
-    } finally {
-      setSaving(false)
-    }
+  function handleEdit(exp: Expense) {
+    setSelectedExpenseId(exp.id)
+    setView('expense-edit')
   }
 
   async function handleDelete(id: string) {
@@ -157,7 +132,7 @@ export default function ExpenseEntry() {
               <p className="text-xs text-slate-500">Filtered Total</p>
               <p className="text-lg font-bold text-red-600">{formatCurrency(totalAmount)}</p>
             </div>
-            <Button onClick={openCreate} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleAddNew} className="bg-emerald-600 hover:bg-emerald-700">
               <Plus className="w-4 h-4 mr-1" /> Add Expense
             </Button>
           </div>
@@ -207,10 +182,15 @@ export default function ExpenseEntry() {
                       </td>
                       <td className="px-4 py-2.5 text-slate-600 max-w-xs truncate">{it.note || '-'}</td>
                       <td className="px-4 py-2.5 text-right font-medium text-red-600">{formatCurrency(it.amount)}</td>
-                      <td className="px-4 py-2.5 text-center">
-                        <Button size="sm" variant="ghost" onClick={() => handleDelete(it.id)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => handleEdit(it)} title="Edit">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDelete(it.id)} title="Delete">
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -227,50 +207,6 @@ export default function ExpenseEntry() {
           )}
         </CardContent>
       </Card>
-
-      {/* Add dialog */}
-      {showForm && (
-        <Dialog open onOpenChange={setShowForm}>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Add Expense</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs">Expense Head *</Label>
-                <Select value={expenseHeadId} onValueChange={setExpenseHeadId}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select head" /></SelectTrigger>
-                  <SelectContent>
-                    {heads.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Title *</Label>
-                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Shop rent for July" autoFocus />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Amount *</Label>
-                  <Input type="number" value={amount} onChange={e => setAmount(parseFloat(e.target.value) || 0)} />
-                </div>
-                <div>
-                  <Label className="text-xs">Date *</Label>
-                  <Input type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs">Note (optional)</Label>
-                <Textarea rows={2} value={note} onChange={e => setNote(e.target.value)} placeholder="Additional details..." />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
-                {saving ? 'Saving...' : 'Save Expense'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   )
 }

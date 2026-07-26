@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAppStore, ViewKey } from '@/lib/store'
+import { useAppStore, ViewKey, buildViewUrl } from '@/lib/store'
 import { api, clearToken } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -36,6 +36,7 @@ import Delivery from '@/components/views/Delivery'
 import DeliveryFormPage from '@/components/views/DeliveryFormPage'
 import BillCollection from '@/components/views/BillCollection'
 import ExpenseEntry from '@/components/views/ExpenseEntry'
+import ExpenseFormPage from '@/components/views/ExpenseFormPage'
 import SetupUom from '@/components/views/SetupUom'
 import SetupItem from '@/components/views/SetupItem'
 import SetupTailor from '@/components/views/SetupTailor'
@@ -95,6 +96,8 @@ const viewTitles: Record<ViewKey, string> = {
   'delivery-create': 'Create Delivery',
   'bill-collection': 'Bill Collection',
   'expense-entry': 'Expense Entry',
+  'expense-create': 'Add Expense',
+  'expense-edit': 'Edit Expense',
   'setup-uom': 'Setup - Unit of Measure',
   'setup-item': 'Setup - Items',
   'setup-tailor': 'Setup - Tailors',
@@ -134,6 +137,8 @@ export default function AppShell() {
       case 'delivery-create': return <DeliveryFormPage />
       case 'bill-collection': return <BillCollection />
       case 'expense-entry': return <ExpenseEntry />
+      case 'expense-create': return <ExpenseFormPage />
+      case 'expense-edit': return <ExpenseFormPage />
       case 'setup-uom': return <SetupUom />
       case 'setup-item': return <SetupItem />
       case 'setup-tailor': return <SetupTailor />
@@ -247,9 +252,14 @@ export default function AppShell() {
                   const Icon = item.icon
                   const active = currentView === item.key
                   return (
-                    <button
+                    <a
                       key={item.key}
-                      onClick={() => setView(item.key)}
+                      href={buildViewUrl(item.key)}
+                      onClick={(e) => {
+                        // Normal left-click: use client-side routing (no full page reload)
+                        e.preventDefault()
+                        setView(item.key)
+                      }}
                       className={cn(
                         'w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors text-left',
                         active
@@ -260,7 +270,7 @@ export default function AppShell() {
                       <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-emerald-600' : 'text-slate-400')} />
                       <span className="flex-1 truncate">{item.label}</span>
                       {active && <ChevronRight className="w-4 h-4 text-emerald-600" />}
-                    </button>
+                    </a>
                   )
                 })}
               </div>
