@@ -3,6 +3,12 @@
 const TOKEN_KEY = 'tsms_token'
 const USER_KEY = 'tsms_user'
 
+// Simple in-memory cache for GET requests.
+// Setup data (UoM, items, tailors, customers, delivery-info) changes rarely,
+// so we cache for 60 seconds. Mutations invalidate the relevant cache.
+const cache = new Map<string, { data: any; expires: number }>()
+const CACHE_TTL = 60 * 1000 // 60 seconds
+
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null
   return localStorage.getItem(TOKEN_KEY)
@@ -17,6 +23,7 @@ export function clearToken() {
   if (typeof window === 'undefined') return
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
+  cache.clear()
 }
 
 export function setUser(user: any) {
@@ -42,6 +49,17 @@ export async function apiFetch<T = any>(
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
+
+  const method = (options.method || 'GET').toUpperCase()
+
+  // Cache GET requests
+  if (method === 'GET') {
+    const cached = cache.get(path)
+    if (cached && cached.expires > Date.now()) {
+      return cached.data as T
+    }
+  }
+
   const res = await fetch(path, {
     ...options,
     headers
@@ -57,7 +75,31 @@ export async function apiFetch<T = any>(
   if (!res.ok) {
     throw new Error(data.error || 'Request failed')
   }
+
+  // Cache successful GET responses
+  if (method === 'GET') {
+    cache.set(path, { data, expires: Date.now() + CACHE_TTL })
+  } else {
+    // For mutations, invalidate cache entries that match the path prefix
+    // E.g. POST /api/tailors should invalidate GET /api/tailors
+    const basePath = path.split('?')[0]
+    for (const key of cache.keys()) {
+      if (key.startsWith(basePath)) {
+        cache.delete(key)
+      }
+    }
+  }
+
   return data
+}
+
+// Manually invalidate a specific cache path (e.g. after complex mutations)
+export function invalidateCache(pathPrefix: string) {
+  for (const key of cache.keys()) {
+    if (key.startsWith(pathPrefix)) {
+      cache.delete(key)
+    }
+  }
 }
 
 export const api = {

@@ -2,39 +2,117 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 import { numberToWords, generateOrderId } from '@/lib/utils-server'
+import { _getClient } from '@/lib/db'
+
+export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
 
   const { searchParams } = new URL(request.url)
-  const search = searchParams.get('search')
+  const search = searchParams.get('search') || ''
   const status = searchParams.get('status')
 
-  const where: any = {}
+  // Direct SQL with JOINs — much faster than nested includes
+  // and supports search across customer name/phone
+  const client = _getClient()
+
+  let sql = `SELECT
+              so.*,
+              c.name as "customer.name",
+              c.phone as "customer.phone",
+              c.address as "customer.address",
+              t.name as "tailor.name",
+              t.phone as "tailor.phone"
+            FROM "SalesOrder" so
+            LEFT JOIN "Customer" c ON c.id = so.customerId
+            LEFT JOIN "Tailor" t ON t.id = so.tailorId`
+
+  const conditions: string[] = []
+  const args: any[] = []
+
   if (search) {
-    where.OR = [
-      { orderId: { contains: search } },
-      { customer: { name: { contains: search } } },
-      { customer: { phone: { contains: search } } }
-    ]
+    conditions.push(`(so.orderId LIKE ? OR c.name LIKE ? OR c.phone LIKE ?)`)
+    args.push(`%${search}%`, `%${search}%`, `%${search}%`)
   }
   if (status && status !== 'all') {
-    where.status = status
+    conditions.push(`so.status = ?`)
+    args.push(status)
   }
 
-  const orders = await db.salesOrder.findMany({
-    where,
-    include: {
-      customer: true,
-      tailor: true,
-      items: { include: { item: { include: { uom: true } } } }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 200
+  if (conditions.length > 0) {
+    sql += ` WHERE ` + conditions.join(' AND ')
+  }
+
+  sql += ` ORDER BY so.createdAt DESC LIMIT 200`
+
+  const res = await client.execute({ sql, args })
+
+  // Transform flat rows (with dotted keys) into nested objects
+  const dateFields = ['orderDate', 'deliveryDate', 'createdAt', 'updatedAt']
+  const orders = res.rows.map((raw: any) => {
+    const order: any = {}
+    const customer: any = {}
+    const tailor: any = {}
+    for (const k of Object.keys(raw)) {
+      if (/^\d+$/.test(k)) continue
+      const val = dateFields.includes(k) && typeof raw[k] === 'string' ? new Date(raw[k]) : raw[k]
+      if (k.startsWith('customer.')) customer[k.slice('customer.'.length)] = raw[k]
+      else if (k.startsWith('tailor.')) tailor[k.slice('tailor.'.length)] = raw[k]
+      else order[k] = val
+    }
+    order.customer = customer
+    order.tailor = tailor.id ? tailor : (order.tailorId ? tailor : null)
+    return order
   })
 
-  return NextResponse.json({ orders })
+  // BATCH load items + nested item.uom for all orders in ONE query each
+  if (orders.length > 0) {
+    const orderIds = orders.map(o => o.id)
+    const placeholders = orderIds.map(() => '?').join(',')
+
+    // Get all SalesOrderItem rows for these orders
+    const itemsRes = await client.execute({
+      sql: `SELECT soi.*, i.name as "item.name", i.unitPrice as "item.unitPrice",
+                   i.uomId as "item.uomId", u.name as "item.uom.name", u.id as "item.uom.id"
+            FROM "SalesOrderItem" soi
+            INNER JOIN "Item" i ON i.id = soi.itemId
+            INNER JOIN "UoM" u ON u.id = i.uomId
+            WHERE soi.orderId IN (${placeholders})`,
+      args: orderIds
+    })
+
+    // Group items by orderId
+    const itemsByOrder: Record<string, any[]> = {}
+    for (const raw of itemsRes.rows as any[]) {
+      const orderId = raw.orderId
+      if (!itemsByOrder[orderId]) itemsByOrder[orderId] = []
+      const item: any = {}
+      const itemData: any = { uom: {} }
+      for (const k of Object.keys(raw)) {
+        if (/^\d+$/.test(k)) continue
+        if (k.startsWith('item.uom.')) {
+          itemData.uom[k.slice('item.uom.'.length)] = raw[k]
+        } else if (k.startsWith('item.')) {
+          itemData[k.slice('item.'.length)] = raw[k]
+        } else {
+          item[k] = k === 'createdAt' && typeof raw[k] === 'string' ? new Date(raw[k]) : raw[k]
+        }
+      }
+      item.item = itemData
+      itemsByOrder[orderId].push(item)
+    }
+
+    // Assign items to orders
+    for (const order of orders) {
+      order.items = itemsByOrder[order.id] || []
+    }
+  }
+
+  const response = NextResponse.json({ orders })
+  response.headers.set('Cache-Control', 'no-store')
+  return response
 }
 
 export async function POST(request: NextRequest) {
@@ -75,7 +153,7 @@ export async function POST(request: NextRequest) {
   const discountAmount = Number(discount) || 0
   const grandTotal = subTotal - discountAmount
 
-  // Create sales order with items in transaction
+  // Create sales order with items
   const order = await db.salesOrder.create({
     data: {
       orderId,

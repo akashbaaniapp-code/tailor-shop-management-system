@@ -195,6 +195,41 @@ async function main() {
     }
   }
 
+  // Create indexes for performance
+  console.log('\nCreating indexes...')
+  const indexes = [
+    `CREATE INDEX IF NOT EXISTS "idx_user_username" ON "User"("username")`,
+    `CREATE INDEX IF NOT EXISTS "idx_customer_phone" ON "Customer"("phone")`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrder_orderId" ON "SalesOrder"("orderId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrder_customerId" ON "SalesOrder"("customerId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrder_tailorId" ON "SalesOrder"("tailorId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrder_status" ON "SalesOrder"("status")`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrder_orderDate" ON "SalesOrder"("orderDate")`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrder_createdAt" ON "SalesOrder"("createdAt" DESC)`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrderItem_orderId" ON "SalesOrderItem"("orderId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrderItem_itemId" ON "SalesOrderItem"("itemId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_delivery_orderId" ON "Delivery"("orderId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_delivery_deliveryId" ON "Delivery"("deliveryId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_deliveryItem_deliveryId" ON "DeliveryItem"("deliveryId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_deliveryItem_orderItemId" ON "DeliveryItem"("orderItemId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_billCollection_orderId" ON "BillCollection"("orderId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_billCollection_collectDate" ON "BillCollection"("collectDate")`,
+    `CREATE INDEX IF NOT EXISTS "idx_expense_expenseDate" ON "Expense"("expenseDate")`,
+    `CREATE INDEX IF NOT EXISTS "idx_income_incomeDate" ON "Income"("incomeDate")`,
+    `CREATE INDEX IF NOT EXISTS "idx_payablePayment_payableId" ON "PayablePayment"("payableId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_payable_status" ON "Payable"("status")`
+  ]
+
+  for (const sql of indexes) {
+    try {
+      await client.execute(sql)
+      const idxName = sql.match(/"(\w+)" ON/)?.[1] || 'unknown'
+      console.log(`  ✓ ${idxName}`)
+    } catch (err: any) {
+      console.error(`  ✗ Index error: ${err.message}`)
+    }
+  }
+
   // Insert admin user if not exists
   console.log('\nSeeding admin user...')
   try {
