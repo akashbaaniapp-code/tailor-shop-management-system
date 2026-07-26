@@ -210,9 +210,17 @@ export default function AppShell() {
   const userInitials = (user?.name || user?.username || 'A').slice(0, 2).toUpperCase()
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen overflow-hidden" style={{ background: '#0b0d0f', color: '#e8eae9' }}>
       {/* Sidebar - desktop */}
-      <aside className="hidden md:flex w-64 flex-col bg-white border-r border-slate-200 shrink-0">
+      <aside
+        className="hidden md:flex w-64 flex-col shrink-0"
+        style={{
+          background: 'rgba(255, 255, 255, 0.03)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+        }}
+      >
         <SidebarContent
           currentView={currentView}
           setView={setView}
@@ -223,11 +231,20 @@ export default function AppShell() {
       {/* Sidebar - mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-64 flex-col bg-white shadow-xl flex">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setMobileOpen(false)} />
+          <aside
+            className="relative w-64 flex-col shadow-xl flex"
+            style={{
+              background: 'rgba(20, 22, 25, 0.95)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+            }}
+          >
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 p-1 rounded hover:bg-slate-100 z-10"
+              className="absolute top-4 right-4 p-1 rounded z-10"
+              style={{ color: 'rgba(255,255,255,0.4)' }}
             >
               <X className="w-5 h-5" />
             </button>
@@ -242,23 +259,34 @@ export default function AppShell() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 bg-white border-b border-slate-200 flex items-center px-4 md:px-6 shrink-0">
+        <header
+          className="h-14 flex items-center px-4 md:px-6 shrink-0"
+          style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+          }}
+        >
           <button
-            className="md:hidden mr-3 p-1 rounded hover:bg-slate-100"
+            className="md:hidden mr-3 p-1 rounded"
+            style={{ color: 'rgba(255,255,255,0.5)' }}
             onClick={() => setMobileOpen(true)}
           >
             <Menu className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-semibold text-slate-900 flex-1 truncate">
+          <h1 className="text-lg font-semibold flex-1 truncate" style={{ color: '#ffffff' }}>
             {viewTitles[currentView]}
           </h1>
           <div className="flex items-center gap-2">
-            {/* Switch Entity button — available for all users (admin + non-admin) */}
-            {/* Shows current entity name, or "All Entities" for admin in overview mode */}
+            {/* Switch Entity button */}
             <Button
               variant="outline"
               size="sm"
-              className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              className="rounded-full"
+              style={{
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.05)',
+                color: 'rgba(255,255,255,0.7)',
+              }}
               onClick={() => {
                 setEntityContextConfirmed(false)
               }}
@@ -269,16 +297,17 @@ export default function AppShell() {
                 {selectedSubEntity?.name || selectedEntity?.name || 'All Entities'}
               </span>
             </Button>
-            <Avatar className="w-8 h-8 bg-emerald-100">
-              <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-semibold">
+            <Avatar className="w-8 h-8" style={{ background: '#d4df3a' }}>
+              <AvatarFallback style={{ background: '#d4df3a', color: '#0b0d0f' }} className="text-xs font-bold">
                 {userInitials}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm text-slate-700 hidden sm:inline">{user?.name || user?.username}</span>
+            <span className="text-sm hidden sm:inline" style={{ color: 'rgba(255,255,255,0.6)' }}>{user?.name || user?.username}</span>
             <Button
               variant="ghost"
               size="sm"
-              className="ml-2 text-slate-600 hover:text-red-600 hover:bg-red-50"
+              className="ml-2 rounded-full"
+              style={{ color: 'rgba(255,100,100,0.5)' }}
               onClick={handleLogout}
               title="Logout"
             >
@@ -314,20 +343,29 @@ export default function AppShell() {
   }) {
     return (
       <>
-        <div className="h-14 flex items-center gap-2 px-4 border-b border-slate-200 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+        <div
+          className="h-14 flex items-center gap-2 px-4 shrink-0"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        >
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
             <img src={BRAND.logoPath} alt={BRAND.shortName} className="w-full h-full object-contain p-0.5" />
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-slate-900 text-sm leading-tight truncate">{BRAND.name}</p>
-            <p className="text-[10px] text-emerald-700 uppercase tracking-wider leading-tight">{BRAND.tagline}</p>
+            <p className="font-bold text-sm leading-tight truncate" style={{ color: '#e8eae9' }}>{BRAND.name}</p>
+            <p className="text-[10px] uppercase tracking-wider leading-tight" style={{ color: '#d4df3a' }}>{BRAND.tagline}</p>
           </div>
         </div>
         <ScrollArea className="flex-1">
           <div className="p-3 space-y-5">
             {navGroups.map(group => (
               <div key={group.label} className="space-y-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide px-3 mb-1">
+                <p
+                  className="text-xs font-semibold uppercase tracking-wide px-3 mb-1"
+                  style={{ color: 'rgba(255,255,255,0.2)' }}
+                >
                   {group.label}
                 </p>
                 {group.items.map(item => {
@@ -338,20 +376,32 @@ export default function AppShell() {
                       key={item.key}
                       href={buildViewUrl(item.key)}
                       onClick={(e) => {
-                        // Normal left-click: use client-side routing (no full page reload)
                         e.preventDefault()
                         setView(item.key)
                       }}
-                      className={cn(
-                        'w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors text-left',
-                        active
-                          ? 'bg-emerald-50 text-emerald-700 font-medium'
-                          : 'text-slate-600 hover:bg-slate-100'
-                      )}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all text-left"
+                      style={{
+                        color: active ? '#d4df3a' : 'rgba(255,255,255,0.4)',
+                        background: active ? 'rgba(212,223,58,0.08)' : 'transparent',
+                        borderRight: active ? '3px solid #d4df3a' : '3px solid transparent',
+                        fontWeight: active ? 500 : 400,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
+                          e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.color = 'rgba(255,255,255,0.4)'
+                        }
+                      }}
                     >
-                      <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-emerald-600' : 'text-slate-400')} />
+                      <Icon className="w-4 h-4 shrink-0" />
                       <span className="flex-1 truncate">{item.label}</span>
-                      {active && <ChevronRight className="w-4 h-4 text-emerald-600" />}
+                      {active && <ChevronRight className="w-4 h-4" />}
                     </a>
                   )
                 })}
