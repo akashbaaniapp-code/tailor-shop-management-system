@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/entity-context'
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
@@ -10,8 +11,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAuth(request)
-  if (auth.response) return auth.response
+  const admin = await requireAdmin(request)
+  if (admin.response) return admin.response
   const body = await request.json()
   const { name, phone, address } = body
   if (!name) return NextResponse.json({ error: 'Name required' }, { status: 400 })
@@ -20,8 +21,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const auth = await requireAuth(request)
-  if (auth.response) return auth.response
+  const admin = await requireAdmin(request)
+  if (admin.response) return admin.response
   const body = await request.json()
   const { id, name, phone, address } = body
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })

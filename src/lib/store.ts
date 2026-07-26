@@ -141,8 +141,17 @@ export const useAppStore = create<AppState>((set) => ({
     set({ accessibleEntities: entities, accessibleSubEntities: subEntities }),
   selectedEntity: null,
   selectedSubEntity: null,
-  setSelectedEntityContext: (entity, subEntity) =>
-    set({ selectedEntity: entity, selectedSubEntity: subEntity }),
+  setSelectedEntityContext: (entity, subEntity) => {
+    // Update the global window variable so apiFetch can read it
+    // without importing the store (avoids circular dependency)
+    if (typeof window !== 'undefined') {
+      ;(window as any).__entityContext = {
+        entityId: entity?.id || null,
+        subEntityId: subEntity?.id || null
+      }
+    }
+    set({ selectedEntity: entity, selectedSubEntity: subEntity })
+  },
   entityContextConfirmed: false,
   setEntityContextConfirmed: (v) => set({ entityContextConfirmed: v })
 }))

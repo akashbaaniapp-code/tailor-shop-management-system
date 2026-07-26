@@ -50,6 +50,18 @@ export async function apiFetch<T = any>(
     headers['Authorization'] = `Bearer ${token}`
   }
 
+  // Attach entity context headers from global store (if available)
+  // This ensures all transaction APIs filter by the user's selected entity
+  if (typeof window !== 'undefined') {
+    // Access the store directly without importing (circular dep avoidance)
+    // We use a global variable set by the store
+    const entityCtx = (window as any).__entityContext
+    if (entityCtx) {
+      if (entityCtx.entityId) headers['X-Entity-Id'] = entityCtx.entityId
+      if (entityCtx.subEntityId) headers['X-Sub-Entity-Id'] = entityCtx.subEntityId
+    }
+  }
+
   const method = (options.method || 'GET').toUpperCase()
 
   // Cache GET requests

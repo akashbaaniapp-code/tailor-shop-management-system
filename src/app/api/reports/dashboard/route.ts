@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 import { getMonthName } from '@/lib/utils-server'
 import { _getClient } from '@/lib/db'
+import { getEntityContext, buildEntityFilter } from '@/lib/entity-context'
 
 // Cache for 60 seconds on Vercel edge / function layer
 export const revalidate = 60
@@ -12,6 +13,12 @@ export async function GET(request: NextRequest) {
   if (auth.response) return auth.response
 
   const client = _getClient()
+  const ctx = await getEntityContext(request)
+
+  // Build entity filter condition for SQL queries
+  const entityCond = buildEntityFilter(ctx)
+  const entityClause = entityCond.sql ? ` AND ${entityCond.sql}` : ''
+  const entityArgs = entityCond.args
   const now = new Date()
   // Last 12 months range
   const yearAgoStart = new Date(now.getFullYear(), now.getMonth() - 11, 1)
@@ -30,38 +37,47 @@ export async function GET(request: NextRequest) {
               COUNT(*) as cnt,
               COALESCE(SUM(grandTotal), 0) as sales
             FROM "SalesOrder"
-            WHERE orderDate >= ?
+            WHERE orderDate >= ?${entityClause}
             GROUP BY ym
             ORDER BY ym`,
-      args: [yearAgoStart.toISOString()]
+      args: [yearAgoStart.toISOString(), ...entityArgs]
     },
     {
       sql: `SELECT
               strftime('%Y-%m', collectDate) as ym,
               COALESCE(SUM(amount), 0) as collected
             FROM "BillCollection"
-            WHERE collectDate >= ?
+            WHERE collectDate >= ?${entityClause}
             GROUP BY ym
             ORDER BY ym`,
-      args: [yearAgoStart.toISOString()]
+      args: [yearAgoStart.toISOString(), ...entityArgs]
     },
     {
       sql: `SELECT
-              (SELECT COUNT(*) FROM "SalesOrder") as totalOrders,
-              (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder") as totalSales,
-              (SELECT COALESCE(SUM(amount), 0) FROM "BillCollection") as totalCollected,
-              (SELECT COALESCE(SUM(dueAmount), 0) FROM "SalesOrder") as totalDue,
+              (SELECT COUNT(*) FROM "SalesOrder" WHERE 1=1${entityClause}) as totalOrders,
+              (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder" WHERE 1=1${entityClause}) as totalSales,
+              (SELECT COALESCE(SUM(amount), 0) FROM "BillCollection" WHERE 1=1${entityClause}) as totalCollected,
+              (SELECT COALESCE(SUM(dueAmount), 0) FROM "SalesOrder" WHERE 1=1${entityClause}) as totalDue,
               (SELECT COUNT(*) FROM "Customer") as totalCustomers,
               (SELECT COUNT(*) FROM "Tailor") as totalTailors,
-              (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'full_pending') as pending,
-              (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'partial_pending') as partial,
-              (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'full_delivered') as delivered,
-              (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder" WHERE orderDate >= ?) as thisMonthSales,
-              (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder" WHERE orderDate >= ? AND orderDate <= ?) as prevMonthSales`,
+              (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'full_pending'${entityClause}) as pending,
+              (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'partial_pending'${entityClause}) as partial,
+              (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'full_delivered'${entityClause}) as delivered,
+              (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder" WHERE orderDate >= ?${entityClause}) as thisMonthSales,
+              (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder" WHERE orderDate >= ? AND orderDate <= ?${entityClause}) as prevMonthSales`,
       args: [
+        ...entityArgs,
+        ...entityArgs,
+        ...entityArgs,
+        ...entityArgs,
+        ...entityArgs,
+        ...entityArgs,
+        ...entityArgs,
         thisMonthStart.toISOString(),
+        ...entityArgs,
         prevMonthStart.toISOString(),
-        prevMonthEnd.toISOString()
+        prevMonthEnd.toISOString(),
+        ...entityArgs
       ]
     }
   ], 'read')

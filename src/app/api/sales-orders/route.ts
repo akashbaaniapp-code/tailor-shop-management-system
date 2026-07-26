@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 import { numberToWords, generateOrderId } from '@/lib/utils-server'
 import { _getClient } from '@/lib/db'
+import { getEntityContext, buildEntityFilter } from '@/lib/entity-context'
 
 export const revalidate = 0
 
@@ -14,8 +15,10 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status')
 
+  // Get entity context for filtering
+  const ctx = await getEntityContext(request)
+
   // Direct SQL with JOINs — much faster than nested includes
-  // and supports search across customer name/phone
   const client = _getClient()
 
   let sql = `SELECT
@@ -39,6 +42,13 @@ export async function GET(request: NextRequest) {
   if (status && status !== 'all') {
     conditions.push(`so.status = ?`)
     args.push(status)
+  }
+
+  // Entity filter — only show transactions for the user's entity
+  const entityFilter = buildEntityFilter(ctx, 'so')
+  if (entityFilter.sql) {
+    conditions.push(entityFilter.sql)
+    args.push(...entityFilter.args)
   }
 
   if (conditions.length > 0) {
@@ -139,6 +149,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'At least one item required' }, { status: 400 })
   }
 
+  // Get entity context — tag this transaction with the user's entity
+  const ctx = await getEntityContext(request)
+
   // Generate auto order ID
   const today = new Date()
   const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
@@ -154,7 +167,7 @@ export async function POST(request: NextRequest) {
   const discountAmount = Number(discount) || 0
   const grandTotal = subTotal - discountAmount
 
-  // Create sales order with items
+  // Create sales order with items — tagged with entity context
   const order = await db.salesOrder.create({
     data: {
       orderId,
@@ -170,6 +183,8 @@ export async function POST(request: NextRequest) {
       dueAmount: grandTotal,
       status: 'full_pending',
       paymentStatus: 'unpaid',
+      entityId: ctx.entityId,
+      subEntityId: ctx.subEntityId,
       items: {
         create: items.map((it: any) => ({
           itemId: it.itemId,

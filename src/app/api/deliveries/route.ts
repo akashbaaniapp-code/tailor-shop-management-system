@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 import { generateOrderId } from '@/lib/utils-server'
+import { getEntityContext, buildEntityWhere } from '@/lib/entity-context'
 
 // GET deliveries - filter by orderId or list all
 export async function GET(request: NextRequest) {
@@ -9,14 +10,18 @@ export async function GET(request: NextRequest) {
   if (auth.response) return auth.response
 
   const { searchParams } = new URL(request.url)
-  const orderId = searchParams.get('orderId') // sales order id (db id)
-  const orderRefId = searchParams.get('orderRef') // sales order ID like SO-...
+  const orderId = searchParams.get('orderId')
+  const orderRefId = searchParams.get('orderRef')
 
-  let where: any = {}
+  // Get entity context for filtering
+  const ctx = await getEntityContext(request)
+  const entityWhere = buildEntityWhere(ctx)
+
+  let where: any = { ...entityWhere }
   if (orderId) {
     where.orderId = orderId
   } else if (orderRefId) {
-    where = { order: { orderId: orderRefId } }
+    where = { ...entityWhere, order: { orderId: orderRefId } }
   }
 
   const deliveries = await db.delivery.findMany({
@@ -50,6 +55,9 @@ export async function POST(request: NextRequest) {
     include: { items: true }
   })
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+
+  // Get entity context — tag this transaction (inherit from order)
+  const ctx = await getEntityContext(request)
 
   // Validate quantities - cannot deliver more than ordered - alreadyDelivered
   for (const it of items) {
@@ -85,6 +93,8 @@ export async function POST(request: NextRequest) {
         orderId,
         deliveryDate: deliveryDate ? new Date(deliveryDate) : new Date(),
         note: note || null,
+        entityId: order.entityId || ctx.entityId,
+        subEntityId: order.subEntityId || ctx.subEntityId,
         items: {
           create: items.map((it: any) => ({
             orderItemId: it.orderItemId,

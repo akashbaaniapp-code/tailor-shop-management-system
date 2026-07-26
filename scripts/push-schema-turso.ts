@@ -121,6 +121,26 @@ const statements = [
   `ALTER TABLE "UserPermission" ADD COLUMN "entityIds" TEXT`,
   `ALTER TABLE "UserPermission" ADD COLUMN "subEntityIds" TEXT`,
 
+  // Add entity context columns to TRANSACTION tables (for multi-entity data isolation)
+  // SalesOrder
+  `ALTER TABLE "SalesOrder" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "SalesOrder" ADD COLUMN "subEntityId" TEXT`,
+  // Delivery
+  `ALTER TABLE "Delivery" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "Delivery" ADD COLUMN "subEntityId" TEXT`,
+  // BillCollection
+  `ALTER TABLE "BillCollection" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "BillCollection" ADD COLUMN "subEntityId" TEXT`,
+  // Expense
+  `ALTER TABLE "Expense" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "Expense" ADD COLUMN "subEntityId" TEXT`,
+  // Income
+  `ALTER TABLE "Income" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "Income" ADD COLUMN "subEntityId" TEXT`,
+  // Payable
+  `ALTER TABLE "Payable" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "Payable" ADD COLUMN "subEntityId" TEXT`,
+
   `CREATE TABLE IF NOT EXISTS "SalesOrder" (
     "id" TEXT PRIMARY KEY NOT NULL,
     "orderId" TEXT NOT NULL UNIQUE,
@@ -285,6 +305,13 @@ async function main() {
     `CREATE INDEX IF NOT EXISTS "idx_entity_name" ON "Entity"("name")`,
     `CREATE INDEX IF NOT EXISTS "idx_subEntity_entityId" ON "SubEntity"("entityId")`,
     `CREATE INDEX IF NOT EXISTS "idx_userPermission_userId" ON "UserPermission"("userId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrder_entityId" ON "SalesOrder"("entityId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_salesOrder_subEntityId" ON "SalesOrder"("subEntityId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_delivery_entityId" ON "Delivery"("entityId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_billCollection_entityId" ON "BillCollection"("entityId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_expense_entityId" ON "Expense"("entityId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_income_entityId" ON "Income"("entityId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_payable_entityId" ON "Payable"("entityId")`,
     `CREATE INDEX IF NOT EXISTS "idx_income_incomeDate" ON "Income"("incomeDate")`,
     `CREATE INDEX IF NOT EXISTS "idx_payablePayment_payableId" ON "PayablePayment"("payableId")`,
     `CREATE INDEX IF NOT EXISTS "idx_payable_status" ON "Payable"("status")`

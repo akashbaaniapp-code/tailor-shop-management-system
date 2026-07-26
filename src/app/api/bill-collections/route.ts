@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 import { generateOrderId } from '@/lib/utils-server'
+import { getEntityContext, buildEntityWhere } from '@/lib/entity-context'
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
@@ -10,7 +11,11 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const orderId = searchParams.get('orderId')
 
-  let where: any = {}
+  // Get entity context for filtering
+  const ctx = await getEntityContext(request)
+  const entityWhere = buildEntityWhere(ctx)
+
+  let where: any = { ...entityWhere }
   if (orderId) where.orderId = orderId
 
   const bills = await db.billCollection.findMany({
@@ -44,6 +49,9 @@ export async function POST(request: NextRequest) {
     }, { status: 400 })
   }
 
+  // Get entity context — tag this transaction (inherit from order)
+  const ctx = await getEntityContext(request)
+
   // Generate bill ID
   const today = new Date()
   const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
@@ -60,7 +68,9 @@ export async function POST(request: NextRequest) {
         amount: amt,
         collectDate: collectDate ? new Date(collectDate) : new Date(),
         method: method || 'cash',
-        note: note || null
+        note: note || null,
+        entityId: order.entityId || ctx.entityId,
+        subEntityId: order.subEntityId || ctx.subEntityId
       }
     })
 
