@@ -8,12 +8,10 @@ import { useAppStore } from '@/lib/store'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Home() {
-  // IMPORTANT: Initial state MUST be identical on server and client to avoid
-  // React hydration mismatch (error #418). We start in "loading" state and
-  // resolve the actual state inside useEffect (which only runs on client).
-  const [user, setLocalUser] = useState<any>(null)
-  const [authChecked, setAuthChecked] = useState(false)
+  // Subscribe to user from store — this re-renders when logout sets it to null
+  const user = useAppStore(s => s.user)
   const setUserStore = useAppStore(s => s.setUser)
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -36,16 +34,13 @@ export default function Home() {
       .then(res => {
         if (cancelled) return
         if (res.user) {
-          setLocalUser(res.user)
           setUserStore(res.user)
         } else {
-          setLocalUser(null)
           setUserStore(null)
         }
       })
       .catch(() => {
         if (cancelled) return
-        setLocalUser(null)
         setUserStore(null)
       })
       .finally(() => {
@@ -56,8 +51,7 @@ export default function Home() {
     return () => { cancelled = true }
   }, [setUserStore])
 
-  function handleUserChange(u: any) {
-    setLocalUser(u)
+  function handleLogin(u: any) {
     setUserStore(u)
   }
 
@@ -70,7 +64,7 @@ export default function Home() {
   }
 
   if (!user) {
-    return <Login onLogin={handleUserChange} />
+    return <Login onLogin={handleLogin} />
   }
 
   return <AppShell />
