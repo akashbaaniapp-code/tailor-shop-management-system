@@ -1,37 +1,23 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Building2, CheckCircle2, Layers, ChevronRight, MapPin, Phone, Globe } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { BRAND } from '@/lib/brand'
 
 export default function EntitySelection() {
   const { user, accessibleEntities, accessibleSubEntities, setSelectedEntityContext, setEntityContextConfirmed } = useAppStore()
-  // Track selection: can be 'all' (admin only), an entity, or a sub-entity
   const [selection, setSelection] = useState<{ type: 'all' | 'entity' | 'subEntity'; id?: string } | null>(null)
 
   const isAdmin = user?.role === 'admin'
 
-  function handleSelectAll() {
-    setSelection({ type: 'all' })
-  }
-
-  function handleSelectEntity(entityId: string) {
-    setSelection({ type: 'entity', id: entityId })
-  }
-
-  function handleSelectSubEntity(subEntityId: string) {
-    setSelection({ type: 'subEntity', id: subEntityId })
-  }
+  function handleSelectAll() { setSelection({ type: 'all' }) }
+  function handleSelectEntity(entityId: string) { setSelection({ type: 'entity', id: entityId }) }
+  function handleSelectSubEntity(subEntityId: string) { setSelection({ type: 'subEntity', id: subEntityId }) }
 
   function handleConfirm() {
     if (!selection) return
-
     if (selection.type === 'all') {
-      // Admin sees all data — no entity filter
       setSelectedEntityContext(null, null)
     } else if (selection.type === 'entity') {
       const entity = accessibleEntities.find(e => e.id === selection.id) || null
@@ -49,232 +35,203 @@ export default function EntitySelection() {
   const hasEntities = accessibleEntities.length > 0
   const hasSubEntities = accessibleSubEntities.length > 0
 
-  // If user has no entities or sub-entities assigned, just confirm and continue
   if (!hasEntities && !hasSubEntities) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/40 to-slate-100 p-4">
-        <Card className="w-full max-w-md shadow-xl border-slate-200">
-          <CardContent className="p-8 text-center">
-            <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h2 className="text-lg font-bold text-slate-900">No Entity Access</h2>
-            <p className="text-sm text-slate-600 mt-2">
-              You don't have any entity or sub-entity assigned. Please contact your administrator to get access.
-            </p>
-            <Button
-              onClick={() => {
-                setSelectedEntityContext(null, null)
-                setEntityContextConfirmed(true)
-              }}
-              variant="outline"
-              className="mt-4"
-            >
-              Continue without entity
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#0b0d0f' }}>
+        <div className="max-w-md w-full p-8 text-center rounded-3xl" style={{ background: '#14161a', border: '1px solid #2a2d33' }}>
+          <Building2 className="w-12 h-12 mx-auto mb-3" style={{ color: '#333' }} />
+          <h2 className="text-lg font-bold" style={{ color: '#e8eae9' }}>No Entity Access</h2>
+          <p className="text-sm mt-2" style={{ color: '#666' }}>
+            You don't have any entity or sub-entity assigned. Please contact your administrator.
+          </p>
+          <button
+            onClick={() => { setSelectedEntityContext(null, null); setEntityContextConfirmed(true) }}
+            className="mt-4 px-6 py-2.5 rounded-xl font-medium transition-all duration-300"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #2a2d33', color: '#aaa' }}
+          >
+            Continue without entity
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/40 to-slate-100 p-4">
-      <Card className="w-full max-w-4xl shadow-xl border-slate-200">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-white shadow-md flex items-center justify-center overflow-hidden border border-slate-100 mb-3">
-            <img src={BRAND.logoPath} alt={BRAND.name} className="w-full h-full object-contain p-2" />
+    <div className="min-h-screen flex justify-center items-center p-4" style={{ background: '#0b0d0f' }}>
+      <div
+        className="max-w-[800px] w-full rounded-3xl p-10 relative"
+        style={{ background: '#14161a', border: '1px solid #2a2d33', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}
+      >
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <div className="rounded-2xl p-2.5" style={{ background: '#fff', boxShadow: '0 4px 15px rgba(255,255,255,0.05)' }}>
+            <img src={BRAND.logoPath} alt={BRAND.name} className="max-w-[80px] h-auto" />
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-900">
+        </div>
+
+        {/* Welcome */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-semibold" style={{ color: '#6c7a89' }}>
             Welcome, {user?.name || user?.username}!
-          </CardTitle>
-          <p className="text-sm text-slate-600 mt-2">
+          </h1>
+          <p className="text-sm mt-2" style={{ color: '#666' }}>
             {isAdmin
               ? 'Select an entity to work in, or choose "All Entities" to see everything.'
-              : 'Click on an entity or sub-entity below to enter and start working.'
-            }
+              : 'Click on an entity or sub-entity below to enter and start working.'}
           </p>
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-6">
-          {/* All Entities option — admin only */}
-          {isAdmin && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Globe className="w-4 h-4 text-blue-600" />
-                <h3 className="text-sm font-semibold text-slate-900">Overview (Admin)</h3>
+        {/* All Entities — admin only */}
+        {isAdmin && (
+          <>
+            <div className="flex items-center gap-2 mt-6 mb-4">
+              <Globe className="w-3.5 h-3.5" style={{ color: '#6c7a89' }} />
+              <span className="text-sm font-medium" style={{ color: '#6c7a89' }}>Overview (Admin)</span>
+            </div>
+            <button
+              onClick={handleSelectAll}
+              className="w-full p-5 rounded-2xl flex items-center gap-5 transition-all duration-300 mb-4"
+              style={{
+                background: selection?.type === 'all' ? '#1f2227' : '#1a1c1e',
+                border: selection?.type === 'all' ? '1px solid #d4df3a' : '1px solid #2a2d33',
+                transform: selection?.type === 'all' ? 'translateY(-2px)' : 'none',
+                boxShadow: selection?.type === 'all' ? '0 5px 20px rgba(212,223,58,0.05)' : 'none',
+              }}
+              onMouseEnter={(e) => { if (selection?.type !== 'all') { e.currentTarget.style.borderColor = '#d4df3a'; e.currentTarget.style.background = '#1f2227'; e.currentTarget.style.transform = 'translateY(-2px)' } }}
+              onMouseLeave={(e) => { if (selection?.type !== 'all') { e.currentTarget.style.borderColor = '#2a2d33'; e.currentTarget.style.background = '#1a1c1e'; e.currentTarget.style.transform = 'none' } }}
+            >
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#0b0d0f' }}>
+                <Globe className="w-5 h-5" style={{ color: selection?.type === 'all' ? '#d4df3a' : '#888' }} />
               </div>
-              <button
-                onClick={handleSelectAll}
-                className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                  selection?.type === 'all'
-                    ? 'border-blue-500 bg-blue-50 shadow-md'
-                    : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50 bg-white'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Globe className={`w-6 h-6 ${selection?.type === 'all' ? 'text-blue-600' : 'text-slate-400'}`} />
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">All Entities</p>
-                      <p className="text-xs text-slate-500">View data across all entities (admin overview)</p>
+              <div className="flex-1 text-left">
+                <p className="text-base font-semibold" style={{ color: '#fff' }}>All Entities</p>
+                <p className="text-xs" style={{ color: '#888' }}>View data across all entities (admin overview)</p>
+              </div>
+              {selection?.type === 'all' && <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: '#d4df3a' }} />}
+            </button>
+          </>
+        )}
+
+        {/* Entities */}
+        {hasEntities && (
+          <>
+            <div className="flex items-center gap-2 mt-6 mb-4">
+              <Building2 className="w-3.5 h-3.5" style={{ color: '#6c7a89' }} />
+              <span className="text-sm font-medium" style={{ color: '#6c7a89' }}>Entities</span>
+              <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#2a2d33', color: '#888' }}>({accessibleEntities.length})</span>
+            </div>
+            <div className="space-y-4">
+              {accessibleEntities.map(e => {
+                const isSelected = selection?.type === 'entity' && selection.id === e.id
+                return (
+                  <button
+                    key={e.id}
+                    onClick={() => handleSelectEntity(e.id)}
+                    className="w-full p-5 rounded-2xl flex items-center gap-5 transition-all duration-300"
+                    style={{
+                      background: isSelected ? '#1f2227' : '#1a1c1e',
+                      border: isSelected ? '1px solid #d4df3a' : '1px solid #2a2d33',
+                      transform: isSelected ? 'translateY(-2px)' : 'none',
+                      boxShadow: isSelected ? '0 5px 20px rgba(212,223,58,0.05)' : 'none',
+                    }}
+                    onMouseEnter={(e2) => { if (!isSelected) { e2.currentTarget.style.borderColor = '#d4df3a'; e2.currentTarget.style.background = '#1f2227'; e2.currentTarget.style.transform = 'translateY(-2px)' } }}
+                    onMouseLeave={(e2) => { if (!isSelected) { e2.currentTarget.style.borderColor = '#2a2d33'; e2.currentTarget.style.background = '#1a1c1e'; e2.currentTarget.style.transform = 'none' } }}
+                  >
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#0b0d0f' }}>
+                      <Building2 className="w-5 h-5" style={{ color: isSelected ? '#d4df3a' : '#888' }} />
                     </div>
-                  </div>
-                  {selection?.type === 'all' && (
-                    <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                  )}
-                </div>
-              </button>
-            </div>
-          )}
-
-          {/* Entities */}
-          {hasEntities && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Building2 className="w-4 h-4 text-emerald-600" />
-                <h3 className="text-sm font-semibold text-slate-900">Entities</h3>
-                <span className="text-xs text-slate-500">({accessibleEntities.length})</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {accessibleEntities.map(e => {
-                  const isSelected = selection?.type === 'entity' && selection.id === e.id
-                  return (
-                    <button
-                      key={e.id}
-                      onClick={() => handleSelectEntity(e.id)}
-                      className={`p-4 rounded-lg border-2 text-left transition-all ${
-                        isSelected
-                          ? 'border-emerald-500 bg-emerald-50 shadow-md'
-                          : 'border-slate-200 hover:border-emerald-300 hover:bg-slate-50 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-slate-900 truncate">{e.name}</p>
-                          {e.description && <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{e.description}</p>}
-                          {e.address && (
-                            <p className="text-xs text-slate-600 mt-1.5 flex items-start gap-1">
-                              <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
-                              <span className="line-clamp-2">{e.address}</span>
-                            </p>
-                          )}
-                          {e.contactNumber && (
-                            <p className="text-xs text-slate-600 mt-0.5 flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {e.contactNumber}
-                            </p>
-                          )}
-                        </div>
-                        {isSelected && (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                        )}
+                    <div className="flex-1 text-left">
+                      <p className="text-base font-semibold" style={{ color: '#fff' }}>{e.name}</p>
+                      {e.description && <p className="text-xs mt-0.5" style={{ color: '#888' }}>{e.description}</p>}
+                      <div className="mt-2 space-y-1 text-xs" style={{ color: '#666' }}>
+                        {e.address && <p className="flex items-center gap-1.5"><MapPin className="w-3 h-3" /> {e.address}</p>}
+                        {e.contactNumber && <p className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {e.contactNumber}</p>}
                       </div>
-                    </button>
-                  )
-                })}
-              </div>
+                    </div>
+                    {isSelected && <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: '#d4df3a' }} />}
+                  </button>
+                )
+              })}
             </div>
-          )}
+          </>
+        )}
 
-          {/* Sub-Entities */}
-          {hasSubEntities && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Layers className="w-4 h-4 text-emerald-600" />
-                <h3 className="text-sm font-semibold text-slate-900">Sub-Entities</h3>
-                <span className="text-xs text-slate-500">({accessibleSubEntities.length})</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {accessibleSubEntities.map(s => {
-                  const isSelected = selection?.type === 'subEntity' && selection.id === s.id
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => handleSelectSubEntity(s.id)}
-                      className={`p-4 rounded-lg border-2 text-left transition-all ${
-                        isSelected
-                          ? 'border-emerald-500 bg-emerald-50 shadow-md'
-                          : 'border-slate-200 hover:border-emerald-300 hover:bg-slate-50 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-slate-900 truncate">{s.name}</p>
-                          {s.entity?.name && (
-                            <Badge variant="secondary" className="bg-slate-100 text-slate-600 text-[10px] mt-1">
-                              {s.entity.name}
-                            </Badge>
-                          )}
-                          {s.description && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{s.description}</p>}
-                          {s.address && (
-                            <p className="text-xs text-slate-600 mt-1.5 flex items-start gap-1">
-                              <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
-                              <span className="line-clamp-2">{s.address}</span>
-                            </p>
-                          )}
-                          {s.contactNumber && (
-                            <p className="text-xs text-slate-600 mt-0.5 flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {s.contactNumber}
-                            </p>
-                          )}
-                        </div>
-                        {isSelected && (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+        {/* Sub-Entities */}
+        {hasSubEntities && (
+          <>
+            <div className="flex items-center gap-2 mt-6 mb-4">
+              <Layers className="w-3.5 h-3.5" style={{ color: '#6c7a89' }} />
+              <span className="text-sm font-medium" style={{ color: '#6c7a89' }}>Sub-Entities</span>
+              <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#2a2d33', color: '#888' }}>({accessibleSubEntities.length})</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {accessibleSubEntities.map(s => {
+                const isSelected = selection?.type === 'subEntity' && selection.id === s.id
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => handleSelectSubEntity(s.id)}
+                    className="w-full p-5 rounded-2xl flex flex-col items-start gap-2 transition-all duration-300 text-left"
+                    style={{
+                      background: isSelected ? '#1f2227' : '#1a1c1e',
+                      border: isSelected ? '1px solid #d4df3a' : '1px solid #2a2d33',
+                      transform: isSelected ? 'translateY(-2px)' : 'none',
+                      boxShadow: isSelected ? '0 5px 20px rgba(212,223,58,0.05)' : 'none',
+                    }}
+                    onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = '#d4df3a'; e.currentTarget.style.background = '#1f2227'; e.currentTarget.style.transform = 'translateY(-2px)' } }}
+                    onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = '#2a2d33'; e.currentTarget.style.background = '#1a1c1e'; e.currentTarget.style.transform = 'none' } }}
+                  >
+                    <div className="w-full flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-semibold" style={{ color: '#fff' }}>{s.name}</p>
+                        {s.entity?.name && (
+                          <p className="text-xs mt-0.5" style={{ color: '#888' }}>{s.entity.name}</p>
                         )}
+                        {s.description && <p className="text-xs mt-1" style={{ color: '#888' }}>{s.description}</p>}
+                        <div className="mt-2 space-y-1 text-xs" style={{ color: '#666' }}>
+                          {s.address && <p className="flex items-center gap-1.5"><MapPin className="w-3 h-3" /> {s.address}</p>}
+                          {s.contactNumber && <p className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {s.contactNumber}</p>}
+                        </div>
                       </div>
-                    </button>
-                  )
-                })}
-              </div>
+                      {isSelected && <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: '#d4df3a' }} />}
+                    </div>
+                  </button>
+                )
+              })}
             </div>
-          )}
+          </>
+        )}
 
-          {/* Selection summary + Continue */}
-          <div className={`p-3 rounded-lg ${selection?.type === 'all' ? 'bg-blue-50' : 'bg-emerald-50'}`}>
-            <p className={`text-xs font-medium mb-1 ${selection?.type === 'all' ? 'text-blue-900' : 'text-emerald-900'}`}>
-              Your selection:
+        {/* Selection summary */}
+        <div className="mt-8 p-4 rounded-xl" style={{ background: 'rgba(29,185,84,0.05)', border: '1px solid rgba(29,185,84,0.1)' }}>
+          <p className="text-xs font-semibold" style={{ color: '#aaa' }}>Your selection:</p>
+          {selection ? (
+            <p className="text-sm mt-1" style={{ color: '#1db954' }}>
+              {selection.type === 'all'
+                ? 'All Entities (Admin Overview)'
+                : selection.type === 'entity'
+                ? `Entity: ${accessibleEntities.find(e => e.id === selection.id)?.name || 'Unknown'}`
+                : `Sub-Entity: ${accessibleSubEntities.find(s => s.id === selection.id)?.name || 'Unknown'}`}
             </p>
-            {selection ? (
-              <div className="flex items-center gap-2 text-sm">
-                <Badge variant="secondary" className={`${
-                  selection.type === 'all'
-                    ? 'bg-white text-blue-700'
-                    : 'bg-white text-slate-700'
-                }`}>
-                  {selection.type === 'all'
-                    ? 'All Entities (Admin Overview)'
-                    : selection.type === 'entity'
-                    ? `Entity: ${accessibleEntities.find(e => e.id === selection.id)?.name || 'Unknown'}`
-                    : `Sub-Entity: ${accessibleSubEntities.find(s => s.id === selection.id)?.name || 'Unknown'}`
-                  }
-                </Badge>
-              </div>
-            ) : (
-              <p className="text-xs text-slate-500 italic">
-                {isAdmin
-                  ? 'Choose "All Entities" for overview, or click a specific entity to work in.'
-                  : 'Please click on an entity or sub-entity above to select it.'
-                }
-              </p>
-            )}
-          </div>
+          ) : (
+            <p className="text-sm italic mt-1" style={{ color: '#666' }}>
+              {isAdmin ? 'Choose "All Entities" for overview, or click a specific entity to work in.' : 'Please click on an entity or sub-entity above to select it.'}
+            </p>
+          )}
+        </div>
 
-          <Button
-            onClick={handleConfirm}
-            disabled={!selection}
-            className={`w-full disabled:opacity-50 disabled:cursor-not-allowed ${
-              selection?.type === 'all'
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-emerald-600 hover:bg-emerald-700'
-            }`}
-            size="lg"
-          >
-            Continue <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </CardContent>
-      </Card>
+        {/* Continue button */}
+        <button
+          onClick={handleConfirm}
+          disabled={!selection}
+          className="w-full py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2.5 transition-all duration-300 mt-5 disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ background: '#1db954', color: '#fff', border: 'none' }}
+          onMouseEnter={(e) => { if (selection) { e.currentTarget.style.background = '#1aa34a'; e.currentTarget.style.boxShadow = '0 5px 20px rgba(29,185,84,0.3)' } }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = '#1db954'; e.currentTarget.style.boxShadow = 'none' }}
+        >
+          Continue <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   )
 }
