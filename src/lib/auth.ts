@@ -50,8 +50,12 @@ export async function requireAuth(request: NextRequest) {
 }
 
 export async function ensureSeedUser() {
-  const count = await db.user.count()
-  if (count === 0) {
+  // Check if admin user already exists
+  const existing = await db.user.findUnique({ where: { username: 'admin' } })
+  if (existing) return
+
+  // Try to create — if race condition causes conflict, ignore
+  try {
     await db.user.create({
       data: {
         username: 'admin',
@@ -60,5 +64,8 @@ export async function ensureSeedUser() {
         role: 'admin'
       }
     })
+  } catch (err) {
+    // Unique constraint violation means another request created it first - fine
+    console.log('Seed user creation skipped (likely already exists):', err instanceof Error ? err.message : err)
   }
 }
