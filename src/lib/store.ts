@@ -18,6 +18,8 @@ export type ViewKey =
   | 'setup-customer'
   | 'setup-delivery-info'
   | 'setup-expense-head'
+  | 'setup-users'
+  | 'setup-entity'
   | 'report-pnl'
   | 'report-receivable'
   | 'report-payable'
@@ -41,6 +43,8 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'setup-customer': 'setup-customers',
   'setup-delivery-info': 'setup-delivery-info',
   'setup-expense-head': 'setup-expense-heads',
+  'setup-users': 'setup-users',
+  'setup-entity': 'setup-entities',
   'report-pnl': 'report-pnl',
   'report-receivable': 'report-receivable',
   'report-payable': 'report-payable',

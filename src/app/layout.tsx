@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tailor Shop Management System",
-  description: "Complete management system for tailor shop - sales orders, deliveries, billing, and reports.",
-  keywords: ["Tailor", "Shop", "Management", "Sales", "Delivery", "Billing"],
+  title: "FOR THE FUTURE - Tailoring & Fashion Management",
+  description: "Complete management system for FOR THE FUTURE — sales orders, deliveries, billing, and reports.",
+  keywords: ["FOR THE FUTURE", "FTF", "Tailor", "Management", "Sales", "Delivery", "Billing"],
 };
 
 export default function RootLayout({

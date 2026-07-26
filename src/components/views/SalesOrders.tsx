@@ -240,7 +240,14 @@ export default function SalesOrders() {
       </Card>
 
       {viewOrder && (
-        <OrderDetail order={viewOrder} onClose={() => setViewOrder(null)} />
+        <OrderDetail
+          order={viewOrder}
+          onClose={() => setViewOrder(null)}
+          onCloseOrder={async (o) => {
+            await handleClose(o)
+            setViewOrder(null)
+          }}
+        />
       )}
     </div>
   )
@@ -257,7 +264,11 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant="secondary" className={v.className}>{v.label}</Badge>
 }
 
-function OrderDetail({ order, onClose }: { order: SalesOrder; onClose: () => void }) {
+function OrderDetail({ order, onClose, onCloseOrder }: {
+  order: SalesOrder
+  onClose: () => void
+  onCloseOrder: (o: SalesOrder) => Promise<void>
+}) {
   const [fullOrder, setFullOrder] = useState<any>(null)
 
   useEffect(() => {
@@ -392,10 +403,23 @@ function OrderDetail({ order, onClose }: { order: SalesOrder; onClose: () => voi
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={onClose}>Close</Button>
+              <Button variant="outline" onClick={onClose}>Close Window</Button>
               <Button onClick={() => printInvoice(fullOrder)} className="bg-emerald-600 hover:bg-emerald-700">
                 <Printer className="w-4 h-4 mr-1" /> Print Invoice
               </Button>
+              {fullOrder.status === 'full_delivered' && (
+                <Button
+                  onClick={() => onCloseOrder(order)}
+                  className="bg-slate-800 hover:bg-slate-900"
+                >
+                  <Lock className="w-4 h-4 mr-1" /> Close Order (Finalize)
+                </Button>
+              )}
+              {fullOrder.status === 'closed' && (
+                <Badge variant="secondary" className="bg-slate-800 text-white hover:bg-slate-800 px-3 py-1.5">
+                  <Lock className="w-3 h-3 mr-1" /> Order is Closed
+                </Badge>
+              )}
             </DialogFooter>
           </div>
         )}

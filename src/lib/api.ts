@@ -182,6 +182,24 @@ export const api = {
   // Sales Order Close
   closeSalesOrder: (id: string) => apiFetch(`/api/sales-orders/${id}/close`, { method: 'POST' }),
 
+  // Users (admin only)
+  listUsers: () => apiFetch('/api/users'),
+  createUser: (data: any) => apiFetch('/api/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (data: any) => apiFetch('/api/users', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteUser: (id: string) => apiFetch(`/api/users?id=${id}`, { method: 'DELETE' }),
+
+  // Entities
+  listEntities: () => apiFetch('/api/entities'),
+  createEntity: (data: any) => apiFetch('/api/entities', { method: 'POST', body: JSON.stringify(data) }),
+  updateEntity: (data: any) => apiFetch('/api/entities', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteEntity: (id: string) => apiFetch(`/api/entities?id=${id}`, { method: 'DELETE' }),
+
+  // Sub-Entities
+  listSubEntities: (entityId?: string) => apiFetch(`/api/sub-entities${entityId ? `?entityId=${entityId}` : ''}`),
+  createSubEntity: (data: any) => apiFetch('/api/sub-entities', { method: 'POST', body: JSON.stringify(data) }),
+  updateSubEntity: (data: any) => apiFetch('/api/sub-entities', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteSubEntity: (id: string) => apiFetch(`/api/sub-entities?id=${id}`, { method: 'DELETE' }),
+
   // Incomes
   listIncomes: () => apiFetch('/api/incomes'),
   createIncome: (data: any) => apiFetch('/api/incomes', { method: 'POST', body: JSON.stringify(data) }),

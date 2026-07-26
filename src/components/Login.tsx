@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Scissors, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { api, setToken, setUser } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
+import { BRAND } from '@/lib/brand'
 import { toast } from 'sonner'
 
 export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
@@ -41,12 +42,21 @@ export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/40 to-slate-100 p-4">
       <Card className="w-full max-w-md shadow-xl border-slate-200">
         <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto w-14 h-14 rounded-full bg-emerald-600 flex items-center justify-center shadow-lg">
-            <Scissors className="w-7 h-7 text-white" />
+          <div className="mx-auto w-28 h-28 rounded-2xl bg-white shadow-lg flex items-center justify-center overflow-hidden border border-slate-100">
+            <img
+              src={BRAND.logoPath}
+              alt={BRAND.name}
+              className="w-full h-full object-contain p-2"
+            />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-slate-900">Tailor Shop MS</CardTitle>
-            <CardDescription className="text-slate-600 mt-1">
+            <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
+              {BRAND.name}
+            </CardTitle>
+            <p className="text-xs font-medium text-emerald-700 mt-1 uppercase tracking-wider">
+              {BRAND.tagline}
+            </p>
+            <CardDescription className="text-slate-600 mt-2">
               Sign in to manage your sales, deliveries & reports
             </CardDescription>
           </div>

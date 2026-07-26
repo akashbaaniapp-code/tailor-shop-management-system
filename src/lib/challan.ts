@@ -1,5 +1,6 @@
 import { printHtml } from './print'
 import { formatCurrency, formatDate, formatDateTime } from './api'
+import { BRAND, getLogoUrl } from './brand'
 
 interface ChallanItem {
   orderItem: { item: { name: string } }
@@ -21,9 +22,10 @@ interface ChallanData {
   items: ChallanItem[]
 }
 
-const SHOP_NAME = 'FTF Tailor Shop'
-const SHOP_ADDRESS = 'Dhaka, Bangladesh'
-const SHOP_PHONE = '+880 1XXX-XXXXXX'
+const SHOP_NAME = BRAND.name
+const SHOP_ADDRESS = BRAND.address
+const SHOP_PHONE = BRAND.phone
+const SHOP_TAGLINE = BRAND.tagline
 
 export function printChallan(data: ChallanData) {
   const itemsRows = data.items.map((it, idx) => `
@@ -36,10 +38,14 @@ export function printChallan(data: ChallanData) {
 
   const totalQty = data.items.reduce((s, it) => s + it.qty, 0)
 
+  const logoUrl = getLogoUrl()
+
   const html = `
     <div class="header">
       <div class="shop-info">
+        <img src="${logoUrl}" alt="${SHOP_NAME}" class="shop-logo" />
         <h1 class="shop-name">${SHOP_NAME}</h1>
+        <p class="shop-tagline">${SHOP_TAGLINE}</p>
         <p class="shop-tagline">${SHOP_ADDRESS}</p>
         <p class="shop-tagline">Phone: ${SHOP_PHONE}</p>
       </div>

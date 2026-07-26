@@ -35,11 +35,20 @@ export function printHtml(html: string, title: string = 'Print') {
       border-bottom: 2px solid #059669;
     }
     .shop-info { flex: 1; }
+    .shop-logo {
+      max-width: 110px;
+      max-height: 80px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      margin-bottom: 8px;
+    }
     .shop-name {
       font-size: 22px;
       font-weight: 800;
       color: #059669;
       margin: 0 0 4px 0;
+      letter-spacing: -0.5px;
     }
     .shop-tagline { color: #64748b; font-size: 12px; margin: 0; }
     .doc-info { text-align: right; }
@@ -212,6 +221,7 @@ export function printHtml(html: string, title: string = 'Print') {
     .status-pending { background: #fef3c7; color: #92400e; }
     .status-partial { background: #dbeafe; color: #1e40af; }
     .status-delivered { background: #d1fae5; color: #065f46; }
+    .status-closed { background: #1e293b; color: #ffffff; }
 
     @media print {
       body { padding: 0; }

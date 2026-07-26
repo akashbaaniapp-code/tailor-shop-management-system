@@ -1,5 +1,6 @@
 import { printHtml } from './print'
 import { formatCurrency, formatDate } from './api'
+import { BRAND, getLogoUrl } from './brand'
 
 interface InvoiceItem {
   item: { name: string }
@@ -60,16 +61,19 @@ function numberToWords(num: number): string {
   return result + ' Only'
 }
 
-const SHOP_NAME = 'FTF Tailor Shop'
-const SHOP_ADDRESS = 'Dhaka, Bangladesh'
-const SHOP_PHONE = '+880 1XXX-XXXXXX'
+const SHOP_NAME = BRAND.name
+const SHOP_ADDRESS = BRAND.address
+const SHOP_PHONE = BRAND.phone
+const SHOP_TAGLINE = BRAND.tagline
 
 export function printInvoice(order: InvoiceOrder) {
   const statusLabel = order.status === 'full_delivered' ? 'Delivered'
     : order.status === 'partial_pending' ? 'Partial'
+    : order.status === 'closed' ? 'Closed'
     : 'Pending'
   const statusClass = order.status === 'full_delivered' ? 'status-delivered'
     : order.status === 'partial_pending' ? 'status-partial'
+    : order.status === 'closed' ? 'status-closed'
     : 'status-pending'
 
   const paymentLabel = order.paymentStatus === 'paid' ? 'Paid'
@@ -86,10 +90,14 @@ export function printInvoice(order: InvoiceOrder) {
     </tr>
   `).join('')
 
+  const logoUrl = getLogoUrl()
+
   const html = `
     <div class="header">
       <div class="shop-info">
+        <img src="${logoUrl}" alt="${SHOP_NAME}" class="shop-logo" />
         <h1 class="shop-name">${SHOP_NAME}</h1>
+        <p class="shop-tagline">${SHOP_TAGLINE}</p>
         <p class="shop-tagline">${SHOP_ADDRESS}</p>
         <p class="shop-tagline">Phone: ${SHOP_PHONE}</p>
       </div>

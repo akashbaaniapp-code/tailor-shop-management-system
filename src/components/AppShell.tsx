@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAppStore, ViewKey, buildViewUrl } from '@/lib/store'
 import { api, clearToken } from '@/lib/api'
+import { BRAND } from '@/lib/brand'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -18,10 +19,12 @@ import {
   Ruler,
   Package,
   Users,
+  UserCog,
   FileText,
   TrendingUp,
   Receipt,
   Tag,
+  Layers,
   ChevronRight,
   Menu,
   X
@@ -43,6 +46,8 @@ import SetupTailor from '@/components/views/SetupTailor'
 import SetupCustomer from '@/components/views/SetupCustomer'
 import SetupDeliveryInfo from '@/components/views/SetupDeliveryInfo'
 import SetupExpenseHead from '@/components/views/SetupExpenseHead'
+import SetupUsers from '@/components/views/SetupUsers'
+import SetupEntity from '@/components/views/SetupEntity'
 import ReportPnl from '@/components/views/ReportPnl'
 import ReportReceivable from '@/components/views/ReportReceivable'
 import ReportPayable from '@/components/views/ReportPayable'
@@ -72,7 +77,9 @@ const navGroups: NavGroup[] = [
       { key: 'setup-tailor', label: 'Tailors', icon: Scissors },
       { key: 'setup-customer', label: 'Customers', icon: Users },
       { key: 'setup-delivery-info', label: 'Delivery Info', icon: FileText },
-      { key: 'setup-expense-head', label: 'Expense Heads', icon: Tag }
+      { key: 'setup-expense-head', label: 'Expense Heads', icon: Tag },
+      { key: 'setup-entity', label: 'Entities', icon: Layers },
+      { key: 'setup-users', label: 'Users & Rights', icon: UserCog }
     ]
   },
   {
@@ -104,6 +111,8 @@ const viewTitles: Record<ViewKey, string> = {
   'setup-customer': 'Setup - Customers',
   'setup-delivery-info': 'Setup - Delivery Information',
   'setup-expense-head': 'Setup - Expense Heads',
+  'setup-users': 'Setup - Users & Access Rights',
+  'setup-entity': 'Setup - Entities & Sub-Entities',
   'report-pnl': 'P&L Report',
   'report-receivable': 'Receivable Report',
   'report-payable': 'Payable Report',
@@ -145,6 +154,8 @@ export default function AppShell() {
       case 'setup-customer': return <SetupCustomer />
       case 'setup-delivery-info': return <SetupDeliveryInfo />
       case 'setup-expense-head': return <SetupExpenseHead />
+      case 'setup-users': return <SetupUsers />
+      case 'setup-entity': return <SetupEntity />
       case 'report-pnl': return <ReportPnl />
       case 'report-receivable': return <ReportReceivable />
       case 'report-payable': return <ReportPayable />
@@ -236,10 +247,13 @@ export default function AppShell() {
     return (
       <>
         <div className="h-14 flex items-center gap-2 px-4 border-b border-slate-200 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center">
-            <Scissors className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+            <img src={BRAND.logoPath} alt={BRAND.shortName} className="w-full h-full object-contain p-0.5" />
           </div>
-          <span className="font-bold text-slate-900">Tailor Shop MS</span>
+          <div className="min-w-0">
+            <p className="font-bold text-slate-900 text-sm leading-tight truncate">{BRAND.name}</p>
+            <p className="text-[10px] text-emerald-700 uppercase tracking-wider leading-tight">{BRAND.tagline}</p>
+          </div>
         </div>
         <ScrollArea className="flex-1">
           <div className="p-3 space-y-5">
