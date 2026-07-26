@@ -72,19 +72,22 @@ export async function GET(request: NextRequest) {
   })
 
   // Transform flat rows into nested objects
+  // Convert BigInt values to Number to avoid JSON serialization errors
   const orders = ordersRes.rows.map((raw: any) => {
     const order: any = {}
     const customer: any = {}
     const tailor: any = {}
     for (const k of Object.keys(raw)) {
       if (/^\d+$/.test(k)) continue
+      // Convert BigInt to Number (libSQL returns BigInt for COUNT/SUM)
+      let val = raw[k]
+      if (typeof val === 'bigint') val = Number(val)
       if (k.startsWith('customer.')) {
-        customer[k.slice('customer.'.length)] = raw[k]
+        customer[k.slice('customer.'.length)] = val
       } else if (k.startsWith('tailor.')) {
-        tailor[k.slice('tailor.'.length)] = raw[k]
+        tailor[k.slice('tailor.'.length)] = val
       } else {
-        // Keep dates as-is (string) — frontend formatDate handles both
-        order[k] = raw[k]
+        order[k] = val
       }
     }
     order.customer = customer
@@ -121,11 +124,13 @@ export async function GET(request: NextRequest) {
       const item: any = {}
       for (const k of Object.keys(raw)) {
         if (/^\d+$/.test(k)) continue
+        let val = raw[k]
+        if (typeof val === 'bigint') val = Number(val)
         if (k.startsWith('item.')) {
           if (!item.item) item.item = {}
-          item.item[k.slice('item.'.length)] = raw[k]
+          item.item[k.slice('item.'.length)] = val
         } else {
-          item[k] = raw[k]
+          item[k] = val
         }
       }
       itemsByOrder[orderId].push(item)
@@ -162,10 +167,11 @@ export async function GET(request: NextRequest) {
         }
         deliveriesByOrder[orderId].push(del)
       }
-      // Add delivery item if exists
-      if (raw['di.qty'] !== null && raw['di.qty'] !== undefined) {
+      // Add delivery item if exists (convert BigInt qty to Number)
+      const diQty = raw['di.qty']
+      if (diQty !== null && diQty !== undefined) {
         del.items.push({
-          qty: raw['di.qty'],
+          qty: typeof diQty === 'bigint' ? Number(diQty) : diQty,
           itemName: raw['di.item.name']
         })
       }
