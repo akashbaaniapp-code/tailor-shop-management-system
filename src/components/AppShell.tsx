@@ -32,6 +32,7 @@ import Dashboard from '@/components/views/Dashboard'
 import SalesOrders from '@/components/views/SalesOrders'
 import SalesOrderFormPage from '@/components/views/SalesOrderFormPage'
 import Delivery from '@/components/views/Delivery'
+import DeliveryFormPage from '@/components/views/DeliveryFormPage'
 import BillCollection from '@/components/views/BillCollection'
 import SetupUom from '@/components/views/SetupUom'
 import SetupItem from '@/components/views/SetupItem'
@@ -86,6 +87,7 @@ const viewTitles: Record<ViewKey, string> = {
   'sales-order-edit': 'Edit Sales Order',
   'sales-order-view': 'View Sales Order',
   'delivery': 'Sales Order Delivery',
+  'delivery-create': 'Create Delivery',
   'bill-collection': 'Bill Collection',
   'setup-uom': 'Setup - Unit of Measure',
   'setup-item': 'Setup - Items',
@@ -122,6 +124,7 @@ export default function AppShell() {
       case 'sales-order-create': return <SalesOrderFormPage />
       case 'sales-order-edit': return <SalesOrderFormPage orderId={selectedOrderId || undefined} />
       case 'delivery': return <Delivery />
+      case 'delivery-create': return <DeliveryFormPage />
       case 'bill-collection': return <BillCollection />
       case 'setup-uom': return <SetupUom />
       case 'setup-item': return <SetupItem />

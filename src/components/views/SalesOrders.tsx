@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, Search, Eye, Edit, FileText } from 'lucide-react'
+import { Plus, Search, Eye, Edit, FileText, Printer } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
+import { printInvoice } from '@/lib/invoice'
 
 interface SalesOrder {
   id: string
@@ -97,6 +98,15 @@ export default function SalesOrders() {
   function handleEdit(o: SalesOrder) {
     setSelectedOrderId(o.id)
     setView('sales-order-edit')
+  }
+
+  async function handlePrint(o: SalesOrder) {
+    try {
+      const res = await api.getSalesOrder(o.id)
+      printInvoice(res.order)
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to load order for printing')
+    }
   }
 
   return (
@@ -186,6 +196,9 @@ export default function SalesOrders() {
                           </Button>
                           <Button size="sm" variant="ghost" onClick={() => handleEdit(o)} title="Edit">
                             <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handlePrint(o)} title="Print Invoice">
+                            <Printer className="w-4 h-4 text-emerald-600" />
                           </Button>
                         </div>
                       </td>
@@ -351,6 +364,9 @@ function OrderDetail({ order, onClose }: { order: SalesOrder; onClose: () => voi
 
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>Close</Button>
+              <Button onClick={() => printInvoice(fullOrder)} className="bg-emerald-600 hover:bg-emerald-700">
+                <Printer className="w-4 h-4 mr-1" /> Print Invoice
+              </Button>
             </DialogFooter>
           </div>
         )}

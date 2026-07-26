@@ -7,6 +7,7 @@ export type ViewKey =
   | 'sales-order-edit'
   | 'sales-order-view'
   | 'delivery'
+  | 'delivery-create'
   | 'bill-collection'
   | 'setup-uom'
   | 'setup-item'

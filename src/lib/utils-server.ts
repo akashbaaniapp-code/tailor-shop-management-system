@@ -61,15 +61,25 @@ export async function generateOrderId(prefix: string, count: number): Promise<st
   return `${prefix}-${ymd}-${seq}`
 }
 
-export function formatDate(date: Date | string | null | undefined): string {
-  if (!date) return ''
-  const d = typeof date === 'string' ? new Date(date) : date
+export function formatDate(date: Date | string | number | null | undefined): string {
+  if (!date && date !== 0) return ''
+  let d: Date
+  if (date instanceof Date) d = date
+  else if (typeof date === 'number') d = new Date(date)
+  else if (typeof date === 'string') d = new Date(date)
+  else return ''
+  if (isNaN(d.getTime())) return ''
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-export function formatDateTime(date: Date | string | null | undefined): string {
-  if (!date) return ''
-  const d = typeof date === 'string' ? new Date(date) : date
+export function formatDateTime(date: Date | string | number | null | undefined): string {
+  if (!date && date !== 0) return ''
+  let d: Date
+  if (date instanceof Date) d = date
+  else if (typeof date === 'number') d = new Date(date)
+  else if (typeof date === 'string') d = new Date(date)
+  else return ''
+  if (isNaN(d.getTime())) return ''
   return d.toLocaleString('en-GB', {
     day: '2-digit',
     month: 'short',

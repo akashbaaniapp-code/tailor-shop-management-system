@@ -8,10 +8,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Trash2, ArrowLeft, Save, UserPlus } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, Save, UserPlus, Printer, CheckCircle2 } from 'lucide-react'
 import { api, formatCurrency } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
+import { printInvoice } from '@/lib/invoice'
 
 interface SalesOrderItem {
   id?: string
@@ -79,6 +80,8 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
   const [ncName, setNcName] = useState('')
   const [ncPhone, setNcPhone] = useState('')
   const [ncAddress, setNcAddress] = useState('')
+  const [savedOrderId, setSavedOrderId] = useState<string | null>(null)
+  const [savedOrderData, setSavedOrderData] = useState<any>(null)
 
   useEffect(() => {
     Promise.all([
@@ -198,11 +201,16 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
       if (orderId) {
         await api.updateSalesOrder(orderId, payload)
         toast.success('Sales order updated')
+        // Fetch the updated order for printing
+        const res = await api.getSalesOrder(orderId)
+        setSavedOrderId(orderId)
+        setSavedOrderData(res.order)
       } else {
-        await api.createSalesOrder(payload)
+        const res = await api.createSalesOrder(payload)
         toast.success('Sales order created')
+        setSavedOrderId(res.order.id)
+        setSavedOrderData(res.order)
       }
-      setView('sales-orders')
     } catch (err: any) {
       toast.error(err.message)
     } finally {
@@ -210,11 +218,78 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
     }
   }
 
+  function handlePrintSaved() {
+    if (savedOrderData) {
+      printInvoice(savedOrderData)
+    }
+  }
+
+  function handleBackToList() {
+    setView('sales-orders')
+  }
+
+  function handleCreateAnother() {
+    setSavedOrderId(null)
+    setSavedOrderData(null)
+    setItems([{ itemId: '', uom: '', qty: 1, unitPrice: 0, total: 0 }])
+    setCustomerId('')
+    setTailorId('')
+    setSalesNote('')
+    setDeliveryInfo('')
+    setDiscount(0)
+    setDeliveryDate('')
+    setView('sales-order-create')
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
         <div className="h-10 bg-slate-100 rounded animate-pulse" />
         <div className="h-64 bg-slate-100 rounded animate-pulse" />
+      </div>
+    )
+  }
+
+  // Success state — show after save with print option
+  if (savedOrderId && savedOrderData) {
+    return (
+      <div className="space-y-4 max-w-2xl mx-auto pt-8">
+        <Card className="border-emerald-300 bg-emerald-50">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-emerald-900">
+              {orderId ? 'Order Updated Successfully!' : 'Order Created Successfully!'}
+            </h2>
+            <p className="text-sm text-emerald-700 mt-2">
+              Order ID: <span className="font-mono font-bold">{savedOrderData.orderId}</span>
+            </p>
+            <p className="text-sm text-emerald-700 mt-1">
+              Customer: <span className="font-semibold">{savedOrderData.customer?.name}</span>
+            </p>
+            <p className="text-lg font-bold text-emerald-900 mt-3">
+              Grand Total: {formatCurrency(savedOrderData.grandTotal)}
+            </p>
+            <p className="text-xs italic text-emerald-700 mt-1">
+              {savedOrderData.inWords || ''}
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-2 mt-6">
+              <Button onClick={handlePrintSaved} className="bg-emerald-600 hover:bg-emerald-700">
+                <Printer className="w-4 h-4 mr-1" /> Print Invoice
+              </Button>
+              {!orderId && (
+                <Button variant="outline" onClick={handleCreateAnother} className="border-emerald-600 text-emerald-700 hover:bg-emerald-100">
+                  <Plus className="w-4 h-4 mr-1" /> Create Another
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleBackToList}>
+                Back to Orders
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
