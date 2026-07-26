@@ -1,0 +1,183 @@
+// Tailor Shop Management System - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String?
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UoM {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  items     Item[]
+}
+
+model Item {
+  id         String   @id @default(cuid())
+  name       String
+  uomId      String
+  uom        UoM      @relation(fields: [uomId], references: [id])
+  unitPrice  Float    @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  orderItems SalesOrderItem[]
+}
+
+model Tailor {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    SalesOrder[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    SalesOrder[]
+}
+
+model DeliveryInfo {
+  id        String   @id @default(cuid())
+  label     String
+  note      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SalesOrder {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  orderDate       DateTime
+  deliveryDate    DateTime?
+  tailorId        String?
+  tailor          Tailor?  @relation(fields: [tailorId], references: [id])
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+  salesNote       String?
+  deliveryInfo    String?
+  subTotal        Float    @default(0)
+  discount        Float    @default(0)
+  grandTotal      Float    @default(0)
+  paidAmount      Float    @default(0)
+  dueAmount       Float    @default(0)
+  status          String   @default("full_pending") // full_pending, partial_pending, full_delivered
+  paymentStatus   String   @default("unpaid") // unpaid, partial, paid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  items           SalesOrderItem[]
+  deliveries      Delivery[]
+  bills           BillCollection[]
+}
+
+model SalesOrderItem {
+  id           String     @id @default(cuid())
+  orderId      String
+  order        SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemId       String
+  item         Item       @relation(fields: [itemId], references: [id])
+  qty          Float      @default(0)
+  uom          String
+  unitPrice    Float      @default(0)
+  total        Float      @default(0)
+  deliveredQty Float      @default(0)
+  createdAt    DateTime   @default(now())
+  deliveryItems DeliveryItem[]
+}
+
+model Delivery {
+  id           String           @id @default(cuid())
+  deliveryId   String           @unique
+  orderId      String
+  order        SalesOrder       @relation(fields: [orderId], references: [id])
+  deliveryDate DateTime         @default(now())
+  note         String?
+  createdAt    DateTime         @default(now())
+  items        DeliveryItem[]
+}
+
+model DeliveryItem {
+  id          String   @id @default(cuid())
+  deliveryId  String
+  delivery    Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  orderItemId String
+  orderItem   SalesOrderItem @relation(fields: [orderItemId], references: [id])
+  qty         Float    @default(0)
+}
+
+model BillCollection {
+  id           String     @id @default(cuid())
+  billId       String     @unique
+  orderId      String
+  order        SalesOrder @relation(fields: [orderId], references: [id])
+  amount       Float
+  collectDate  DateTime   @default(now())
+  method       String     @default("cash")
+  note         String?
+  createdAt    DateTime   @default(now())
+}
+
+model Expense {
+  id        String   @id @default(cuid())
+  title     String
+  category  String   @default("general")
+  amount    Float
+  expenseDate DateTime
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model Income {
+  id        String   @id @default(cuid())
+  title     String
+  category  String   @default("general")
+  amount    Float
+  incomeDate DateTime
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model Payable {
+  id          String   @id @default(cuid())
+  payableId   String   @unique
+  partyName   String
+  description String?
+  amount      Float
+  paidAmount  Float    @default(0)
+  dueDate     DateTime?
+  status      String   @default("pending") // pending, partial, paid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  payments    PayablePayment[]
+}
+
+model PayablePayment {
+  id         String   @id @default(cuid())
+  payableId  String
+  payable    Payable  @relation(fields: [payableId], references: [id], onDelete: Cascade)
+  amount     Float
+  payDate    DateTime @default(now())
+  note       String?
+  createdAt  DateTime @default(now())
+}

@@ -1,0 +1,98 @@
+'use client'
+
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Scissors, Loader2 } from 'lucide-react'
+import { api, setToken, setUser } from '@/lib/api'
+import { useAppStore } from '@/lib/store'
+import { toast } from 'sonner'
+
+export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
+  const setUserStore = useAppStore(s => s.setUser)
+  const [username, setUsername] = useState('admin')
+  const [password, setPassword] = useState('admin123')
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!username || !password) {
+      toast.error('Username and password required')
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await api.login(username, password)
+      setToken(res.token)
+      setUser(res.user)
+      setUserStore(res.user)
+      onLogin?.(res.user)
+      toast.success('Login successful')
+    } catch (err: any) {
+      toast.error(err.message || 'Login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/40 to-slate-100 p-4">
+      <Card className="w-full max-w-md shadow-xl border-slate-200">
+        <CardHeader className="space-y-3 text-center">
+          <div className="mx-auto w-14 h-14 rounded-full bg-emerald-600 flex items-center justify-center shadow-lg">
+            <Scissors className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <CardTitle className="text-2xl font-bold text-slate-900">Tailor Shop MS</CardTitle>
+            <CardDescription className="text-slate-600 mt-1">
+              Sign in to manage your sales, deliveries & reports
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter username"
+                autoComplete="username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                autoComplete="current-password"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+            <p className="text-xs text-center text-slate-500 pt-2">
+              Default credentials: <span className="font-mono font-semibold">admin / admin123</span>
+            </p>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
