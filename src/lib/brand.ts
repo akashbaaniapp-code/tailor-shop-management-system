@@ -6,7 +6,7 @@
 export const BRAND = {
   name: 'FOR THE FUTURE',
   shortName: 'FTF',
-  tagline: 'Tailoring & Fashion',
+  tagline: 'Believe in Progress',
   address: 'Dhaka, Bangladesh',
   phone: '+880 1XXX-XXXXXX',
   email: 'info@ftf.com',
