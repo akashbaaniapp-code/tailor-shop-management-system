@@ -53,6 +53,8 @@ interface Permission {
   id?: string
   entityId?: string | null
   subEntityId?: string | null
+  entityIds: string[]
+  subEntityIds: string[]
   menuAccess: string[]
   canView: boolean
   canCreate: boolean
@@ -118,7 +120,10 @@ export default function SetupUsers() {
         api.listSubEntities()
       ])
       setPermissions(permRes.permissions?.length ? permRes.permissions : [{
-        menuAccess: [], canView: true, canCreate: false, canEdit: false, canDelete: false
+        menuAccess: [],
+        entityIds: [],
+        subEntityIds: [],
+        canView: true, canCreate: false, canEdit: false, canDelete: false
       }])
       setEntities(entRes.items)
       setSubEntities(subRes.items)
@@ -129,7 +134,10 @@ export default function SetupUsers() {
 
   function addPermissionRow() {
     setPermissions([...permissions, {
-      menuAccess: [], canView: true, canCreate: false, canEdit: false, canDelete: false
+      menuAccess: [],
+      entityIds: [],
+      subEntityIds: [],
+      canView: true, canCreate: false, canEdit: false, canDelete: false
     }])
   }
 
@@ -150,6 +158,38 @@ export default function SetupUsers() {
       next[idx].menuAccess = current.filter(m => m !== menuKey)
     } else {
       next[idx].menuAccess = [...current, menuKey]
+    }
+    setPermissions(next)
+  }
+
+  function toggleEntityInPermission(idx: number, entityId: string) {
+    const next = [...permissions]
+    const current = next[idx].entityIds || []
+    if (current.includes(entityId)) {
+      next[idx].entityIds = current.filter(id => id !== entityId)
+      // Also remove any sub-entities that belong to this entity
+      const subIdsToRemove = new Set(
+        subEntities.filter(s => s.entityId === entityId).map(s => s.id)
+      )
+      next[idx].subEntityIds = (next[idx].subEntityIds || []).filter(id => !subIdsToRemove.has(id))
+    } else {
+      next[idx].entityIds = [...current, entityId]
+    }
+    setPermissions(next)
+  }
+
+  function toggleSubEntityInPermission(idx: number, subEntityId: string) {
+    const next = [...permissions]
+    const current = next[idx].subEntityIds || []
+    if (current.includes(subEntityId)) {
+      next[idx].subEntityIds = current.filter(id => id !== subEntityId)
+    } else {
+      next[idx].subEntityIds = [...current, subEntityId]
+      // Auto-select parent entity if not already selected
+      const sub = subEntities.find(s => s.id === subEntityId)
+      if (sub && !(next[idx].entityIds || []).includes(sub.entityId)) {
+        next[idx].entityIds = [...(next[idx].entityIds || []), sub.entityId]
+      }
     }
     setPermissions(next)
   }
@@ -347,41 +387,57 @@ export default function SetupUsers() {
                       </div>
                     </div>
 
-                    {/* Entity / Sub-Entity restrictions (optional) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <Label className="text-xs">Restrict to Entity (optional)</Label>
-                        <Select
-                          value={perm.entityId || 'all'}
-                          onValueChange={(v) => updatePermission(idx, 'entityId', v === 'all' ? null : v)}
-                        >
-                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Entities</SelectItem>
-                            {entities.map((e: any) => (
-                              <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-xs">Restrict to Sub-Entity (optional)</Label>
-                        <Select
-                          value={perm.subEntityId || 'all'}
-                          onValueChange={(v) => updatePermission(idx, 'subEntityId', v === 'all' ? null : v)}
-                        >
-                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Sub-Entities</SelectItem>
-                            {subEntities
-                              .filter((s: any) => !perm.entityId || s.entityId === perm.entityId)
-                              .map((s: any) => (
-                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    {/* Entity access (multi-select checkboxes) */}
+                    <div>
+                      <Label className="text-xs font-semibold">
+                        Entity Access (select one or more — user will choose which to work in)
+                      </Label>
+                      {entities.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic mt-2 p-2 bg-slate-50 rounded">
+                          No entities created yet. User will have access to all entities by default.
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 p-2 border border-slate-200 rounded">
+                          {entities.map((e: any) => (
+                            <label key={e.id} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                              <Checkbox
+                                checked={(perm.entityIds || []).includes(e.id)}
+                                onCheckedChange={() => toggleEntityInPermission(idx, e.id)}
+                              />
+                              <span className="truncate">{e.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Sub-Entity access (multi-select, filtered by selected entities) */}
+                    {subEntities.length > 0 && (
+                      <div>
+                        <Label className="text-xs font-semibold">
+                          Sub-Entity Access (optional — select specific sub-entities)
+                        </Label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 p-2 border border-slate-200 rounded max-h-40 overflow-y-auto">
+                          {subEntities
+                            .filter((s: any) => (perm.entityIds || []).length === 0 || (perm.entityIds || []).includes(s.entityId))
+                            .map((s: any) => (
+                              <label key={s.id} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                <Checkbox
+                                  checked={(perm.subEntityIds || []).includes(s.id)}
+                                  onCheckedChange={() => toggleSubEntityInPermission(idx, s.id)}
+                                />
+                                <span className="truncate">{s.name}</span>
+                                <span className="text-[10px] text-slate-400">({s.entity?.name || entities.find(e => e.id === s.entityId)?.name})</span>
+                              </label>
+                            ))}
+                          {subEntities.filter((s: any) => (perm.entityIds || []).length === 0 || (perm.entityIds || []).includes(s.entityId)).length === 0 && (
+                            <p className="text-xs text-slate-400 italic col-span-3">
+                              Select an entity above to see its sub-entities, or no sub-entities exist.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

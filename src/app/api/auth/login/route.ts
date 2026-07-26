@@ -42,10 +42,18 @@ export async function POST(request: NextRequest) {
     const permissions = await getUserPermissions(user.id)
 
     // Build list of entities + sub-entities the user has access to
-    // (for entity selection screen after login)
+    // (for entity selection screen after login). Supports multi-select.
     const entityIds = new Set<string>()
     const subEntityIds = new Set<string>()
     for (const p of permissions) {
+      // New multi-select fields (arrays)
+      if (Array.isArray(p.entityIds)) {
+        p.entityIds.forEach((id: string) => entityIds.add(id))
+      }
+      if (Array.isArray(p.subEntityIds)) {
+        p.subEntityIds.forEach((id: string) => subEntityIds.add(id))
+      }
+      // Legacy single-entity fields (backward compat)
       if (p.entityId) entityIds.add(p.entityId)
       if (p.subEntityId) subEntityIds.add(p.subEntityId)
     }

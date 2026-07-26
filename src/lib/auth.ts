@@ -122,8 +122,8 @@ export async function getUserAccessibleMenus(userId: string): Promise<string[]> 
 }
 
 /**
- * Get all permission rows for a user (parsed, with menuAccess as array
- * and canView/canCreate/canEdit/canDelete as booleans).
+ * Get all permission rows for a user (parsed, with menuAccess, entityIds,
+ * subEntityIds as arrays and canView/canCreate/canEdit/canDelete as booleans).
  * Used by /api/auth/login to send to the client for entity selection screen.
  */
 export async function getUserPermissions(userId: string): Promise<any[]> {
@@ -135,11 +135,17 @@ export async function getUserPermissions(userId: string): Promise<any[]> {
     where: { userId }
   })
 
+  const parseIds = (val: any): string[] => {
+    if (!val) return []
+    if (Array.isArray(val)) return val
+    try { return JSON.parse(val) } catch { return [] }
+  }
+
   return permissions.map((p: any) => ({
     ...p,
-    menuAccess: p.menuAccess ? (() => {
-      try { return JSON.parse(p.menuAccess) } catch { return [] }
-    })() : [],
+    menuAccess: parseIds(p.menuAccess),
+    entityIds: parseIds(p.entityIds),
+    subEntityIds: parseIds(p.subEntityIds),
     canView: !!p.canView,
     canCreate: !!p.canCreate,
     canEdit: !!p.canEdit,

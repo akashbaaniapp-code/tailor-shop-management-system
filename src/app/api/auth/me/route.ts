@@ -13,10 +13,16 @@ export async function GET(request: NextRequest) {
   const accessibleMenus = await getUserAccessibleMenus(user.id)
   const permissions = await getUserPermissions(user.id)
 
-  // Build list of entities + sub-entities the user has access to
+  // Build list of entities + sub-entities the user has access to (multi-select)
   const entityIds = new Set<string>()
   const subEntityIds = new Set<string>()
   for (const p of permissions) {
+    if (Array.isArray(p.entityIds)) {
+      p.entityIds.forEach((id: string) => entityIds.add(id))
+    }
+    if (Array.isArray(p.subEntityIds)) {
+      p.subEntityIds.forEach((id: string) => subEntityIds.add(id))
+    }
     if (p.entityId) entityIds.add(p.entityId)
     if (p.subEntityId) subEntityIds.add(p.subEntityId)
   }

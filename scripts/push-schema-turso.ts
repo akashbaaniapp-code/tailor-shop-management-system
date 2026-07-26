@@ -117,6 +117,10 @@ const statements = [
     FOREIGN KEY ("userId") REFERENCES "User"("id") ON UPDATE CASCADE ON DELETE CASCADE
   )`,
 
+  // Add multi-entity + multi-sub-entity columns (JSON arrays of IDs)
+  `ALTER TABLE "UserPermission" ADD COLUMN "entityIds" TEXT`,
+  `ALTER TABLE "UserPermission" ADD COLUMN "subEntityIds" TEXT`,
+
   `CREATE TABLE IF NOT EXISTS "SalesOrder" (
     "id" TEXT PRIMARY KEY NOT NULL,
     "orderId" TEXT NOT NULL UNIQUE,

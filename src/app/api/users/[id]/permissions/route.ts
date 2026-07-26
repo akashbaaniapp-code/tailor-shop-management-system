@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 
+function parseIds(val: any): string[] {
+  if (!val) return []
+  if (Array.isArray(val)) return val
+  try { return JSON.parse(val) } catch { return [] }
+}
+
 // Get all permissions for a user
 export async function GET(
   request: NextRequest,
@@ -20,10 +26,12 @@ export async function GET(
     where: { userId: id }
   })
 
-  // Parse menuAccess JSON for each permission
+  // Parse JSON fields for each permission
   const parsed = permissions.map((p: any) => ({
     ...p,
-    menuAccess: p.menuAccess ? JSON.parse(p.menuAccess) : [],
+    menuAccess: parseIds(p.menuAccess),
+    entityIds: parseIds(p.entityIds),
+    subEntityIds: parseIds(p.subEntityIds),
     canView: !!p.canView,
     canCreate: !!p.canCreate,
     canEdit: !!p.canEdit,
@@ -60,8 +68,10 @@ export async function PUT(
     await db.userPermission.create({
       data: {
         userId: id,
-        entityId: p.entityId || null,
-        subEntityId: p.subEntityId || null,
+        entityId: null, // legacy single-entity field, kept for backward compat
+        subEntityId: null,
+        entityIds: JSON.stringify(p.entityIds || []),
+        subEntityIds: JSON.stringify(p.subEntityIds || []),
         menuAccess: JSON.stringify(p.menuAccess || []),
         canView: p.canView ? 1 : 0,
         canCreate: p.canCreate ? 1 : 0,
