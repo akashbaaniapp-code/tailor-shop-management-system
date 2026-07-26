@@ -138,6 +138,9 @@ export async function POST(request: NextRequest) {
     customerId,
     salesNote,
     deliveryInfo,
+    deliveryName,
+    deliveryContact,
+    deliveryAddress,
     items,
     discount
   } = body
@@ -177,6 +180,9 @@ export async function POST(request: NextRequest) {
       customerId,
       salesNote: salesNote || null,
       deliveryInfo: deliveryInfo || null,
+      deliveryName: deliveryName || null,
+      deliveryContact: deliveryContact || null,
+      deliveryAddress: deliveryAddress || null,
       subTotal,
       discount: discountAmount,
       grandTotal,

@@ -125,6 +125,10 @@ const statements = [
   // SalesOrder
   `ALTER TABLE "SalesOrder" ADD COLUMN "entityId" TEXT`,
   `ALTER TABLE "SalesOrder" ADD COLUMN "subEntityId" TEXT`,
+  // Delivery contact info fields (actual delivery recipient details)
+  `ALTER TABLE "SalesOrder" ADD COLUMN "deliveryName" TEXT`,
+  `ALTER TABLE "SalesOrder" ADD COLUMN "deliveryContact" TEXT`,
+  `ALTER TABLE "SalesOrder" ADD COLUMN "deliveryAddress" TEXT`,
   // Delivery
   `ALTER TABLE "Delivery" ADD COLUMN "entityId" TEXT`,
   `ALTER TABLE "Delivery" ADD COLUMN "subEntityId" TEXT`,

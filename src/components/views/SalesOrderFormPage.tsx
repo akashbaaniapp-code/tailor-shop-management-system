@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Trash2, ArrowLeft, Save, UserPlus, Printer, CheckCircle2 } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, Save, UserPlus, Printer, CheckCircle2, Search, ChevronDown } from 'lucide-react'
 import { api, formatCurrency } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
@@ -73,6 +74,9 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
   const [deliveryDate, setDeliveryDate] = useState('')
   const [salesNote, setSalesNote] = useState('')
   const [deliveryInfo, setDeliveryInfo] = useState('')
+  const [deliveryName, setDeliveryName] = useState('')
+  const [deliveryContact, setDeliveryContact] = useState('')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
   const [discount, setDiscount] = useState(0)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(!!orderId)
@@ -80,6 +84,22 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
   const [ncName, setNcName] = useState('')
   const [ncPhone, setNcPhone] = useState('')
   const [ncAddress, setNcAddress] = useState('')
+
+  // Customer combobox state
+  const [customerSearch, setCustomerSearch] = useState('')
+  const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false)
+
+  // When customer is selected, auto-fill delivery fields if they're empty
+  function selectCustomer(c: Customer) {
+    setCustomerId(c.id)
+    setCustomerPopoverOpen(false)
+    setCustomerSearch('')
+    // Auto-fill delivery contact info from customer (only if empty)
+    if (!deliveryName) setDeliveryName(c.name || '')
+    if (!deliveryContact) setDeliveryContact(c.phone || '')
+    if (!deliveryAddress) setDeliveryAddress(c.address || '')
+  }
+
   const [savedOrderId, setSavedOrderId] = useState<string | null>(null)
   const [savedOrderData, setSavedOrderData] = useState<any>(null)
 
@@ -107,6 +127,9 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
         setDeliveryDate(o.deliveryDate ? new Date(o.deliveryDate).toISOString().split('T')[0] : '')
         setSalesNote(o.salesNote || '')
         setDeliveryInfo(o.deliveryInfo || '')
+        setDeliveryName(o.deliveryName || '')
+        setDeliveryContact(o.deliveryContact || '')
+        setDeliveryAddress(o.deliveryAddress || '')
         setDiscount(o.discount)
         setItems(o.items.map((it: any) => ({
           id: it.id,
@@ -189,6 +212,9 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
         customerId,
         salesNote,
         deliveryInfo,
+        deliveryName,
+        deliveryContact,
+        deliveryAddress,
         items: validItems.map(it => ({
           itemId: it.itemId,
           qty: it.qty,
@@ -343,15 +369,73 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Customer *</Label>
+              <Label className="text-xs">Customer * (search & select)</Label>
               <div className="flex gap-2 mt-1">
-                <Select value={customerId} onValueChange={setCustomerId}>
-                  <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
-                  <SelectContent>
-                    {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name} - {c.phone}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Button type="button" size="icon" variant="outline" onClick={() => setShowNewCustomer(true)}>
+                <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between font-normal"
+                    >
+                      {customerId
+                        ? (() => {
+                            const c = customers.find(c => c.id === customerId)
+                            return c ? `${c.name} — ${c.phone}` : 'Select customer'
+                          })()
+                        : 'Select customer...'}
+                      <ChevronDown className="w-4 h-4 ml-2 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                    <div className="p-2 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input
+                          placeholder="Search by name or phone..."
+                          value={customerSearch}
+                          onChange={e => setCustomerSearch(e.target.value)}
+                          className="pl-8"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto">
+                      {customers
+                        .filter(c => {
+                          if (!customerSearch) return true
+                          const q = customerSearch.toLowerCase()
+                          return c.name.toLowerCase().includes(q) || c.phone.includes(q)
+                        })
+                        .length === 0 ? (
+                        <p className="p-3 text-sm text-slate-500 text-center">No customers found</p>
+                      ) : (
+                        customers
+                          .filter(c => {
+                            if (!customerSearch) return true
+                            const q = customerSearch.toLowerCase()
+                            return c.name.toLowerCase().includes(q) || c.phone.includes(q)
+                          })
+                          .map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => selectCustomer(c)}
+                              className={`w-full text-left px-3 py-2 hover:bg-emerald-50 border-b border-slate-100 last:border-0 ${
+                                c.id === customerId ? 'bg-emerald-50' : ''
+                              }`}
+                            >
+                              <p className="text-sm font-medium text-slate-900">{c.name}</p>
+                              <p className="text-xs text-slate-500">{c.phone}</p>
+                              {c.address && <p className="text-xs text-slate-400 truncate">{c.address}</p>}
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Button type="button" size="icon" variant="outline" onClick={() => setShowNewCustomer(true)} title="Add new customer">
                   <UserPlus className="w-4 h-4" />
                 </Button>
               </div>
@@ -364,12 +448,12 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
               <Textarea value={salesNote} onChange={e => setSalesNote(e.target.value)} rows={2} placeholder="Internal sales note..." className="mt-1" />
             </div>
             <div>
-              <Label className="text-xs">Delivery Information</Label>
+              <Label className="text-xs">Delivery Instructions (optional)</Label>
               <Textarea
                 value={deliveryInfo}
                 onChange={e => setDeliveryInfo(e.target.value)}
                 rows={2}
-                placeholder="Delivery instructions..."
+                placeholder="Any special delivery instructions..."
                 className="mt-1"
               />
               {deliveryInfos.length > 0 && (
@@ -387,6 +471,46 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Delivery Contact Info */}
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <Label className="text-xs font-semibold text-amber-800 mb-2 block">
+              📦 Delivery Contact Information (actual recipient details)
+            </Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">Delivery Name</Label>
+                <Input
+                  value={deliveryName}
+                  onChange={e => setDeliveryName(e.target.value)}
+                  placeholder="Recipient name"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Contact Number</Label>
+                <Input
+                  value={deliveryContact}
+                  onChange={e => setDeliveryContact(e.target.value)}
+                  placeholder="01XXXXXXXXX"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Delivery Address</Label>
+                <Textarea
+                  value={deliveryAddress}
+                  onChange={e => setDeliveryAddress(e.target.value)}
+                  rows={1}
+                  placeholder="Full delivery address"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-amber-700 mt-2">
+              💡 Auto-filled from customer when selected. Edit if delivery is to a different person/address.
+            </p>
           </div>
         </CardContent>
       </Card>

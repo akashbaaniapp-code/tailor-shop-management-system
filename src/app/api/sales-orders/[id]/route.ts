@@ -46,6 +46,9 @@ export async function PUT(
     customerId,
     salesNote,
     deliveryInfo,
+    deliveryName,
+    deliveryContact,
+    deliveryAddress,
     items,
     discount
   } = body
@@ -76,6 +79,9 @@ export async function PUT(
       customerId: customerId || undefined,
       salesNote: salesNote !== undefined ? salesNote : undefined,
       deliveryInfo: deliveryInfo !== undefined ? deliveryInfo : undefined,
+      deliveryName: deliveryName !== undefined ? deliveryName : undefined,
+      deliveryContact: deliveryContact !== undefined ? deliveryContact : undefined,
+      deliveryAddress: deliveryAddress !== undefined ? deliveryAddress : undefined,
       subTotal,
       discount: discountAmount,
       grandTotal,
