@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tailor-shop-secret-key-2024'
+const JWT_SECRET = process.env.JWT_SECRET || 'tailor-shop-dev-secret-key-2024-change-in-production'
 
 export interface SessionUser {
   id: string
