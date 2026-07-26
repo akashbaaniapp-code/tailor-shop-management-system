@@ -1,12 +1,18 @@
 // Tailor Shop Management System - Prisma Schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  // When using @prisma/adapter-libsql, Prisma does NOT use this URL for the
+  // actual database connection — that's handled by the adapter in src/lib/db.ts.
+  // However, Prisma still validates the URL format at runtime. We use a static
+  // dummy file URL here so the runtime check passes regardless of what
+  // DATABASE_URL is set to in the deployment environment.
+  url = "file:./prisma-dummy.db"
 }
 
 model User {
