@@ -1,14 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, Search, Eye, Edit, FileText, Printer, Lock } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
@@ -68,6 +63,11 @@ function numberToWords(num: number): string {
   return result + ' Only'
 }
 
+// Dark theme styles
+const darkCard = { background: '#14161a', border: '1px solid #2a2d33', borderRadius: '16px' }
+const darkInput = { background: '#0b0d0f', border: '1px solid #2a2d33', color: '#fff', borderRadius: '10px' }
+const btnGreen = { background: '#1db954', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }
+
 export default function SalesOrders() {
   const setView = useAppStore(s => s.setView)
   const setSelectedOrderId = useAppStore(s => s.setSelectedOrderId)
@@ -91,9 +91,7 @@ export default function SalesOrders() {
 
   useEffect(() => { load() }, [load])
 
-  function handleNew() {
-    setView('sales-order-create')
-  }
+  function handleNew() { setView('sales-order-create') }
 
   function handleEdit(o: SalesOrder) {
     setSelectedOrderId(o.id)
@@ -110,9 +108,7 @@ export default function SalesOrders() {
   }
 
   async function handleClose(o: SalesOrder) {
-    if (!confirm(`Close order ${o.orderId}?\n\nOnce closed, the order cannot be modified. This is typically done after the order is fully delivered and payment is complete.`)) {
-      return
-    }
+    if (!confirm(`Close order ${o.orderId}?\n\nOnce closed, the order cannot be modified.`)) return
     try {
       await api.closeSalesOrder(o.id)
       toast.success(`Order ${o.orderId} closed`)
@@ -123,121 +119,113 @@ export default function SalesOrders() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Filters */}
-      <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-3 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <Label className="text-xs text-slate-500">Search by Order ID / Customer</Label>
-              <div className="relative mt-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search..."
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <div className="w-[180px]">
-              <Label className="text-xs text-slate-500">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="full_pending">Full Pending</SelectItem>
-                  <SelectItem value="partial_pending">Partial Pending</SelectItem>
-                  <SelectItem value="full_delivered">Full Delivered</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleNew} className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="w-4 h-4 mr-1" /> New Sales Order
-            </Button>
+      <div className="p-5" style={darkCard}>
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex-1 min-w-[200px] relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#666' }} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && load()}
+              placeholder="Search by Order ID / Customer..."
+              className="w-full pl-10 pr-4 py-3 text-sm outline-none"
+              style={darkInput}
+            />
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex gap-3 items-center">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger style={{ ...darkInput, minWidth: '140px' }}><SelectValue /></SelectTrigger>
+              <SelectContent style={{ background: '#1a1c1e', border: '1px solid #2a2d33' }}>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="full_pending">Full Pending</SelectItem>
+                <SelectItem value="partial_pending">Partial Pending</SelectItem>
+                <SelectItem value="full_delivered">Full Delivered</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+            <button onClick={handleNew} className="px-5 py-3 flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5" style={btnGreen}>
+              <Plus className="w-4 h-4" /> New Sales Order
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Table */}
-      <Card className="border-slate-200">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="p-4 space-y-2">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">No sales orders found. Click "New Sales Order" to create one.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="text-left px-4 py-2.5 font-medium text-slate-600">Order ID</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-slate-600">Date</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-slate-600">Customer</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-slate-600">Tailor</th>
-                    <th className="text-right px-4 py-2.5 font-medium text-slate-600">Total</th>
-                    <th className="text-right px-4 py-2.5 font-medium text-slate-600">Due</th>
-                    <th className="text-center px-4 py-2.5 font-medium text-slate-600">Status</th>
-                    <th className="text-center px-4 py-2.5 font-medium text-slate-600">Action</th>
+      <div style={darkCard} className="overflow-hidden">
+        {loading ? (
+          <div className="p-5 space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-12" style={{ color: '#555' }}>No sales orders found. Click "New Sales Order" to create one.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: '1px solid #2a2d33' }}>
+                  <th className="text-left px-6 py-4 font-medium" style={{ color: '#888' }}>Order ID</th>
+                  <th className="text-left px-4 py-4 font-medium" style={{ color: '#888' }}>Date</th>
+                  <th className="text-left px-4 py-4 font-medium" style={{ color: '#888' }}>Customer</th>
+                  <th className="text-left px-4 py-4 font-medium" style={{ color: '#888' }}>Tailor</th>
+                  <th className="text-right px-4 py-4 font-medium" style={{ color: '#888' }}>Total</th>
+                  <th className="text-right px-4 py-4 font-medium" style={{ color: '#888' }}>Due</th>
+                  <th className="text-center px-4 py-4 font-medium" style={{ color: '#888' }}>Status</th>
+                  <th className="text-right px-6 py-4 font-medium" style={{ color: '#888' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map(o => (
+                  <tr key={o.id} style={{ borderBottom: '1px solid #1f2227' }} className="transition-colors hover:bg-[rgba(255,255,255,0.02)]">
+                    <td className="px-6 py-4 font-mono text-xs font-semibold" style={{ color: '#fff' }}>{o.orderId}</td>
+                    <td className="px-4 py-4" style={{ color: '#888' }}>{formatDate(o.orderDate)}</td>
+                    <td className="px-4 py-4">
+                      <span className="font-medium" style={{ color: '#fff' }}>{o.customer.name}</span>
+                      <span className="block text-xs mt-0.5" style={{ color: '#666' }}>{o.customer.phone}</span>
+                    </td>
+                    <td className="px-4 py-4" style={{ color: '#888' }}>{o.tailor?.name || '-'}</td>
+                    <td className="px-4 py-4 text-right font-medium" style={{ color: '#1db954' }}>{formatCurrency(o.grandTotal)}</td>
+                    <td className="px-4 py-4 text-right">
+                      <span style={{ color: o.dueAmount > 0 ? '#ff6b6b' : '#444', fontWeight: o.dueAmount > 0 ? 600 : 400 }}>
+                        {formatCurrency(o.dueAmount)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <StatusBadge status={o.status} />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-4">
+                        <button onClick={() => setViewOrder(o)} title="View" className="transition-colors" style={{ color: '#666' }} onMouseEnter={e => e.currentTarget.style.color = '#d4df3a'} onMouseLeave={e => e.currentTarget.style.color = '#666'}>
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {o.status !== 'closed' && (
+                          <>
+                            <button onClick={() => handleEdit(o)} title="Edit" className="transition-colors" style={{ color: '#666' }} onMouseEnter={e => e.currentTarget.style.color = '#3498db'} onMouseLeave={e => e.currentTarget.style.color = '#666'}>
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handlePrint(o)} title="Print Invoice" className="transition-colors" style={{ color: '#666' }} onMouseEnter={e => e.currentTarget.style.color = '#1db954'} onMouseLeave={e => e.currentTarget.style.color = '#666'}>
+                              <Printer className="w-4 h-4" />
+                            </button>
+                            {o.status === 'full_delivered' && (
+                              <button onClick={() => handleClose(o)} title="Close Order" className="transition-colors" style={{ color: '#666' }} onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'} onMouseLeave={e => e.currentTarget.style.color = '#666'}>
+                                <Lock className="w-4 h-4" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                        {o.status === 'closed' && (
+                          <button onClick={() => handlePrint(o)} title="Print Invoice" className="transition-colors" style={{ color: '#666' }} onMouseEnter={e => e.currentTarget.style.color = '#1db954'} onMouseLeave={e => e.currentTarget.style.color = '#666'}>
+                            <Printer className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {orders.map(o => (
-                    <tr key={o.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-4 py-2.5 font-mono text-xs font-semibold text-slate-900">{o.orderId}</td>
-                      <td className="px-4 py-2.5 text-slate-600">{formatDate(o.orderDate)}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="font-medium text-slate-900">{o.customer.name}</div>
-                        <div className="text-xs text-slate-500">{o.customer.phone}</div>
-                      </td>
-                      <td className="px-4 py-2.5 text-slate-600">{o.tailor?.name || '-'}</td>
-                      <td className="px-4 py-2.5 text-right font-medium text-slate-900">{formatCurrency(o.grandTotal)}</td>
-                      <td className="px-4 py-2.5 text-right">
-                        <span className={o.dueAmount > 0 ? 'text-red-600 font-medium' : 'text-slate-400'}>
-                          {formatCurrency(o.dueAmount)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-center">
-                        <StatusBadge status={o.status} />
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => setViewOrder(o)} title="View">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {o.status !== 'closed' && (
-                            <>
-                              <Button size="sm" variant="ghost" onClick={() => handleEdit(o)} title="Edit">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => handlePrint(o)} title="Print Invoice">
-                                <Printer className="w-4 h-4 text-emerald-600" />
-                              </Button>
-                              {o.status === 'full_delivered' && (
-                                <Button size="sm" variant="ghost" onClick={() => handleClose(o)} title="Close Order">
-                                  <Lock className="w-4 h-4 text-slate-600" />
-                                </Button>
-                              )}
-                            </>
-                          )}
-                          {o.status === 'closed' && (
-                            <Button size="sm" variant="ghost" onClick={() => handlePrint(o)} title="Print Invoice">
-                              <Printer className="w-4 h-4 text-emerald-600" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {viewOrder && (
         <OrderDetail
@@ -254,14 +242,14 @@ export default function SalesOrders() {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; className: string }> = {
-    full_pending: { label: 'Full Pending', className: 'bg-amber-100 text-amber-700 hover:bg-amber-100' },
-    partial_pending: { label: 'Partial', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100' },
-    full_delivered: { label: 'Delivered', className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' },
-    closed: { label: 'Closed', className: 'bg-slate-800 text-white hover:bg-slate-800' }
+  const map: Record<string, { label: string; bg: string; color: string }> = {
+    full_pending: { label: 'Pending', bg: 'rgba(241,196,15,0.15)', color: '#f1c40f' },
+    partial_pending: { label: 'Partial', bg: 'rgba(52,152,219,0.15)', color: '#3498db' },
+    full_delivered: { label: 'Delivered', bg: 'rgba(29,185,84,0.15)', color: '#1db954' },
+    closed: { label: 'Closed', bg: '#2a2d33', color: '#fff' }
   }
-  const v = map[status] || { label: status, className: 'bg-slate-100 text-slate-700' }
-  return <Badge variant="secondary" className={v.className}>{v.label}</Badge>
+  const v = map[status] || { label: status, bg: '#2a2d33', color: '#fff' }
+  return <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: v.bg, color: v.color }}>{v.label}</span>
 }
 
 function OrderDetail({ order, onClose, onCloseOrder }: {
@@ -275,77 +263,79 @@ function OrderDetail({ order, onClose, onCloseOrder }: {
     api.getSalesOrder(order.id).then(res => setFullOrder(res.order)).catch(() => onClose())
   }, [order.id, onClose])
 
+  const darkTextMuted = { color: '#888' }
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ background: '#14161a', border: '1px solid #2a2d33' }}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-emerald-600" />
+          <DialogTitle className="flex items-center gap-2" style={{ color: '#d4df3a' }}>
+            <FileText className="w-5 h-5" />
             Sales Order: {order.orderId}
           </DialogTitle>
         </DialogHeader>
         {fullOrder && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="text-xs text-slate-500">Order Date</p>
-                <p className="font-medium">{formatDate(fullOrder.orderDate)}</p>
+                <p className="text-xs mb-1" style={darkTextMuted}>Order Date</p>
+                <p className="font-medium" style={{ color: '#fff' }}>{formatDate(fullOrder.orderDate)}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500">Delivery Date</p>
-                <p className="font-medium">{fullOrder.deliveryDate ? formatDate(fullOrder.deliveryDate) : '-'}</p>
+                <p className="text-xs mb-1" style={darkTextMuted}>Delivery Date</p>
+                <p className="font-medium" style={{ color: '#fff' }}>{fullOrder.deliveryDate ? formatDate(fullOrder.deliveryDate) : '-'}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500">Customer</p>
-                <p className="font-medium">{fullOrder.customer.name}</p>
-                <p className="text-xs text-slate-500">{fullOrder.customer.phone}</p>
+                <p className="text-xs mb-1" style={darkTextMuted}>Customer</p>
+                <p className="font-medium" style={{ color: '#fff' }}>{fullOrder.customer.name}</p>
+                <p className="text-xs" style={darkTextMuted}>{fullOrder.customer.phone}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500">Tailor</p>
-                <p className="font-medium">{fullOrder.tailor?.name || '-'}</p>
+                <p className="text-xs mb-1" style={darkTextMuted}>Tailor</p>
+                <p className="font-medium" style={{ color: '#fff' }}>{fullOrder.tailor?.name || '-'}</p>
               </div>
             </div>
 
             {fullOrder.salesNote && (
-              <div>
-                <p className="text-xs text-slate-500">Sales Note</p>
-                <p className="text-sm bg-slate-50 p-2 rounded">{fullOrder.salesNote}</p>
+              <div className="p-3 rounded-xl" style={{ background: '#0b0d0f', border: '1px solid #2a2d33' }}>
+                <p className="text-xs mb-1" style={darkTextMuted}>Sales Note</p>
+                <p className="text-sm" style={{ color: '#ccc' }}>{fullOrder.salesNote}</p>
               </div>
             )}
             {fullOrder.deliveryInfo && (
-              <div>
-                <p className="text-xs text-slate-500">Delivery Information</p>
-                <p className="text-sm bg-slate-50 p-2 rounded">{fullOrder.deliveryInfo}</p>
+              <div className="p-3 rounded-xl" style={{ background: '#0b0d0f', border: '1px solid #2a2d33' }}>
+                <p className="text-xs mb-1" style={darkTextMuted}>Delivery Information</p>
+                <p className="text-sm" style={{ color: '#ccc' }}>{fullOrder.deliveryInfo}</p>
               </div>
             )}
 
             <div>
-              <p className="text-xs text-slate-500 mb-2">Items</p>
-              <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <p className="text-xs mb-2" style={darkTextMuted}>Items</p>
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #2a2d33' }}>
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200">
+                  <thead style={{ borderBottom: '1px solid #2a2d33' }}>
                     <tr>
-                      <th className="text-left px-3 py-2 font-medium text-slate-600">Item</th>
-                      <th className="text-right px-3 py-2 font-medium text-slate-600">Qty</th>
-                      <th className="text-left px-3 py-2 font-medium text-slate-600">UoM</th>
-                      <th className="text-right px-3 py-2 font-medium text-slate-600">Unit Price</th>
-                      <th className="text-right px-3 py-2 font-medium text-slate-600">Delivered</th>
-                      <th className="text-right px-3 py-2 font-medium text-slate-600">Total</th>
+                      <th className="text-left px-3 py-2.5 font-medium" style={darkTextMuted}>Item</th>
+                      <th className="text-right px-3 py-2.5 font-medium" style={darkTextMuted}>Qty</th>
+                      <th className="text-left px-3 py-2.5 font-medium" style={darkTextMuted}>UoM</th>
+                      <th className="text-right px-3 py-2.5 font-medium" style={darkTextMuted}>Unit Price</th>
+                      <th className="text-right px-3 py-2.5 font-medium" style={darkTextMuted}>Delivered</th>
+                      <th className="text-right px-3 py-2.5 font-medium" style={darkTextMuted}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fullOrder.items.map((it: any) => (
-                      <tr key={it.id} className="border-b border-slate-100">
-                        <td className="px-3 py-2 font-medium">{it.item.name}</td>
-                        <td className="px-3 py-2 text-right">{it.qty}</td>
-                        <td className="px-3 py-2">{it.uom}</td>
-                        <td className="px-3 py-2 text-right">{formatCurrency(it.unitPrice)}</td>
-                        <td className="px-3 py-2 text-right">
-                          <span className={it.deliveredQty >= it.qty ? 'text-emerald-600 font-medium' : ''}>
+                      <tr key={it.id} style={{ borderBottom: '1px solid #1f2227' }}>
+                        <td className="px-3 py-2.5 font-medium" style={{ color: '#fff' }}>{it.item.name}</td>
+                        <td className="px-3 py-2.5 text-right" style={darkTextMuted}>{it.qty}</td>
+                        <td className="px-3 py-2.5" style={darkTextMuted}>{it.uom}</td>
+                        <td className="px-3 py-2.5 text-right" style={darkTextMuted}>{formatCurrency(it.unitPrice)}</td>
+                        <td className="px-3 py-2.5 text-right">
+                          <span style={{ color: it.deliveredQty >= it.qty ? '#1db954' : '#888', fontWeight: it.deliveredQty >= it.qty ? 500 : 400 }}>
                             {it.deliveredQty}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-right font-medium">{formatCurrency(it.total)}</td>
+                        <td className="px-3 py-2.5 text-right font-medium" style={{ color: '#fff' }}>{formatCurrency(it.total)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -354,31 +344,31 @@ function OrderDetail({ order, onClose, onCloseOrder }: {
             </div>
 
             <div className="flex justify-end">
-              <div className="w-72 space-y-1 text-sm">
-                <div className="flex justify-between"><span className="text-slate-600">Sub Total</span><span className="font-medium">{formatCurrency(fullOrder.subTotal)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-600">Discount</span><span className="font-medium text-red-600">- {formatCurrency(fullOrder.discount)}</span></div>
-                <div className="flex justify-between text-base border-t border-slate-200 pt-1"><span className="font-semibold">Grand Total</span><span className="font-bold">{formatCurrency(fullOrder.grandTotal)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-600">Paid</span><span className="font-medium text-emerald-600">{formatCurrency(fullOrder.paidAmount)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-600">Due</span><span className="font-bold text-red-600">{formatCurrency(fullOrder.dueAmount)}</span></div>
+              <div className="w-72 space-y-1.5 text-sm">
+                <div className="flex justify-between"><span style={darkTextMuted}>Sub Total</span><span className="font-medium" style={{ color: '#fff' }}>{formatCurrency(fullOrder.subTotal)}</span></div>
+                <div className="flex justify-between"><span style={darkTextMuted}>Discount</span><span className="font-medium" style={{ color: '#ff6b6b' }}>- {formatCurrency(fullOrder.discount)}</span></div>
+                <div className="flex justify-between text-base pt-2" style={{ borderTop: '1px solid #2a2d33' }}><span className="font-bold" style={{ color: '#fff' }}>Grand Total</span><span className="font-bold" style={{ color: '#d4df3a' }}>{formatCurrency(fullOrder.grandTotal)}</span></div>
+                <div className="flex justify-between"><span style={darkTextMuted}>Paid</span><span className="font-medium" style={{ color: '#1db954' }}>{formatCurrency(fullOrder.paidAmount)}</span></div>
+                <div className="flex justify-between"><span style={darkTextMuted}>Due</span><span className="font-bold" style={{ color: '#ff6b6b' }}>{formatCurrency(fullOrder.dueAmount)}</span></div>
               </div>
             </div>
 
-            <div className="bg-emerald-50 p-3 rounded-lg">
-              <p className="text-xs text-emerald-700">In Words</p>
-              <p className="text-sm font-medium text-emerald-900 italic">{numberToWords(fullOrder.grandTotal)}</p>
+            <div className="p-3 rounded-xl" style={{ background: 'rgba(212,223,58,0.05)', border: '1px solid rgba(212,223,58,0.1)' }}>
+              <p className="text-xs" style={{ color: 'rgba(212,223,58,0.6)' }}>In Words</p>
+              <p className="text-sm font-medium italic mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{numberToWords(fullOrder.grandTotal)}</p>
             </div>
 
             {fullOrder.deliveries?.length > 0 && (
               <div>
-                <p className="text-xs text-slate-500 mb-2">Delivery History ({fullOrder.deliveries.length})</p>
+                <p className="text-xs mb-2" style={darkTextMuted}>Delivery History ({fullOrder.deliveries.length})</p>
                 <div className="space-y-2">
                   {fullOrder.deliveries.map((d: any) => (
-                    <div key={d.id} className="border border-slate-200 rounded p-2 text-sm">
+                    <div key={d.id} className="p-3 rounded-xl text-sm" style={{ background: '#0b0d0f', border: '1px solid #2a2d33' }}>
                       <div className="flex justify-between mb-1">
-                        <span className="font-mono text-xs font-semibold">{d.deliveryId}</span>
-                        <span className="text-slate-500 text-xs">{formatDate(d.deliveryDate)}</span>
+                        <span className="font-mono text-xs font-semibold" style={{ color: '#fff' }}>{d.deliveryId}</span>
+                        <span className="text-xs" style={darkTextMuted}>{formatDate(d.deliveryDate)}</span>
                       </div>
-                      <div className="text-xs text-slate-600">
+                      <div className="text-xs" style={{ color: '#aaa' }}>
                         {d.items.map((di: any) => `${di.orderItem.item.name}: ${di.qty}`).join(', ')}
                       </div>
                     </div>
@@ -389,13 +379,13 @@ function OrderDetail({ order, onClose, onCloseOrder }: {
 
             {fullOrder.bills?.length > 0 && (
               <div>
-                <p className="text-xs text-slate-500 mb-2">Payment History ({fullOrder.bills.length})</p>
+                <p className="text-xs mb-2" style={darkTextMuted}>Payment History ({fullOrder.bills.length})</p>
                 <div className="space-y-2">
                   {fullOrder.bills.map((b: any) => (
-                    <div key={b.id} className="border border-slate-200 rounded p-2 text-sm flex justify-between">
-                      <span className="font-mono text-xs font-semibold">{b.billId}</span>
-                      <span className="text-slate-500 text-xs">{formatDate(b.collectDate)}</span>
-                      <span className="font-medium text-emerald-600">{formatCurrency(b.amount)}</span>
+                    <div key={b.id} className="p-3 rounded-xl text-sm flex justify-between" style={{ background: '#0b0d0f', border: '1px solid #2a2d33' }}>
+                      <span className="font-mono text-xs font-semibold" style={{ color: '#fff' }}>{b.billId}</span>
+                      <span className="text-xs" style={darkTextMuted}>{formatDate(b.collectDate)}</span>
+                      <span className="font-medium" style={{ color: '#1db954' }}>{formatCurrency(b.amount)}</span>
                     </div>
                   ))}
                 </div>
@@ -403,22 +393,19 @@ function OrderDetail({ order, onClose, onCloseOrder }: {
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={onClose}>Close Window</Button>
-              <Button onClick={() => printInvoice(fullOrder)} className="bg-emerald-600 hover:bg-emerald-700">
-                <Printer className="w-4 h-4 mr-1" /> Print Invoice
-              </Button>
+              <button onClick={onClose} className="px-5 py-2.5 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #2a2d33', color: 'rgba(255,255,255,0.7)', borderRadius: '10px', fontSize: '14px' }}>Close Window</button>
+              <button onClick={() => printInvoice(fullOrder)} className="px-5 py-2.5 flex items-center gap-1.5 transition-all duration-300 hover:opacity-90" style={btnGreen}>
+                <Printer className="w-4 h-4" /> Print Invoice
+              </button>
               {fullOrder.status === 'full_delivered' && (
-                <Button
-                  onClick={() => onCloseOrder(order)}
-                  className="bg-slate-800 hover:bg-slate-900"
-                >
-                  <Lock className="w-4 h-4 mr-1" /> Close Order (Finalize)
-                </Button>
+                <button onClick={() => onCloseOrder(order)} className="px-5 py-2.5 flex items-center gap-1.5 transition-all duration-300" style={{ background: '#2a2d33', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }}>
+                  <Lock className="w-4 h-4" /> Close Order
+                </button>
               )}
               {fullOrder.status === 'closed' && (
-                <Badge variant="secondary" className="bg-slate-800 text-white hover:bg-slate-800 px-3 py-1.5">
-                  <Lock className="w-3 h-3 mr-1" /> Order is Closed
-                </Badge>
+                <span className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: '#2a2d33', color: '#fff' }}>
+                  <Lock className="w-3 h-3 inline mr-1" /> Order is Closed
+                </span>
               )}
             </DialogFooter>
           </div>
