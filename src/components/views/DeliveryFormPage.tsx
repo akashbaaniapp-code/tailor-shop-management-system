@@ -1,12 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ArrowLeft, Truck, Printer, Save } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
@@ -36,6 +30,13 @@ interface FullOrder {
   deliveries: any[]
 }
 
+// Dark theme styles
+const darkCard = { background: '#14161a', border: '1px solid #2a2d33', borderRadius: '16px' }
+const darkInput = { background: '#0b0d0f', border: '1px solid #2a2d33', color: '#fff', borderRadius: '8px' }
+const btnGreen = { background: '#1db954', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600 }
+const btnWhite = { background: '#fff', color: '#000', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600 }
+const btnOutline = { background: 'transparent', border: '1px solid #2a2d33', color: '#fff', borderRadius: '8px', fontSize: '14px' }
+
 export default function DeliveryFormPage() {
   const setView = useAppStore(s => s.setView)
   const selectedOrderId = useAppStore(s => s.selectedOrderId)
@@ -55,7 +56,6 @@ export default function DeliveryFormPage() {
     }
     api.getSalesOrder(selectedOrderId).then(res => {
       setOrder(res.order)
-      // Initialize delivering quantities: default to remaining
       const init: Record<string, number> = {}
       res.order.items.forEach((it: FullOrderItem) => {
         init[it.id] = Math.max(0, it.qty - it.deliveredQty)
@@ -73,28 +73,15 @@ export default function DeliveryFormPage() {
     const items = order.items
       .map(it => ({ orderItemId: it.id, qty: delivering[it.id] || 0 }))
       .filter(it => it.qty > 0)
-
-    if (items.length === 0) {
-      toast.error('No quantities to deliver')
-      return
-    }
-
+    if (items.length === 0) { toast.error('No quantities to deliver'); return }
     setSaving(true)
     try {
-      const res = await api.createDelivery({
-        orderId: order.id,
-        items,
-        note,
-        deliveryDate
-      })
+      const res = await api.createDelivery({ orderId: order.id, items, note, deliveryDate })
       toast.success('Delivery recorded')
       setLastDeliveryId(res.delivery.deliveryId)
       setLastDeliveryItems(res.delivery.items)
-
-      // Refresh order
       const refreshed = await api.getSalesOrder(order.id)
       setOrder(refreshed.order)
-      // Reset delivering quantities
       const init: Record<string, number> = {}
       refreshed.order.items.forEach((it: FullOrderItem) => {
         init[it.id] = Math.max(0, it.qty - it.deliveredQty)
@@ -137,9 +124,9 @@ export default function DeliveryFormPage() {
 
   if (!order) {
     return (
-      <div className="text-center py-12 text-slate-500">
+      <div className="text-center py-12" style={{ color: '#555' }}>
         Order not found.{' '}
-        <Button variant="link" onClick={() => setView('delivery')}>Back to Delivery</Button>
+        <button onClick={() => setView('delivery')} style={{ color: '#d4df3a', textDecoration: 'underline' }}>Back to Delivery</button>
       </div>
     )
   }
@@ -147,255 +134,238 @@ export default function DeliveryFormPage() {
   const allFullyDelivered = order.status === 'full_delivered'
 
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-5 pb-8">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={() => setView('delivery')}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#1f2227' }}>
+            <ArrowLeft className="w-4 h-4" style={{ color: '#888' }} />
+          </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Create Delivery</h2>
-            <p className="text-sm text-slate-500">
-              Order: <span className="font-mono font-semibold">{order.orderId}</span>
-            </p>
+            <p className="text-sm" style={{ color: '#aaa' }}>Order: <span className="font-mono font-semibold" style={{ color: '#fff' }}>{order.orderId}</span></p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setView('delivery')}>Cancel</Button>
+        <div className="flex gap-2.5">
+          <button onClick={() => setView('delivery')} className="px-5 py-2.5 transition-all duration-300" style={btnWhite}>Cancel</button>
           {!allFullyDelivered && (
-            <Button onClick={handleDeliver} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
-              <Save className="w-4 h-4 mr-1" />
+            <button onClick={handleDeliver} disabled={saving} className="px-5 py-2.5 flex items-center gap-1.5 transition-all duration-300 hover:opacity-90 disabled:opacity-50" style={btnGreen}>
+              <Save className="w-4 h-4" />
               {saving ? 'Saving...' : 'Confirm Delivery'}
-            </Button>
+            </button>
           )}
           {lastDeliveryId && (
-            <Button onClick={handlePrintChallan} variant="outline" className="border-emerald-600 text-emerald-700 hover:bg-emerald-50">
-              <Printer className="w-4 h-4 mr-1" /> Print Challan
-            </Button>
+            <button onClick={handlePrintChallan} className="px-5 py-2.5 flex items-center gap-1.5 transition-all duration-300" style={btnOutline}>
+              <Printer className="w-4 h-4" /> Print Challan
+            </button>
           )}
         </div>
       </div>
 
       {/* Order summary card */}
-      <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-slate-500">Customer</p>
-              <p className="font-medium">{order.customer.name}</p>
-              <p className="text-xs text-slate-500">{order.customer.phone}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Order Date</p>
-              <p className="font-medium">{formatDate(order.orderDate)}</p>
-              {order.deliveryDate && (
-                <p className="text-xs text-slate-500">Expected: {formatDate(order.deliveryDate)}</p>
-              )}
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Tailor</p>
-              <p className="font-medium">{order.tailor?.name || 'Not assigned'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Status</p>
-              <DeliveryStatusBadge status={order.status} />
-            </div>
+      <div className="p-5" style={darkCard}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          <div>
+            <h4 className="text-xs mb-1" style={{ color: '#888' }}>Customer</h4>
+            <p className="font-medium text-sm" style={{ color: '#fff' }}>{order.customer.name}</p>
+            <p className="text-xs" style={{ color: '#aaa' }}>{order.customer.phone}</p>
           </div>
-          {order.deliveryInfo && (
-            <div className="mt-3 p-2 bg-amber-50 rounded text-sm">
-              <p className="text-xs text-amber-700 font-medium">Delivery Information:</p>
-              <p className="text-slate-700">{order.deliveryInfo}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <div>
+            <h4 className="text-xs mb-1" style={{ color: '#888' }}>Order Date</h4>
+            <p className="font-medium text-sm" style={{ color: '#fff' }}>{formatDate(order.orderDate)}</p>
+            {order.deliveryDate && <p className="text-xs" style={{ color: '#aaa' }}>Expected: {formatDate(order.deliveryDate)}</p>}
+          </div>
+          <div>
+            <h4 className="text-xs mb-1" style={{ color: '#888' }}>Tailor</h4>
+            <p className="font-medium text-sm" style={{ color: '#fff' }}>{order.tailor?.name || 'Not assigned'}</p>
+          </div>
+          <div className="flex items-start justify-end">
+            <DeliveryStatusBadge status={order.status} />
+          </div>
+        </div>
+        {order.deliveryInfo && (
+          <div className="mt-4 p-3.5 rounded-xl" style={{ background: '#fcf9e8', border: '1px solid #efecc8' }}>
+            <h4 className="text-xs mb-1" style={{ color: '#555' }}>Delivery Information</h4>
+            <p className="text-sm" style={{ color: '#333' }}>{order.deliveryInfo}</p>
+          </div>
+        )}
+      </div>
 
       {/* Delivery form */}
       {!allFullyDelivered ? (
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-base">Items to Deliver</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Delivery date */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Delivery Date *</Label>
-                  <Input
-                    type="date"
-                    value={deliveryDate}
-                    onChange={e => setDeliveryDate(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-
-              {/* Items table */}
-              <div className="border border-slate-200 rounded-lg overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="text-left px-3 py-2 font-medium text-slate-600">Item</th>
-                      <th className="text-right px-3 py-2 font-medium text-slate-600">Ordered</th>
-                      <th className="text-right px-3 py-2 font-medium text-slate-600">Already Delivered</th>
-                      <th className="text-right px-3 py-2 font-medium text-slate-600">Remaining</th>
-                      <th className="text-right px-3 py-2 font-medium text-slate-600">Deliver Qty</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.items.map(it => {
-                      const remaining = it.qty - it.deliveredQty
-                      return (
-                        <tr key={it.id} className="border-b border-slate-100">
-                          <td className="px-3 py-2 font-medium">{it.item.name}</td>
-                          <td className="px-3 py-2 text-right">{it.qty} {it.uom}</td>
-                          <td className="px-3 py-2 text-right text-emerald-600">{it.deliveredQty}</td>
-                          <td className="px-3 py-2 text-right">
-                            <span className={remaining > 0 ? 'text-amber-600 font-medium' : 'text-slate-400'}>
-                              {remaining}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={remaining}
-                              value={delivering[it.id]}
-                              onChange={e => {
-                                const val = Math.min(remaining, Math.max(0, parseFloat(e.target.value) || 0))
-                                setDelivering({ ...delivering, [it.id]: val })
-                              }}
-                              disabled={remaining === 0}
-                              className="h-8 w-24 ml-auto text-right"
-                            />
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Note */}
-              <div>
-                <Label className="text-xs">Delivery Note (optional)</Label>
-                <Textarea
-                  rows={2}
-                  value={note}
-                  onChange={e => setNote(e.target.value)}
-                  placeholder="Note about this delivery..."
-                  className="mt-1"
-                />
-              </div>
-
-              {/* Action buttons at bottom */}
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setView('delivery')}>Cancel</Button>
-                <Button onClick={handleDeliver} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
-                  <Save className="w-4 h-4 mr-1" />
-                  {saving ? 'Saving...' : 'Confirm Delivery'}
-                </Button>
-              </div>
+        <div className="p-5" style={darkCard}>
+          <h3 className="text-base font-medium mb-5" style={{ color: '#fff' }}>Items to Deliver</h3>
+          <div className="space-y-5">
+            {/* Delivery date */}
+            <div>
+              <h4 className="text-xs mb-1.5" style={{ color: '#888' }}>Delivery Date <span style={{ color: '#ff6b6b' }}>*</span></h4>
+              <input
+                type="date"
+                value={deliveryDate}
+                onChange={e => setDeliveryDate(e.target.value)}
+                className="px-3 py-2 text-sm outline-none"
+                style={darkInput}
+              />
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Items table */}
+            <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid #222' }}>
+              <table className="w-full text-sm">
+                <thead style={{ borderBottom: '1px solid #2a2d33' }}>
+                  <tr>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Item</th>
+                    <th className="text-right px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Ordered</th>
+                    <th className="text-right px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Already Delivered</th>
+                    <th className="text-right px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Remaining</th>
+                    <th className="text-right px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Deliver Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.map(it => {
+                    const remaining = it.qty - it.deliveredQty
+                    return (
+                      <tr key={it.id} style={{ borderBottom: '1px solid #222' }}>
+                        <td className="px-4 py-3 font-medium" style={{ color: '#fff' }}>{it.item.name}</td>
+                        <td className="px-4 py-3 text-right" style={{ color: '#888' }}>{it.qty} {it.uom}</td>
+                        <td className="px-4 py-3 text-right font-medium" style={{ color: '#1db954' }}>{it.deliveredQty}</td>
+                        <td className="px-4 py-3 text-right">
+                          <span style={{ color: remaining > 0 ? '#f1c40f' : '#444', fontWeight: remaining > 0 ? 500 : 400 }}>
+                            {remaining}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <input
+                            type="number"
+                            min={0}
+                            max={remaining}
+                            value={delivering[it.id]}
+                            onChange={e => {
+                              const val = Math.min(remaining, Math.max(0, parseFloat(e.target.value) || 0))
+                              setDelivering({ ...delivering, [it.id]: val })
+                            }}
+                            disabled={remaining === 0}
+                            className="px-2 py-1.5 text-sm text-center outline-none disabled:opacity-30"
+                            style={{ ...darkInput, width: '60px' }}
+                          />
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Note */}
+            <div>
+              <h4 className="text-xs mb-1.5" style={{ color: '#888' }}>Delivery Note (Optional)</h4>
+              <textarea
+                rows={2}
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="Note about this delivery..."
+                className="w-full px-3 py-2.5 text-sm outline-none resize-vertical"
+                style={darkInput}
+              />
+            </div>
+
+            {/* Action footer */}
+            <div className="flex justify-end gap-2.5 pt-1">
+              <button onClick={() => setView('delivery')} className="px-5 py-2.5 transition-all duration-300" style={btnWhite}>Cancel</button>
+              <button onClick={handleDeliver} disabled={saving} className="px-5 py-2.5 flex items-center gap-1.5 transition-all duration-300 hover:opacity-90 disabled:opacity-50" style={btnGreen}>
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Confirm Delivery'}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
-        <Card className="border-emerald-200 bg-emerald-50">
-          <CardContent className="p-8 text-center">
-            <Truck className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-emerald-900">All items delivered</h3>
-            <p className="text-sm text-emerald-700 mt-1">
-              This order has been fully delivered. No further deliveries can be created.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="p-8 text-center" style={darkCard}>
+          <Truck className="w-12 h-12 mx-auto mb-3" style={{ color: '#1db954' }} />
+          <h3 className="text-lg font-semibold" style={{ color: '#1db954' }}>All items delivered</h3>
+          <p className="text-sm mt-1" style={{ color: '#888' }}>This order has been fully delivered. No further deliveries can be created.</p>
+        </div>
       )}
 
-      {/* Last delivery confirmation + print */}
+      {/* Last delivery confirmation */}
       {lastDeliveryId && (
-        <Card className="border-emerald-300 bg-emerald-50">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-emerald-900">✓ Delivery Created Successfully</p>
-                <p className="text-xs text-emerald-700 mt-1">
-                  Delivery ID: <span className="font-mono font-semibold">{lastDeliveryId}</span>
-                </p>
-                <p className="text-xs text-emerald-700">
-                  Items delivered: {lastDeliveryItems.map((di: any) => `${di.orderItem.item.name}: ${di.qty}`).join(', ')}
-                </p>
-              </div>
-              <Button onClick={handlePrintChallan} className="bg-emerald-600 hover:bg-emerald-700">
-                <Printer className="w-4 h-4 mr-1" /> Print Challan
-              </Button>
+        <div className="p-5" style={{ ...darkCard, borderColor: 'rgba(29,185,84,0.3)' }}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#1db954' }}>✓ Delivery Created Successfully</p>
+              <p className="text-xs mt-1" style={{ color: '#888' }}>
+                Delivery ID: <span className="font-mono font-semibold" style={{ color: '#fff' }}>{lastDeliveryId}</span>
+              </p>
+              <p className="text-xs" style={{ color: '#888' }}>
+                Items delivered: {lastDeliveryItems.map((di: any) => `${di.orderItem.item.name}: ${di.qty}`).join(', ')}
+              </p>
             </div>
-          </CardContent>
-        </Card>
+            <button onClick={handlePrintChallan} className="px-5 py-2.5 flex items-center gap-1.5 transition-all duration-300 hover:opacity-90" style={btnGreen}>
+              <Printer className="w-4 h-4" /> Print Challan
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Delivery history */}
       {order.deliveries.length > 0 && (
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-base">Delivery History ({order.deliveries.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {order.deliveries.map((d: any) => (
-                <div key={d.id} className="border border-slate-200 rounded-lg p-3 flex flex-wrap justify-between items-start gap-2">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-mono text-xs font-semibold text-slate-900">{d.deliveryId}</span>
-                      <span className="text-xs text-slate-500">{formatDate(d.deliveryDate)}</span>
-                    </div>
-                    {d.note && <p className="text-xs text-slate-600 mb-1">{d.note}</p>}
-                    <div className="text-xs text-slate-700">
-                      {d.items.map((di: any) => (
-                        <span key={di.id} className="inline-block mr-3">
-                          {di.orderItem.item.name}: <span className="font-medium">{di.qty}</span>
-                        </span>
-                      ))}
-                    </div>
+        <div className="p-5" style={darkCard}>
+          <h3 className="text-sm font-medium mb-4" style={{ color: '#fff' }}>Delivery History ({order.deliveries.length})</h3>
+          <div className="space-y-3">
+            {order.deliveries.map((d: any) => (
+              <div key={d.id} className="p-4 rounded-xl flex flex-wrap justify-between items-start gap-2" style={{ background: '#0b0d0f', border: '1px solid #2a2d33' }}>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono text-xs font-semibold" style={{ color: '#fff' }}>{d.deliveryId}</span>
+                    <span className="text-xs" style={{ color: '#888' }}>{formatDate(d.deliveryDate)}</span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                    onClick={() => printChallan({
-                      deliveryId: d.deliveryId,
-                      deliveryDate: d.deliveryDate,
-                      note: d.note,
-                      order: {
-                        orderId: order.orderId,
-                        orderDate: order.orderDate,
-                        deliveryDate: order.deliveryDate,
-                        customer: order.customer,
-                        tailor: order.tailor,
-                        deliveryInfo: order.deliveryInfo
-                      },
-                      items: d.items
-                    })}
-                  >
-                    <Printer className="w-3 h-3 mr-1" /> Print
-                  </Button>
+                  {d.note && <p className="text-xs mb-1" style={{ color: '#aaa' }}>{d.note}</p>}
+                  <div className="text-xs" style={{ color: '#aaa' }}>
+                    {d.items.map((di: any) => (
+                      <span key={di.id} className="inline-block mr-3">
+                        {di.orderItem.item.name}: <span className="font-medium" style={{ color: '#fff' }}>{di.qty}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <button
+                  onClick={() => printChallan({
+                    deliveryId: d.deliveryId,
+                    deliveryDate: d.deliveryDate,
+                    note: d.note,
+                    order: {
+                      orderId: order.orderId,
+                      orderDate: order.orderDate,
+                      deliveryDate: order.deliveryDate,
+                      customer: order.customer,
+                      tailor: order.tailor,
+                      deliveryInfo: order.deliveryInfo
+                    },
+                    items: d.items
+                  })}
+                  className="px-4 py-2 text-sm flex items-center gap-1.5 transition-all duration-300"
+                  style={btnOutline}
+                >
+                  <Printer className="w-3 h-3" /> Print
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
 }
 
 function DeliveryStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; className: string }> = {
-    full_pending: { label: 'Full Pending', className: 'bg-amber-100 text-amber-700 hover:bg-amber-100' },
-    partial_pending: { label: 'Partial Pending', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100' },
-    full_delivered: { label: 'Full Delivered', className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' }
+  const map: Record<string, { label: string; bg: string; color: string }> = {
+    full_pending: { label: 'Full Pending', bg: 'rgba(241,196,15,0.15)', color: '#f1c40f' },
+    partial_pending: { label: 'Partial Pending', bg: 'rgba(52,152,219,0.2)', color: '#3498db' },
+    full_delivered: { label: 'Full Delivered', bg: 'rgba(29,185,84,0.2)', color: '#1db954' },
+    closed: { label: 'Closed', bg: '#2a2d33', color: '#fff' }
   }
-  const v = map[status] || { label: status, className: 'bg-slate-100 text-slate-700' }
-  return <Badge variant="secondary" className={v.className}>{v.label}</Badge>
+  const v = map[status] || { label: status, bg: '#2a2d33', color: '#fff' }
+  return (
+    <span className="text-xs font-semibold px-3.5 py-1.5 rounded-full" style={{ background: v.bg, color: v.color }}>
+      {v.label}
+    </span>
+  )
 }

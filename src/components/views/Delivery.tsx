@@ -1,11 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
@@ -36,6 +31,13 @@ interface FullOrder extends OrderListItem {
   deliveries: any[]
 }
 
+// Dark theme styles
+const darkCard = { background: '#14161a', border: '1px solid #2a2d33', borderRadius: '16px' }
+const darkInput = { background: '#0b0d0f', border: '1px solid #2a2d33', color: '#fff', borderRadius: '10px' }
+const darkTextMuted = { color: '#888' }
+const btnGreen = { background: '#1db954', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }
+const btnOutline = { background: 'transparent', border: '1px solid #2a2d33', color: '#fff', borderRadius: '8px', fontSize: '14px' }
+
 export default function Delivery() {
   const setView = useAppStore(s => s.setView)
   const setSelectedOrderId = useAppStore(s => s.setSelectedOrderId)
@@ -46,7 +48,6 @@ export default function Delivery() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
 
-  // Detail panel
   const [selectedOrder, setSelectedOrder] = useState<FullOrder | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
 
@@ -68,12 +69,10 @@ export default function Delivery() {
 
   useEffect(() => { load() }, [load])
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
   const paginatedOrders = orders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
-  // When user clicks an order, fetch its full details (with deliveries)
   async function openOrderDetail(o: OrderListItem) {
     setLoadingDetail(true)
     setSelectedOrder(null)
@@ -87,9 +86,7 @@ export default function Delivery() {
     }
   }
 
-  function closeDetail() {
-    setSelectedOrder(null)
-  }
+  function closeDetail() { setSelectedOrder(null) }
 
   function openCreateDelivery() {
     if (!selectedOrder) return
@@ -98,286 +95,267 @@ export default function Delivery() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Search + Filters */}
-      <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <Label className="text-xs text-slate-500">
-            Search by Order ID, Customer Name, or Phone — leave empty to see all
-          </Label>
-          <div className="flex flex-wrap gap-2 mt-1">
-            <div className="flex-1 min-w-[200px] relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && load()}
-                placeholder="e.g. SO-20260726-0001 or customer name..."
-                className="pl-9"
-              />
-            </div>
-            <div className="w-[160px]">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="full_pending">Full Pending</SelectItem>
-                  <SelectItem value="partial_pending">Partial Pending</SelectItem>
-                  <SelectItem value="full_delivered">Full Delivered</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={load} className="bg-emerald-600 hover:bg-emerald-700">
-              <Search className="w-4 h-4 mr-1" /> Search
-            </Button>
+      <div className="p-5" style={darkCard}>
+        <p className="text-xs mb-3" style={darkTextMuted}>Search by Order ID, Customer Name, or Phone — leave empty to see all</p>
+        <div className="flex flex-wrap gap-3">
+          <div className="flex-1 min-w-[200px] relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#666' }} />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && load()}
+              placeholder="e.g. SO-20260726-0001 or customer name..."
+              className="w-full pl-10 pr-4 py-3 text-sm outline-none"
+              style={darkInput}
+            />
           </div>
-          <p className="text-xs text-slate-500 mt-2">
-            💡 Click "View" on any order to see its items, delivery history, and create a new delivery.
-          </p>
-        </CardContent>
-      </Card>
+          <div className="w-[160px]">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger style={darkInput}><SelectValue /></SelectTrigger>
+              <SelectContent style={{ background: '#1a1c1e', border: '1px solid #2a2d33' }}>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="full_pending">Full Pending</SelectItem>
+                <SelectItem value="partial_pending">Partial Pending</SelectItem>
+                <SelectItem value="full_delivered">Full Delivered</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <button onClick={load} className="px-6 py-3 flex items-center gap-1.5 transition-all duration-300 hover:opacity-90" style={btnGreen}>
+            <Search className="w-4 h-4" /> Search
+          </button>
+        </div>
+        <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: '#555' }}>
+          <CheckCircle2 className="w-3 h-3" style={{ color: '#d4df3a' }} />
+          Click "View" on any order to see its items, delivery history, and create a new delivery.
+        </p>
+      </div>
 
-      {/* Detail panel (shown when an order is selected) */}
+      {/* Detail panel */}
       {(selectedOrder || loadingDetail) && (
-        <Card className="border-emerald-300">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-emerald-900">
-                📦 Order Detail {selectedOrder && <span className="font-mono">— {selectedOrder.orderId}</span>}
-              </h3>
-              <Button size="sm" variant="ghost" onClick={closeDetail}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+        <div className="p-5" style={darkCard}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold" style={{ color: '#d4df3a' }}>
+              📦 Order Detail {selectedOrder && <span className="font-mono">— {selectedOrder.orderId}</span>}
+            </h3>
+            <button onClick={closeDetail} className="p-1.5 rounded-lg transition-colors" style={{ color: '#666' }}>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-            {loadingDetail && <Skeleton className="h-40 w-full" />}
+          {loadingDetail && <Skeleton className="h-40 w-full" />}
 
-            {selectedOrder && (
-              <>
-                <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold">{selectedOrder.orderId}</h3>
-                      <DeliveryStatusBadge status={selectedOrder.status} />
-                    </div>
-                    <p className="text-sm text-slate-600 mt-1">
-                      {selectedOrder.customer.name} • {selectedOrder.customer.phone}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Order Date: {formatDate(selectedOrder.orderDate)}
-                      {selectedOrder.tailor && ` • Tailor: ${selectedOrder.tailor.name}`}
-                    </p>
-                  </div>
-                  {selectedOrder.status !== 'full_delivered' && selectedOrder.status !== 'closed' && (
-                    <Button onClick={openCreateDelivery} className="bg-emerald-600 hover:bg-emerald-700">
-                      <Truck className="w-4 h-4 mr-1" /> Create Delivery
-                      <ArrowRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  )}
-                </div>
-
-                <div className="border border-slate-200 rounded-lg overflow-x-auto mb-4">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="text-left px-3 py-2 font-medium text-slate-600">Item</th>
-                        <th className="text-right px-3 py-2 font-medium text-slate-600">Ordered</th>
-                        <th className="text-right px-3 py-2 font-medium text-slate-600">Delivered</th>
-                        <th className="text-right px-3 py-2 font-medium text-slate-600">Remaining</th>
-                        <th className="text-center px-3 py-2 font-medium text-slate-600">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedOrder.items.map((it: any) => {
-                        const remaining = it.qty - it.deliveredQty
-                        const status = it.deliveredQty === 0 ? 'pending' : it.deliveredQty >= it.qty ? 'delivered' : 'partial'
-                        return (
-                          <tr key={it.id} className="border-b border-slate-100">
-                            <td className="px-3 py-2 font-medium">{it.item.name}</td>
-                            <td className="px-3 py-2 text-right">{it.qty} {it.uom}</td>
-                            <td className="px-3 py-2 text-right text-emerald-600 font-medium">{it.deliveredQty}</td>
-                            <td className="px-3 py-2 text-right">
-                              <span className={remaining > 0 ? 'text-amber-600 font-medium' : 'text-slate-400'}>
-                                {remaining}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              {status === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100">Pending</Badge>}
-                              {status === 'partial' && <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">Partial</Badge>}
-                              {status === 'delivered' && <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Delivered</Badge>}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {selectedOrder.deliveries.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-700 mb-3">Delivery History ({selectedOrder.deliveries.length})</h4>
-                    <div className="space-y-3">
-                      {selectedOrder.deliveries.map((d: any) => (
-                        <div key={d.id} className="border border-slate-200 rounded-lg p-3 flex flex-wrap justify-between items-start gap-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono text-xs font-semibold text-slate-900">{d.deliveryId}</span>
-                              <span className="text-xs text-slate-500">{formatDate(d.deliveryDate)}</span>
-                            </div>
-                            {d.note && <p className="text-xs text-slate-600 mb-1">{d.note}</p>}
-                            <div className="text-xs text-slate-700">
-                              {d.items.map((di: any) => (
-                                <span key={di.id} className="inline-block mr-3">
-                                  {di.orderItem.item.name}: <span className="font-medium">{di.qty}</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                            onClick={() => printChallan({
-                              deliveryId: d.deliveryId,
-                              deliveryDate: d.deliveryDate,
-                              note: d.note,
-                              order: {
-                                orderId: selectedOrder.orderId,
-                                orderDate: selectedOrder.orderDate,
-                                deliveryDate: selectedOrder.deliveryDate,
-                                customer: selectedOrder.customer,
-                                tailor: selectedOrder.tailor,
-                                deliveryInfo: selectedOrder.deliveryInfo
-                              },
-                              items: d.items
-                            })}
-                          >
-                            <Printer className="w-3 h-3 mr-1" /> Print Challan
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Orders list */}
-      <Card className="border-slate-200">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="p-4 space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-          ) : paginatedOrders.length === 0 ? (
-            <div className="text-center py-12">
-              <Truck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500">No orders found</p>
-              <p className="text-xs text-slate-400 mt-1">Try a different search or clear filters</p>
-            </div>
-          ) : (
+          {selectedOrder && (
             <>
-              <div className="overflow-x-auto">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold" style={{ color: '#fff' }}>{selectedOrder.orderId}</h3>
+                    <DeliveryStatusBadge status={selectedOrder.status} />
+                  </div>
+                  <p className="text-sm mt-1" style={darkTextMuted}>
+                    {selectedOrder.customer.name} • {selectedOrder.customer.phone}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: '#555' }}>
+                    Order Date: {formatDate(selectedOrder.orderDate)}
+                    {selectedOrder.tailor && ` • Tailor: ${selectedOrder.tailor.name}`}
+                  </p>
+                </div>
+                {selectedOrder.status !== 'full_delivered' && selectedOrder.status !== 'closed' && (
+                  <button onClick={openCreateDelivery} className="px-5 py-2.5 flex items-center gap-1.5 transition-all duration-300 hover:opacity-90" style={btnGreen}>
+                    <Truck className="w-4 h-4" /> Create Delivery
+                    <ArrowRight className="w-4 h-4 ml-0.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Items table */}
+              <div className="overflow-x-auto rounded-xl mb-4" style={{ border: '1px solid #222' }}>
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200">
+                  <thead style={{ borderBottom: '1px solid #2a2d33' }}>
                     <tr>
-                      <th className="text-left px-4 py-2.5 font-medium text-slate-600">Order ID</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-slate-600">Date</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-slate-600">Customer</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-slate-600">Tailor</th>
-                      <th className="text-right px-4 py-2.5 font-medium text-slate-600">Items</th>
-                      <th className="text-center px-4 py-2.5 font-medium text-slate-600">Status</th>
-                      <th className="text-center px-4 py-2.5 font-medium text-slate-600">Action</th>
+                      <th className="text-left px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Item</th>
+                      <th className="text-right px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Ordered</th>
+                      <th className="text-right px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Delivered</th>
+                      <th className="text-right px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Remaining</th>
+                      <th className="text-center px-4 py-3 font-medium" style={{ color: '#888', fontSize: '13px' }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedOrders.map(o => (
-                      <tr key={o.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="px-4 py-2.5 font-mono text-xs font-semibold text-slate-900">{o.orderId}</td>
-                        <td className="px-4 py-2.5 text-slate-600">{formatDate(o.orderDate)}</td>
-                        <td className="px-4 py-2.5">
-                          <div className="font-medium">{o.customer.name}</div>
-                          <div className="text-xs text-slate-500">{o.customer.phone}</div>
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-600">{o.tailor?.name || '-'}</td>
-                        <td className="px-4 py-2.5 text-right">{o.items?.length || 0}</td>
-                        <td className="px-4 py-2.5 text-center">
-                          <DeliveryStatusBadge status={o.status} />
-                        </td>
-                        <td className="px-4 py-2.5 text-center">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => openOrderDetail(o)}
-                            title="View items & delivery"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {selectedOrder.items.map((it: any) => {
+                      const remaining = it.qty - it.deliveredQty
+                      const status = it.deliveredQty === 0 ? 'pending' : it.deliveredQty >= it.qty ? 'delivered' : 'partial'
+                      return (
+                        <tr key={it.id} style={{ borderBottom: '1px solid #222' }}>
+                          <td className="px-4 py-3 font-medium" style={{ color: '#fff' }}>{it.item.name}</td>
+                          <td className="px-4 py-3 text-right" style={darkTextMuted}>{it.qty} {it.uom}</td>
+                          <td className="px-4 py-3 text-right font-medium" style={{ color: '#1db954' }}>{it.deliveredQty}</td>
+                          <td className="px-4 py-3 text-right">
+                            <span style={{ color: remaining > 0 ? '#f1c40f' : '#444', fontWeight: remaining > 0 ? 500 : 400 }}>
+                              {remaining}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {status === 'pending' && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'rgba(241,196,15,0.15)', color: '#f1c40f' }}>Pending</span>}
+                            {status === 'partial' && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'rgba(52,152,219,0.2)', color: '#3498db' }}>Partial</span>}
+                            {status === 'delivered' && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'rgba(29,185,84,0.2)', color: '#1db954' }}>Delivered</span>}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
-                  <p className="text-xs text-slate-500">
-                    Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, orders.length)} of {orders.length} orders
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={currentPage === 1}
-                      onClick={() => setPage(currentPage - 1)}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <span className="text-sm px-2">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={currentPage === totalPages}
-                      onClick={() => setPage(currentPage + 1)}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+              {/* Delivery History */}
+              {selectedOrder.deliveries.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-3" style={darkTextMuted}>Delivery History ({selectedOrder.deliveries.length})</h4>
+                  <div className="space-y-3">
+                    {selectedOrder.deliveries.map((d: any) => (
+                      <div key={d.id} className="p-4 rounded-xl flex flex-wrap justify-between items-start gap-2" style={{ background: '#0b0d0f', border: '1px solid #2a2d33' }}>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs font-semibold" style={{ color: '#fff' }}>{d.deliveryId}</span>
+                            <span className="text-xs" style={darkTextMuted}>{formatDate(d.deliveryDate)}</span>
+                          </div>
+                          {d.note && <p className="text-xs mb-1" style={{ color: '#aaa' }}>{d.note}</p>}
+                          <div className="text-xs" style={{ color: '#aaa' }}>
+                            {d.items.map((di: any) => (
+                              <span key={di.id} className="inline-block mr-3">
+                                {di.orderItem.item.name}: <span className="font-medium" style={{ color: '#fff' }}>{di.qty}</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => printChallan({
+                            deliveryId: d.deliveryId,
+                            deliveryDate: d.deliveryDate,
+                            note: d.note,
+                            order: {
+                              orderId: selectedOrder.orderId,
+                              orderDate: selectedOrder.orderDate,
+                              deliveryDate: selectedOrder.deliveryDate,
+                              customer: selectedOrder.customer,
+                              tailor: selectedOrder.tailor,
+                              deliveryInfo: selectedOrder.deliveryInfo
+                            },
+                            items: d.items
+                          })}
+                          className="px-4 py-2 text-sm flex items-center gap-1.5 transition-all duration-300"
+                          style={btnOutline}
+                        >
+                          <Printer className="w-3 h-3" /> Print Challan
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              )}
-
-              {/* Result count when no pagination needed */}
-              {totalPages === 1 && orders.length > 0 && (
-                <div className="px-4 py-3 border-t border-slate-200 text-xs text-slate-500">
-                  Showing {orders.length} order{orders.length === 1 ? '' : 's'}
                 </div>
               )}
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
+
+      {/* Orders list */}
+      <div style={darkCard}>
+        {loading ? (
+          <div className="p-5 space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        ) : paginatedOrders.length === 0 ? (
+          <div className="text-center py-12">
+            <Truck className="w-12 h-12 mx-auto mb-3" style={{ color: '#333' }} />
+            <p style={{ color: '#555' }}>No orders found</p>
+            <p className="text-xs mt-1" style={{ color: '#444' }}>Try a different search or clear filters</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead style={{ borderBottom: '1px solid #2a2d33' }}>
+                  <tr>
+                    <th className="text-left px-4 py-3.5 font-medium" style={{ color: '#888', fontSize: '13px' }}>Order ID</th>
+                    <th className="text-left px-4 py-3.5 font-medium" style={{ color: '#888', fontSize: '13px' }}>Date</th>
+                    <th className="text-left px-4 py-3.5 font-medium" style={{ color: '#888', fontSize: '13px' }}>Customer</th>
+                    <th className="text-left px-4 py-3.5 font-medium" style={{ color: '#888', fontSize: '13px' }}>Tailor</th>
+                    <th className="text-right px-4 py-3.5 font-medium" style={{ color: '#888', fontSize: '13px' }}>Items</th>
+                    <th className="text-center px-4 py-3.5 font-medium" style={{ color: '#888', fontSize: '13px' }}>Status</th>
+                    <th className="text-center px-4 py-3.5 font-medium" style={{ color: '#888', fontSize: '13px' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedOrders.map(o => (
+                    <tr key={o.id} style={{ borderBottom: '1px solid #222' }} className="transition-colors hover:bg-[#1f2227]">
+                      <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color: '#fff' }}>{o.orderId}</td>
+                      <td className="px-4 py-3" style={darkTextMuted}>{formatDate(o.orderDate)}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium" style={{ color: '#fff' }}>{o.customer.name}</div>
+                        <div className="text-xs" style={{ color: '#555' }}>{o.customer.phone}</div>
+                      </td>
+                      <td className="px-4 py-3" style={darkTextMuted}>{o.tailor?.name || '-'}</td>
+                      <td className="px-4 py-3 text-right" style={{ color: '#fff' }}>{o.items?.length || 0}</td>
+                      <td className="px-4 py-3 text-center">
+                        <DeliveryStatusBadge status={o.status} />
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => openOrderDetail(o)}
+                          title="View items & delivery"
+                          className="p-2 rounded-lg transition-colors hover:bg-[#2a2d33]"
+                          style={{ color: '#666' }}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid #2a2d33' }}>
+                <p className="text-xs" style={{ color: '#555' }}>
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, orders.length)} of {orders.length} orders
+                </p>
+                <div className="flex items-center gap-2">
+                  <button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} className="px-3 py-1.5 transition-all disabled:opacity-30" style={btnOutline}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-sm px-2" style={darkTextMuted}>Page {currentPage} of {totalPages}</span>
+                  <button disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} className="px-3 py-1.5 transition-all disabled:opacity-30" style={btnOutline}>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {totalPages === 1 && orders.length > 0 && (
+              <div className="px-4 py-3 text-center text-xs" style={{ borderTop: '1px solid #2a2d33', color: '#555' }}>
+                Showing {orders.length} order{orders.length === 1 ? '' : 's'}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
 
 function DeliveryStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; icon: any; className: string }> = {
-    full_pending: { label: 'Full Pending', icon: Clock, className: 'bg-amber-100 text-amber-700 hover:bg-amber-100' },
-    partial_pending: { label: 'Partial', icon: AlertCircle, className: 'bg-blue-100 text-blue-700 hover:bg-blue-100' },
-    full_delivered: { label: 'Delivered', icon: CheckCircle2, className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' },
-    closed: { label: 'Closed', icon: CheckCircle2, className: 'bg-slate-800 text-white hover:bg-slate-800' }
+  const map: Record<string, { label: string; bg: string; color: string }> = {
+    full_pending: { label: 'Full Pending', bg: 'rgba(241,196,15,0.15)', color: '#f1c40f' },
+    partial_pending: { label: 'Partial', bg: 'rgba(52,152,219,0.2)', color: '#3498db' },
+    full_delivered: { label: 'Delivered', bg: 'rgba(29,185,84,0.2)', color: '#1db954' },
+    closed: { label: 'Closed', bg: '#2a2d33', color: '#fff' }
   }
-  const v = map[status] || { label: status, icon: AlertCircle, className: 'bg-slate-100 text-slate-700' }
-  const Icon = v.icon
+  const v = map[status] || { label: status, bg: '#2a2d33', color: '#fff' }
   return (
-    <Badge variant="secondary" className={v.className}>
-      <Icon className="w-3 h-3 mr-1" /> {v.label}
-    </Badge>
+    <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: v.bg, color: v.color }}>
+      {v.label}
+    </span>
   )
 }
