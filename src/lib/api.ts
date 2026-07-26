@@ -332,6 +332,16 @@ export const api = {
     if (params?.headId) q.set('headId', params.headId)
     if (params?.groupBy) q.set('groupBy', params.groupBy)
     return apiFetch(`/api/reports/expense${q.toString() ? `?${q}` : ''}`)
+  },
+
+  // Delivery Report
+  deliveryReport: (params?: { from?: string; to?: string; status?: string; search?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.from) q.set('from', params.from)
+    if (params?.to) q.set('to', params.to)
+    if (params?.status) q.set('status', params.status)
+    if (params?.search) q.set('search', params.search)
+    return apiFetch(`/api/reports/delivery${q.toString() ? `?${q}` : ''}`)
   }
 }
 

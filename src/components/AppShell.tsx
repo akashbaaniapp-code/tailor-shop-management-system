@@ -62,6 +62,7 @@ const ReportReceivable = dynamic(() => import('@/components/views/ReportReceivab
 const ReportPayable = dynamic(() => import('@/components/views/ReportPayable'))
 const ReportOrders = dynamic(() => import('@/components/views/ReportOrders'))
 const ReportExpense = dynamic(() => import('@/components/views/ReportExpense'))
+const ReportDelivery = dynamic(() => import('@/components/views/ReportDelivery'))
 
 interface NavGroup {
   label: string
@@ -99,7 +100,8 @@ const navGroups: NavGroup[] = [
       { key: 'report-receivable', label: 'Receivable', icon: Receipt },
       { key: 'report-payable', label: 'Payable', icon: Wallet },
       { key: 'report-orders', label: 'Order Report', icon: BarChart3 },
-      { key: 'report-expense', label: 'Expense Report', icon: TrendingDown }
+      { key: 'report-expense', label: 'Expense Report', icon: TrendingDown },
+      { key: 'report-delivery', label: 'Delivery Report', icon: Truck }
     ]
   }
 ]
@@ -130,7 +132,8 @@ const viewTitles: Record<ViewKey, string> = {
   'report-receivable': 'Receivable Report',
   'report-payable': 'Payable Report',
   'report-orders': 'Order Report',
-  'report-expense': 'Expense Report'
+  'report-expense': 'Expense Report',
+  'report-delivery': 'Delivery Report'
 }
 
 export default function AppShell() {
@@ -191,6 +194,7 @@ export default function AppShell() {
       case 'report-payable': return <ReportPayable />
       case 'report-orders': return <ReportOrders />
       case 'report-expense': return <ReportExpense />
+      case 'report-delivery': return <ReportDelivery />
       default: return <Dashboard />
     }
   }

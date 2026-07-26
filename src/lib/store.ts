@@ -27,6 +27,7 @@ export type ViewKey =
   | 'report-payable'
   | 'report-orders'
   | 'report-expense'
+  | 'report-delivery'
 
 // Map view keys to URL ?view= values (kept short for cleaner URLs)
 const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
@@ -54,7 +55,8 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'report-receivable': 'report-receivable',
   'report-payable': 'report-payable',
   'report-orders': 'report-orders',
-  'report-expense': 'report-expense'
+  'report-expense': 'report-expense',
+  'report-delivery': 'report-delivery'
 }
 
 const URL_TO_VIEW: Record<string, ViewKey> = Object.entries(VIEW_TO_URL).reduce(
