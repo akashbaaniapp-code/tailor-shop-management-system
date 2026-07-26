@@ -30,6 +30,7 @@ import { toast } from 'sonner'
 
 import Dashboard from '@/components/views/Dashboard'
 import SalesOrders from '@/components/views/SalesOrders'
+import SalesOrderFormPage from '@/components/views/SalesOrderFormPage'
 import Delivery from '@/components/views/Delivery'
 import BillCollection from '@/components/views/BillCollection'
 import SetupUom from '@/components/views/SetupUom'
@@ -81,6 +82,9 @@ const navGroups: NavGroup[] = [
 const viewTitles: Record<ViewKey, string> = {
   'dashboard': 'Dashboard',
   'sales-orders': 'Sales Orders',
+  'sales-order-create': 'Create Sales Order',
+  'sales-order-edit': 'Edit Sales Order',
+  'sales-order-view': 'View Sales Order',
   'delivery': 'Sales Order Delivery',
   'bill-collection': 'Bill Collection',
   'setup-uom': 'Setup - Unit of Measure',
@@ -95,7 +99,7 @@ const viewTitles: Record<ViewKey, string> = {
 }
 
 export default function AppShell() {
-  const { currentView, setView, user, setUser } = useAppStore()
+  const { currentView, setView, user, setUser, selectedOrderId } = useAppStore()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
@@ -115,6 +119,8 @@ export default function AppShell() {
     switch (currentView) {
       case 'dashboard': return <Dashboard />
       case 'sales-orders': return <SalesOrders />
+      case 'sales-order-create': return <SalesOrderFormPage />
+      case 'sales-order-edit': return <SalesOrderFormPage orderId={selectedOrderId || undefined} />
       case 'delivery': return <Delivery />
       case 'bill-collection': return <BillCollection />
       case 'setup-uom': return <SetupUom />

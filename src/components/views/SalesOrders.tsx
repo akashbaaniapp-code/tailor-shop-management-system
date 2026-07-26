@@ -4,25 +4,15 @@ import { useEffect, useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, Trash2, Search, Eye, Edit, FileText, X } from 'lucide-react'
+import { Plus, Search, Eye, Edit, FileText } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
+import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
-
-interface SalesOrderItem {
-  id?: string
-  itemId: string
-  itemName?: string
-  uom: string
-  qty: number
-  unitPrice: number
-  total: number
-}
 
 interface SalesOrder {
   id: string
@@ -44,10 +34,6 @@ interface SalesOrder {
   paymentStatus: string
   items: any[]
 }
-
-interface Item { id: string; name: string; uomId: string; uom: { id: string; name: string }; unitPrice: number }
-interface Tailor { id: string; name: string }
-interface Customer { id: string; name: string; phone: string; address?: string }
 
 function numberToWords(num: number): string {
   if (num === 0) return 'Zero Taka Only'
@@ -82,13 +68,13 @@ function numberToWords(num: number): string {
 }
 
 export default function SalesOrders() {
+  const setView = useAppStore(s => s.setView)
+  const setSelectedOrderId = useAppStore(s => s.setSelectedOrderId)
   const [orders, setOrders] = useState<SalesOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [showCreate, setShowCreate] = useState(false)
   const [viewOrder, setViewOrder] = useState<SalesOrder | null>(null)
-  const [editOrder, setEditOrder] = useState<SalesOrder | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -103,6 +89,15 @@ export default function SalesOrders() {
   }, [search, statusFilter])
 
   useEffect(() => { load() }, [load])
+
+  function handleNew() {
+    setView('sales-order-create')
+  }
+
+  function handleEdit(o: SalesOrder) {
+    setSelectedOrderId(o.id)
+    setView('sales-order-edit')
+  }
 
   return (
     <div className="space-y-4">
@@ -134,7 +129,7 @@ export default function SalesOrders() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => setShowCreate(true)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleNew} className="bg-emerald-600 hover:bg-emerald-700">
               <Plus className="w-4 h-4 mr-1" /> New Sales Order
             </Button>
           </div>
@@ -149,7 +144,7 @@ export default function SalesOrders() {
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
             </div>
           ) : orders.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">No sales orders found</div>
+            <div className="text-center py-12 text-slate-500">No sales orders found. Click "New Sales Order" to create one.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -186,10 +181,10 @@ export default function SalesOrders() {
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => setViewOrder(o)}>
+                          <Button size="sm" variant="ghost" onClick={() => setViewOrder(o)} title="View">
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditOrder(o)}>
+                          <Button size="sm" variant="ghost" onClick={() => handleEdit(o)} title="Edit">
                             <Edit className="w-4 h-4" />
                           </Button>
                         </div>
@@ -202,21 +197,6 @@ export default function SalesOrders() {
           )}
         </CardContent>
       </Card>
-
-      {showCreate && (
-        <SalesOrderForm
-          onClose={() => setShowCreate(false)}
-          onSaved={() => { setShowCreate(false); load() }}
-        />
-      )}
-
-      {editOrder && (
-        <SalesOrderForm
-          order={editOrder}
-          onClose={() => setEditOrder(null)}
-          onSaved={() => { setEditOrder(null); load() }}
-        />
-      )}
 
       {viewOrder && (
         <OrderDetail order={viewOrder} onClose={() => setViewOrder(null)} />
@@ -373,366 +353,6 @@ function OrderDetail({ order, onClose }: { order: SalesOrder; onClose: () => voi
               <Button variant="outline" onClick={onClose}>Close</Button>
             </DialogFooter>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function SalesOrderForm({ order, onClose, onSaved }: { order?: SalesOrder; onClose: () => void; onSaved: () => void }) {
-  const [items, setItems] = useState<SalesOrderItem[]>([])
-  const [dbItems, setDbItems] = useState<Item[]>([])
-  const [tailors, setTailors] = useState<Tailor[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [deliveryInfos, setDeliveryInfos] = useState<{ id: string; label: string; note: string }[]>([])
-  const [tailorId, setTailorId] = useState('')
-  const [customerId, setCustomerId] = useState('')
-  const [orderDate, setOrderDate] = useState(new Date().toISOString().split('T')[0])
-  const [deliveryDate, setDeliveryDate] = useState('')
-  const [salesNote, setSalesNote] = useState('')
-  const [deliveryInfo, setDeliveryInfo] = useState('')
-  const [discount, setDiscount] = useState(0)
-  const [saving, setSaving] = useState(false)
-  const [showNewCustomer, setShowNewCustomer] = useState(false)
-
-  // New customer form
-  const [ncName, setNcName] = useState('')
-  const [ncPhone, setNcPhone] = useState('')
-  const [ncAddress, setNcAddress] = useState('')
-
-  useEffect(() => {
-    Promise.all([
-      api.listItems(),
-      api.listTailors(),
-      api.listCustomers(),
-      api.listDeliveryInfo()
-    ]).then(([i, t, c, d]) => {
-      setDbItems(i.items)
-      setTailors(t.items)
-      setCustomers(c.items)
-      setDeliveryInfos(d.items)
-    })
-  }, [])
-
-  useEffect(() => {
-    if (order) {
-      api.getSalesOrder(order.id).then(res => {
-        const o = res.order
-        setTailorId(o.tailorId || '')
-        setCustomerId(o.customerId)
-        setOrderDate(new Date(o.orderDate).toISOString().split('T')[0])
-        setDeliveryDate(o.deliveryDate ? new Date(o.deliveryDate).toISOString().split('T')[0] : '')
-        setSalesNote(o.salesNote || '')
-        setDeliveryInfo(o.deliveryInfo || '')
-        setDiscount(o.discount)
-        setItems(o.items.map((it: any) => ({
-          id: it.id,
-          itemId: it.itemId,
-          itemName: it.item.name,
-          uom: it.uom,
-          qty: it.qty,
-          unitPrice: it.unitPrice,
-          total: it.total
-        })))
-      })
-    } else {
-      // Add a blank item by default
-      setItems([{ itemId: '', uom: '', qty: 1, unitPrice: 0, total: 0 }])
-    }
-  }, [order])
-
-  function addItem() {
-    setItems([...items, { itemId: '', uom: '', qty: 1, unitPrice: 0, total: 0 }])
-  }
-
-  function removeItem(idx: number) {
-    if (items.length === 1) {
-      toast.error('At least one item required')
-      return
-    }
-    setItems(items.filter((_, i) => i !== idx))
-  }
-
-  function updateItem(idx: number, field: keyof SalesOrderItem, value: any) {
-    const next = [...items]
-    ;(next[idx] as any)[field] = value
-    if (field === 'itemId') {
-      const dbItem = dbItems.find(i => i.id === value)
-      if (dbItem) {
-        next[idx].uom = dbItem.uom.name
-        next[idx].unitPrice = dbItem.unitPrice
-        next[idx].itemName = dbItem.name
-      }
-    }
-    next[idx].total = (Number(next[idx].qty) || 0) * (Number(next[idx].unitPrice) || 0)
-    setItems(next)
-  }
-
-  const subTotal = items.reduce((s, it) => s + (Number(it.total) || 0), 0)
-  const grandTotal = subTotal - (Number(discount) || 0)
-
-  async function handleCreateCustomer() {
-    if (!ncName || !ncPhone) {
-      toast.error('Name and phone required')
-      return
-    }
-    try {
-      const res = await api.createCustomer({ name: ncName, phone: ncPhone, address: ncAddress })
-      setCustomers([...customers, res.item])
-      setCustomerId(res.item.id)
-      setShowNewCustomer(false)
-      setNcName(''); setNcPhone(''); setNcAddress('')
-      toast.success('Customer added')
-    } catch (err: any) {
-      toast.error(err.message)
-    }
-  }
-
-  async function handleSave() {
-    if (!customerId) { toast.error('Customer required'); return }
-    if (!orderDate) { toast.error('Order date required'); return }
-    const validItems = items.filter(it => it.itemId && it.qty > 0)
-    if (validItems.length === 0) { toast.error('At least one valid item required'); return }
-
-    setSaving(true)
-    try {
-      const payload = {
-        orderDate,
-        deliveryDate: deliveryDate || undefined,
-        tailorId: tailorId || undefined,
-        customerId,
-        salesNote,
-        deliveryInfo,
-        items: validItems.map(it => ({
-          itemId: it.itemId,
-          qty: it.qty,
-          uom: it.uom,
-          unitPrice: it.unitPrice,
-          total: it.total
-        })),
-        discount: Number(discount) || 0
-      }
-      if (order) {
-        await api.updateSalesOrder(order.id, payload)
-        toast.success('Sales order updated')
-      } else {
-        await api.createSalesOrder(payload)
-        toast.success('Sales order created')
-      }
-      onSaved()
-    } catch (err: any) {
-      toast.error(err.message)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{order ? `Edit Order: ${order.orderId}` : 'Create New Sales Order'}</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Header info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div>
-              <Label className="text-xs">Order Date *</Label>
-              <Input type="date" value={orderDate} onChange={e => setOrderDate(e.target.value)} />
-            </div>
-            <div>
-              <Label className="text-xs">Delivery Date</Label>
-              <Input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} />
-            </div>
-            <div>
-              <Label className="text-xs">Tailor</Label>
-              <Select value={tailorId} onValueChange={setTailorId}>
-                <SelectTrigger><SelectValue placeholder="Select tailor" /></SelectTrigger>
-                <SelectContent>
-                  {tailors.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Customer *</Label>
-              <div className="flex gap-2">
-                <Select value={customerId} onValueChange={setCustomerId}>
-                  <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
-                  <SelectContent>
-                    {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name} - {c.phone}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Button type="button" size="icon" variant="outline" onClick={() => setShowNewCustomer(true)}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">Sales Note</Label>
-              <Textarea value={salesNote} onChange={e => setSalesNote(e.target.value)} rows={2} placeholder="Internal sales note..." />
-            </div>
-            <div>
-              <Label className="text-xs">Delivery Information</Label>
-              <Textarea
-                value={deliveryInfo}
-                onChange={e => setDeliveryInfo(e.target.value)}
-                rows={2}
-                placeholder="Delivery instructions..."
-              />
-              {deliveryInfos.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {deliveryInfos.map(d => (
-                    <button
-                      key={d.id}
-                      type="button"
-                      onClick={() => setDeliveryInfo(d.note)}
-                      className="text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600"
-                    >
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Items table */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <Label className="text-sm font-medium">Items</Label>
-              <Button type="button" size="sm" variant="outline" onClick={addItem}>
-                <Plus className="w-3 h-3 mr-1" /> Add Item
-              </Button>
-            </div>
-            <div className="border border-slate-200 rounded-lg overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="text-left px-2 py-2 font-medium text-slate-600 min-w-[200px]">Item</th>
-                    <th className="text-right px-2 py-2 font-medium text-slate-600 w-20">Qty</th>
-                    <th className="text-left px-2 py-2 font-medium text-slate-600 w-20">UoM</th>
-                    <th className="text-right px-2 py-2 font-medium text-slate-600 w-28">Unit Price</th>
-                    <th className="text-right px-2 py-2 font-medium text-slate-600 w-32">Total</th>
-                    <th className="w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((it, idx) => (
-                    <tr key={idx} className="border-b border-slate-100">
-                      <td className="px-2 py-1.5">
-                        <Select value={it.itemId} onValueChange={(v) => updateItem(idx, 'itemId', v)}>
-                          <SelectTrigger className="h-8"><SelectValue placeholder="Select item" /></SelectTrigger>
-                          <SelectContent>
-                            {dbItems.map(i => <SelectItem key={i.id} value={i.id}>{i.name} ({i.uom.name})</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <Input
-                          type="number"
-                          value={it.qty}
-                          onChange={e => updateItem(idx, 'qty', parseFloat(e.target.value) || 0)}
-                          className="h-8 text-right"
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 text-slate-600">{it.uom || '-'}</td>
-                      <td className="px-2 py-1.5">
-                        <Input
-                          type="number"
-                          value={it.unitPrice}
-                          onChange={e => updateItem(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          className="h-8 text-right"
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 text-right font-medium">{formatCurrency(it.total)}</td>
-                      <td className="px-2 py-1.5 text-center">
-                        <button
-                          type="button"
-                          onClick={() => removeItem(idx)}
-                          className="text-red-500 hover:text-red-700 p-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Totals */}
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 bg-emerald-50 p-3 rounded-lg">
-              <p className="text-xs text-emerald-700">In Words</p>
-              <p className="text-sm font-medium text-emerald-900 italic mt-1">
-                {numberToWords(grandTotal)}
-              </p>
-            </div>
-            <div className="w-full md:w-72 space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-600">Sub Total</span>
-                <span className="font-medium">{formatCurrency(subTotal)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Discount</span>
-                <Input
-                  type="number"
-                  value={discount}
-                  onChange={e => setDiscount(parseFloat(e.target.value) || 0)}
-                  className="h-7 w-28 text-right"
-                />
-              </div>
-              <div className="flex justify-between text-base border-t border-slate-200 pt-1.5">
-                <span className="font-semibold">Grand Total</span>
-                <span className="font-bold">{formatCurrency(grandTotal)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
-            {saving ? 'Saving...' : order ? 'Update Order' : 'Create Order'}
-          </Button>
-        </DialogFooter>
-
-        {showNewCustomer && (
-          <Dialog open onOpenChange={setShowNewCustomer}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add New Customer</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs">Name *</Label>
-                  <Input value={ncName} onChange={e => setNcName(e.target.value)} />
-                </div>
-                <div>
-                  <Label className="text-xs">Contact Number *</Label>
-                  <Input
-                    value={ncPhone}
-                    onChange={e => setNcPhone(e.target.value)}
-                    placeholder="Unique contact number"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">System will check for duplicates automatically</p>
-                </div>
-                <div>
-                  <Label className="text-xs">Address</Label>
-                  <Textarea value={ncAddress} onChange={e => setNcAddress(e.target.value)} rows={2} />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowNewCustomer(false)}>Cancel</Button>
-                <Button onClick={handleCreateCustomer} className="bg-emerald-600 hover:bg-emerald-700">Add Customer</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         )}
       </DialogContent>
     </Dialog>

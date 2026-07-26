@@ -336,8 +336,17 @@ function makeModel(modelKey: string) {
 
     async create(args: { data: any; include?: any }): Promise<any> {
       const client = getClient()
+      const now = new Date()
       const data: any = { id: cuid(), ...args.data }
-      // Convert dates
+      // Auto-set createdAt if model has it and not provided
+      if (cfg.dateFields.includes('createdAt') && data.createdAt === undefined) {
+        data.createdAt = now
+      }
+      // Auto-set updatedAt if model has it and not provided
+      if (cfg.dateFields.includes('updatedAt') && data.updatedAt === undefined) {
+        data.updatedAt = now
+      }
+      // Convert dates to ISO strings for storage
       for (const k of Object.keys(data)) {
         data[k] = toStorage(data[k])
       }
@@ -355,8 +364,12 @@ function makeModel(modelKey: string) {
 
     async update(args: { where: any; data: any; include?: any }): Promise<any> {
       const client = getClient()
-      const data = args.data
-      // Convert dates
+      const data = { ...args.data }
+      // Auto-set updatedAt if model has it and not explicitly provided
+      if (cfg.dateFields.includes('updatedAt') && data.updatedAt === undefined) {
+        data.updatedAt = new Date()
+      }
+      // Convert dates to ISO strings for storage
       for (const k of Object.keys(data)) {
         data[k] = toStorage(data[k])
       }
