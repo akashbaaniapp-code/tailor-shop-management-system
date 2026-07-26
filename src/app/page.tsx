@@ -11,6 +11,7 @@ export default function Home() {
   // Subscribe to user from store — this re-renders when logout sets it to null
   const user = useAppStore(s => s.user)
   const setUserStore = useAppStore(s => s.setUser)
+  const setAccessibleMenus = useAppStore(s => s.setAccessibleMenus)
   const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
@@ -19,15 +20,12 @@ export default function Home() {
     const cachedUser = getUser()
 
     if (!token) {
-      // No token — nothing to verify. Mark as checked on next microtask
-      // (avoids synchronous setState in effect body lint warning).
       Promise.resolve().then(() => {
         if (!cancelled) setAuthChecked(true)
       })
       return
     }
 
-    // We have a token — verify with backend
     if (cachedUser) setUserStore(cachedUser)
 
     api.me()
@@ -35,6 +33,10 @@ export default function Home() {
         if (cancelled) return
         if (res.user) {
           setUserStore(res.user)
+          // Set accessible menus for sidebar filtering
+          if (res.user.accessibleMenus) {
+            setAccessibleMenus(res.user.accessibleMenus)
+          }
         } else {
           setUserStore(null)
         }
@@ -49,10 +51,16 @@ export default function Home() {
       })
 
     return () => { cancelled = true }
-  }, [setUserStore])
+  }, [setUserStore, setAccessibleMenus])
 
   function handleLogin(u: any) {
     setUserStore(u)
+    if (u?.accessibleMenus) {
+      setAccessibleMenus(u.accessibleMenus)
+    } else {
+      // Default to all menus if not provided
+      setAccessibleMenus(['*'])
+    }
   }
 
   if (!authChecked) {

@@ -22,6 +22,7 @@ import {
   UserCog,
   FileText,
   TrendingUp,
+  TrendingDown,
   Receipt,
   Tag,
   Layers,
@@ -52,6 +53,7 @@ import ReportPnl from '@/components/views/ReportPnl'
 import ReportReceivable from '@/components/views/ReportReceivable'
 import ReportPayable from '@/components/views/ReportPayable'
 import ReportOrders from '@/components/views/ReportOrders'
+import ReportExpense from '@/components/views/ReportExpense'
 
 interface NavGroup {
   label: string
@@ -88,7 +90,8 @@ const navGroups: NavGroup[] = [
       { key: 'report-pnl', label: 'P&L Report', icon: TrendingUp },
       { key: 'report-receivable', label: 'Receivable', icon: Receipt },
       { key: 'report-payable', label: 'Payable', icon: Wallet },
-      { key: 'report-orders', label: 'Order Report', icon: BarChart3 }
+      { key: 'report-orders', label: 'Order Report', icon: BarChart3 },
+      { key: 'report-expense', label: 'Expense Report', icon: TrendingDown }
     ]
   }
 ]
@@ -116,12 +119,23 @@ const viewTitles: Record<ViewKey, string> = {
   'report-pnl': 'P&L Report',
   'report-receivable': 'Receivable Report',
   'report-payable': 'Payable Report',
-  'report-orders': 'Order Report'
+  'report-orders': 'Order Report',
+  'report-expense': 'Expense Report'
 }
 
 export default function AppShell() {
-  const { currentView, setView, user, setUser, selectedOrderId } = useAppStore()
+  const { currentView, setView, user, setUser, selectedOrderId, accessibleMenus } = useAppStore()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Filter nav groups to only show menus the user can access.
+  // accessibleMenus === ['*'] means admin (all menus).
+  const isAllAccess = accessibleMenus.includes('*')
+  const filteredNavGroups = isAllAccess
+    ? navGroups
+    : navGroups.map(g => ({
+        ...g,
+        items: g.items.filter(item => accessibleMenus.includes(item.key))
+      })).filter(g => g.items.length > 0)
 
   useEffect(() => {
     setMobileOpen(false)
@@ -133,6 +147,7 @@ export default function AppShell() {
     } catch {}
     clearToken()
     setUser(null)
+    useAppStore.getState().setAccessibleMenus(['*'])
     toast.success('Logged out')
   }
 
@@ -160,6 +175,7 @@ export default function AppShell() {
       case 'report-receivable': return <ReportReceivable />
       case 'report-payable': return <ReportPayable />
       case 'report-orders': return <ReportOrders />
+      case 'report-expense': return <ReportExpense />
       default: return <Dashboard />
     }
   }
@@ -173,6 +189,7 @@ export default function AppShell() {
         <SidebarContent
           currentView={currentView}
           setView={setView}
+          navGroups={filteredNavGroups}
         />
       </aside>
 
@@ -180,16 +197,17 @@ export default function AppShell() {
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-64 flex flex-col bg-white shadow-xl">
+          <aside className="relative w-64 flex-col bg-white shadow-xl flex">
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 p-1 rounded hover:bg-slate-100"
+              className="absolute top-4 right-4 p-1 rounded hover:bg-slate-100 z-10"
             >
               <X className="w-5 h-5" />
             </button>
             <SidebarContent
               currentView={currentView}
               setView={setView}
+              navGroups={filteredNavGroups}
             />
           </aside>
         </div>
@@ -237,10 +255,12 @@ export default function AppShell() {
 
   function SidebarContent({
     currentView,
-    setView
+    setView,
+    navGroups
   }: {
     currentView: ViewKey
     setView: (v: ViewKey) => void
+    navGroups: NavGroup[]
   }) {
     return (
       <>

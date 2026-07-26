@@ -241,6 +241,7 @@ interface ModelConfig {
 
 const MODEL_CONFIG: Record<string, ModelConfig> = {
   user: { name: 'User', dateFields: ['createdAt', 'updatedAt'] },
+  userPermission: { name: 'UserPermission', dateFields: ['createdAt', 'updatedAt'] },
   uoM: { name: 'UoM', dateFields: ['createdAt', 'updatedAt'] },
   item: { name: 'Item', dateFields: ['createdAt', 'updatedAt'] },
   tailor: { name: 'Tailor', dateFields: ['createdAt', 'updatedAt'] },
@@ -536,7 +537,8 @@ function makeModel(modelKey: string) {
 // ---- Includes loader ----
 // Maps model name -> { relationName: { model, foreignKey, isList, isOptional } }
 const RELATIONS: Record<string, Record<string, { model: string; fk: string; isList: boolean; isOptional: boolean }>> = {
-  user: {},
+  user: { permissions: { model: 'userPermission', fk: 'userId', isList: true, isOptional: false } },
+  userPermission: { user: { model: 'user', fk: 'userId', isList: false, isOptional: false } },
   uoM: { items: { model: 'item', fk: 'uomId', isList: true, isOptional: false } },
   item: { uom: { model: 'uoM', fk: 'uomId', isList: false, isOptional: false } },
   tailor: { orders: { model: 'salesOrder', fk: 'tailorId', isList: true, isOptional: true } },
@@ -716,6 +718,7 @@ const transactionClient = {
 // ---- Build the db object ----
 export const db: any = {
   user: makeModel('user'),
+  userPermission: makeModel('userPermission'),
   uoM: makeModel('uoM'),
   item: makeModel('item'),
   tailor: makeModel('tailor'),

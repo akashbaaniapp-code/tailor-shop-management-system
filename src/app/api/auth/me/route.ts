@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSession, ensureSeedUser } from '@/lib/auth'
+import { getSession, ensureSeedUser, getUserAccessibleMenus } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   await ensureSeedUser()
@@ -7,5 +7,9 @@ export async function GET(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ user: null }, { status: 200 })
   }
-  return NextResponse.json({ user })
+
+  // Fetch accessible menus for sidebar filtering
+  const accessibleMenus = await getUserAccessibleMenus(user.id)
+
+  return NextResponse.json({ user: { ...user, accessibleMenus } })
 }

@@ -24,6 +24,7 @@ export type ViewKey =
   | 'report-receivable'
   | 'report-payable'
   | 'report-orders'
+  | 'report-expense'
 
 // Map view keys to URL ?view= values (kept short for cleaner URLs)
 const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
@@ -48,7 +49,8 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'report-pnl': 'report-pnl',
   'report-receivable': 'report-receivable',
   'report-payable': 'report-payable',
-  'report-orders': 'report-orders'
+  'report-orders': 'report-orders',
+  'report-expense': 'report-expense'
 }
 
 const URL_TO_VIEW: Record<string, ViewKey> = Object.entries(VIEW_TO_URL).reduce(
@@ -82,6 +84,10 @@ interface AppState {
   setSelectedOrderId: (id: string | null) => void
   selectedExpenseId: string | null
   setSelectedExpenseId: (id: string | null) => void
+  // List of menu keys the current user can access.
+  // ['*'] means all menus (admin). Empty array means none (will be refetched).
+  accessibleMenus: string[]
+  setAccessibleMenus: (menus: string[]) => void
 }
 
 function getInitialView(): ViewKey {
@@ -106,7 +112,9 @@ export const useAppStore = create<AppState>((set) => ({
   selectedOrderId: null,
   setSelectedOrderId: (id) => set({ selectedOrderId: id }),
   selectedExpenseId: null,
-  setSelectedExpenseId: (id) => set({ selectedExpenseId: id })
+  setSelectedExpenseId: (id) => set({ selectedExpenseId: id }),
+  accessibleMenus: ['*'], // default to all; will be overridden after /api/auth/me
+  setAccessibleMenus: (menus) => set({ accessibleMenus: menus })
 }))
 
 // Listen for browser back/forward to update the store

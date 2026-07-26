@@ -49,6 +49,78 @@ export async function requireAuth(request: NextRequest) {
   return { user, response: null }
 }
 
+/**
+ * Check if a user has permission to perform an action on a menu.
+ * Admins always have full access. Other users are checked against
+ * their UserPermission records.
+ *
+ * @param userId - User ID
+ * @param menuKey - Menu key (e.g. 'sales-orders', 'delivery', 'expense-entry')
+ * @param action - 'view' | 'create' | 'edit' | 'delete'
+ */
+export async function checkPermission(
+  userId: string,
+  menuKey: string,
+  action: 'view' | 'create' | 'edit' | 'delete'
+): Promise<boolean> {
+  // Look up user
+  const user = await db.user.findUnique({ where: { id: userId } })
+  if (!user) return false
+
+  // Admins have full access
+  if (user.role === 'admin') return true
+
+  // Find any permission row where menuAccess includes this menuKey
+  const permissions = await db.userPermission.findMany({
+    where: { userId }
+  })
+
+  for (const p of permissions as any[]) {
+    let menuAccess: string[] = []
+    try {
+      menuAccess = p.menuAccess ? JSON.parse(p.menuAccess) : []
+    } catch {
+      menuAccess = []
+    }
+    if (!menuAccess.includes(menuKey)) continue
+
+    // Check the action bit
+    if (action === 'view' && p.canView) return true
+    if (action === 'create' && p.canCreate) return true
+    if (action === 'edit' && p.canEdit) return true
+    if (action === 'delete' && p.canDelete) return true
+  }
+
+  return false
+}
+
+/**
+ * Get all menu keys the user has view access to.
+ * Used by /api/auth/me to send permissions to the client for sidebar filtering.
+ */
+export async function getUserAccessibleMenus(userId: string): Promise<string[]> {
+  const user = await db.user.findUnique({ where: { id: userId } })
+  if (!user) return []
+  if (user.role === 'admin') return ['*'] // wildcard = all menus
+
+  const permissions = await db.userPermission.findMany({
+    where: { userId }
+  })
+
+  const menus = new Set<string>()
+  for (const p of permissions as any[]) {
+    if (!p.canView) continue
+    let menuAccess: string[] = []
+    try {
+      menuAccess = p.menuAccess ? JSON.parse(p.menuAccess) : []
+    } catch {
+      menuAccess = []
+    }
+    menuAccess.forEach(m => menus.add(m))
+  }
+  return Array.from(menus)
+}
+
 export async function ensureSeedUser() {
   // Check if admin user already exists
   const existing = await db.user.findUnique({ where: { username: 'admin' } })

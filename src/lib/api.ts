@@ -188,6 +188,13 @@ export const api = {
   updateUser: (data: any) => apiFetch('/api/users', { method: 'PUT', body: JSON.stringify(data) }),
   deleteUser: (id: string) => apiFetch(`/api/users?id=${id}`, { method: 'DELETE' }),
 
+  // User Permissions
+  getUserPermissions: (userId: string) => apiFetch(`/api/users/${userId}/permissions`),
+  saveUserPermissions: (userId: string, permissions: any[]) =>
+    apiFetch(`/api/users/${userId}/permissions`, { method: 'PUT', body: JSON.stringify({ permissions }) }),
+  clearUserPermissions: (userId: string) =>
+    apiFetch(`/api/users/${userId}/permissions`, { method: 'DELETE' }),
+
   // Entities
   listEntities: () => apiFetch('/api/entities'),
   createEntity: (data: any) => apiFetch('/api/entities', { method: 'POST', body: JSON.stringify(data) }),
@@ -228,6 +235,16 @@ export const api = {
     if (params?.to) q.set('to', params.to)
     if (params?.status) q.set('status', params.status)
     return apiFetch(`/api/reports/orders${q.toString() ? `?${q}` : ''}`)
+  },
+
+  // Expense Report
+  expenseReport: (params?: { from?: string; to?: string; headId?: string; groupBy?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.from) q.set('from', params.from)
+    if (params?.to) q.set('to', params.to)
+    if (params?.headId) q.set('headId', params.headId)
+    if (params?.groupBy) q.set('groupBy', params.groupBy)
+    return apiFetch(`/api/reports/expense${q.toString() ? `?${q}` : ''}`)
   }
 }
 

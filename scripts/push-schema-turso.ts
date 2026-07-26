@@ -102,6 +102,21 @@ const statements = [
   `ALTER TABLE "SubEntity" ADD COLUMN "address" TEXT`,
   `ALTER TABLE "SubEntity" ADD COLUMN "contactNumber" TEXT`,
 
+  `CREATE TABLE IF NOT EXISTS "UserPermission" (
+    "id" TEXT PRIMARY KEY NOT NULL,
+    "userId" TEXT NOT NULL,
+    "entityId" TEXT,
+    "subEntityId" TEXT,
+    "menuAccess" TEXT,
+    "canView" INTEGER NOT NULL DEFAULT 1,
+    "canCreate" INTEGER NOT NULL DEFAULT 0,
+    "canEdit" INTEGER NOT NULL DEFAULT 0,
+    "canDelete" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    FOREIGN KEY ("userId") REFERENCES "User"("id") ON UPDATE CASCADE ON DELETE CASCADE
+  )`,
+
   `CREATE TABLE IF NOT EXISTS "SalesOrder" (
     "id" TEXT PRIMARY KEY NOT NULL,
     "orderId" TEXT NOT NULL UNIQUE,
@@ -265,6 +280,7 @@ async function main() {
     `CREATE INDEX IF NOT EXISTS "idx_expenseHead_name" ON "ExpenseHead"("name")`,
     `CREATE INDEX IF NOT EXISTS "idx_entity_name" ON "Entity"("name")`,
     `CREATE INDEX IF NOT EXISTS "idx_subEntity_entityId" ON "SubEntity"("entityId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_userPermission_userId" ON "UserPermission"("userId")`,
     `CREATE INDEX IF NOT EXISTS "idx_income_incomeDate" ON "Income"("incomeDate")`,
     `CREATE INDEX IF NOT EXISTS "idx_payablePayment_payableId" ON "PayablePayment"("payableId")`,
     `CREATE INDEX IF NOT EXISTS "idx_payable_status" ON "Payable"("status")`
