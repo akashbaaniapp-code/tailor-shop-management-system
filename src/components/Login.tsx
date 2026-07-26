@@ -58,12 +58,8 @@ export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
         `,
       }}
     >
-      {/* Font import via style tag for Space Grotesk */}
+      {/* Animated shapes */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-        .login-card, .login-card * {
-          font-family: 'Space Grotesk', sans-serif !important;
-        }
         @keyframes floatAnimation {
           0% { transform: translate(0, 0) scale(1) rotate(0deg); }
           33% { transform: translate(30px, -40px) scale(1.1) rotate(120deg); }
