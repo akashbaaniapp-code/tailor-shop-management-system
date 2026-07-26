@@ -19,31 +19,56 @@ export async function GET(request: NextRequest) {
   const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
 
-  // ONE query for all monthly sales + orders for the last 12 months
-  // GROUP BY year-month
-  const monthlyOrdersRes = await client.execute({
-    sql: `SELECT
-            strftime('%Y-%m', orderDate) as ym,
-            COUNT(*) as cnt,
-            COALESCE(SUM(grandTotal), 0) as sales
-          FROM "SalesOrder"
-          WHERE orderDate >= ?
-          GROUP BY ym
-          ORDER BY ym`,
-    args: [yearAgoStart.toISOString()]
-  })
+  // BATCH all 3 queries in a SINGLE HTTP round-trip to Turso.
+  // This is critical because Turso is in Mumbai and Vercel is in USA —
+  // each round trip costs ~250ms. 3 sequential queries = 750ms.
+  // batch() sends all 3 in one HTTP request → ~250ms total.
+  const batchResults = await client.batch([
+    {
+      sql: `SELECT
+              strftime('%Y-%m', orderDate) as ym,
+              COUNT(*) as cnt,
+              COALESCE(SUM(grandTotal), 0) as sales
+            FROM "SalesOrder"
+            WHERE orderDate >= ?
+            GROUP BY ym
+            ORDER BY ym`,
+      args: [yearAgoStart.toISOString()]
+    },
+    {
+      sql: `SELECT
+              strftime('%Y-%m', collectDate) as ym,
+              COALESCE(SUM(amount), 0) as collected
+            FROM "BillCollection"
+            WHERE collectDate >= ?
+            GROUP BY ym
+            ORDER BY ym`,
+      args: [yearAgoStart.toISOString()]
+    },
+    {
+      sql: `SELECT
+              (SELECT COUNT(*) FROM "SalesOrder") as totalOrders,
+              (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder") as totalSales,
+              (SELECT COALESCE(SUM(amount), 0) FROM "BillCollection") as totalCollected,
+              (SELECT COALESCE(SUM(dueAmount), 0) FROM "SalesOrder") as totalDue,
+              (SELECT COUNT(*) FROM "Customer") as totalCustomers,
+              (SELECT COUNT(*) FROM "Tailor") as totalTailors,
+              (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'full_pending') as pending,
+              (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'partial_pending') as partial,
+              (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'full_delivered') as delivered,
+              (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder" WHERE orderDate >= ?) as thisMonthSales,
+              (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder" WHERE orderDate >= ? AND orderDate <= ?) as prevMonthSales`,
+      args: [
+        thisMonthStart.toISOString(),
+        prevMonthStart.toISOString(),
+        prevMonthEnd.toISOString()
+      ]
+    }
+  ], 'read')
 
-  // ONE query for all monthly collections for the last 12 months
-  const monthlyBillsRes = await client.execute({
-    sql: `SELECT
-            strftime('%Y-%m', collectDate) as ym,
-            COALESCE(SUM(amount), 0) as collected
-          FROM "BillCollection"
-          WHERE collectDate >= ?
-          GROUP BY ym
-          ORDER BY ym`,
-    args: [yearAgoStart.toISOString()]
-  })
+  const monthlyOrdersRes = batchResults[0]
+  const monthlyBillsRes = batchResults[1]
+  const summaryRes = batchResults[2]
 
   // Build month lookup maps
   const salesByMonth: Record<string, { sales: number; orders: number }> = {}
@@ -69,27 +94,7 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  // ONE query for ALL summary totals using subqueries (avoids 6 round trips)
-  const summaryRes = await client.execute({
-    sql: `SELECT
-            (SELECT COUNT(*) FROM "SalesOrder") as totalOrders,
-            (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder") as totalSales,
-            (SELECT COALESCE(SUM(amount), 0) FROM "BillCollection") as totalCollected,
-            (SELECT COALESCE(SUM(dueAmount), 0) FROM "SalesOrder") as totalDue,
-            (SELECT COUNT(*) FROM "Customer") as totalCustomers,
-            (SELECT COUNT(*) FROM "Tailor") as totalTailors,
-            (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'full_pending') as pending,
-            (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'partial_pending') as partial,
-            (SELECT COUNT(*) FROM "SalesOrder" WHERE status = 'full_delivered') as delivered,
-            (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder" WHERE orderDate >= ?) as thisMonthSales,
-            (SELECT COALESCE(SUM(grandTotal), 0) FROM "SalesOrder" WHERE orderDate >= ? AND orderDate <= ?) as prevMonthSales`,
-    args: [
-      thisMonthStart.toISOString(),
-      prevMonthStart.toISOString(),
-      prevMonthEnd.toISOString()
-    ]
-  })
-
+  // Summary totals — already fetched in parallel above
   const summaryRow = summaryRes.rows[0] as any
   const thisMonthSales = Number(summaryRow.thisMonthSales) || 0
   const prevMonthSales = Number(summaryRow.prevMonthSales) || 0

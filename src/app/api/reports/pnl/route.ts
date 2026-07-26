@@ -45,49 +45,52 @@ export async function GET(request: NextRequest) {
     endISO = end.toISOString()
   }
 
-  // Run all 5 GROUP BY queries in parallel — much faster than sequential
-  const [salesRes, collectedRes, expensesRes, incomesRes, payablesRes] = await Promise.all([
-    client.execute({
+  // BATCH all 5 GROUP BY queries in a SINGLE HTTP round-trip to Turso.
+  // Critical for cross-region latency (Vercel USA ↔ Turso Mumbai).
+  const batchResults = await client.batch([
+    {
       sql: `SELECT strftime('${periodFormat}', orderDate) as bucket,
                    COALESCE(SUM(grandTotal), 0) as sales
             FROM "SalesOrder"
             WHERE orderDate >= ? AND orderDate <= ?
             GROUP BY bucket`,
       args: [startISO, endISO]
-    }),
-    client.execute({
+    },
+    {
       sql: `SELECT strftime('${periodFormat}', collectDate) as bucket,
                    COALESCE(SUM(amount), 0) as collected
             FROM "BillCollection"
             WHERE collectDate >= ? AND collectDate <= ?
             GROUP BY bucket`,
       args: [startISO, endISO]
-    }),
-    client.execute({
+    },
+    {
       sql: `SELECT strftime('${periodFormat}', expenseDate) as bucket,
                    COALESCE(SUM(amount), 0) as expense
             FROM "Expense"
             WHERE expenseDate >= ? AND expenseDate <= ?
             GROUP BY bucket`,
       args: [startISO, endISO]
-    }),
-    client.execute({
+    },
+    {
       sql: `SELECT strftime('${periodFormat}', incomeDate) as bucket,
                    COALESCE(SUM(amount), 0) as income
             FROM "Income"
             WHERE incomeDate >= ? AND incomeDate <= ?
             GROUP BY bucket`,
       args: [startISO, endISO]
-    }),
-    client.execute({
+    },
+    {
       sql: `SELECT strftime('${periodFormat}', payDate) as bucket,
                    COALESCE(SUM(amount), 0) as payablePaid
             FROM "PayablePayment"
             WHERE payDate >= ? AND payDate <= ?
             GROUP BY bucket`,
       args: [startISO, endISO]
-    })
-  ])
+    }
+  ], 'read')
+
+  const [salesRes, collectedRes, expensesRes, incomesRes, payablesRes] = batchResults
 
   // Merge results into a single map keyed by bucket
   type Row = { label: string; sales: number; collected: number; expense: number; otherIncome: number; payablePaid: number; netProfit: number }

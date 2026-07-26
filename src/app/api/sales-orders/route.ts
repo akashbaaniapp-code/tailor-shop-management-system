@@ -67,12 +67,13 @@ export async function GET(request: NextRequest) {
     return order
   })
 
-  // BATCH load items + nested item.uom for all orders in ONE query each
+  // BATCH load items + nested item.uom for all orders in a single HTTP round-trip.
+  // (Vercel USA ↔ Turso Mumbai: each round trip costs ~250ms.)
   if (orders.length > 0) {
     const orderIds = orders.map(o => o.id)
     const placeholders = orderIds.map(() => '?').join(',')
 
-    // Get all SalesOrderItem rows for these orders
+    // Get all SalesOrderItem rows for these orders (single query)
     const itemsRes = await client.execute({
       sql: `SELECT soi.*, i.name as "item.name", i.unitPrice as "item.unitPrice",
                    i.uomId as "item.uomId", u.name as "item.uom.name", u.id as "item.uom.id"
