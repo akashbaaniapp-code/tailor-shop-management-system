@@ -35,9 +35,17 @@ Open http://localhost:3000 and login with `admin / admin123`.
 
 1. Create a free account at https://turso.tech
 2. Create a new database (e.g. `tailor-shop`)
-3. Run `turso db tokens create tailor-shop` to get an auth token
-4. Get the URL via `turso db show tailor-shop --url`
-5. Push schema: `DATABASE_URL=libsql://... DATABASE_AUTH_TOKEN=... bun run db:push`
+3. Generate an auth token from the Turso dashboard (database → Settings → Tokens)
+4. Get the URL from the dashboard (looks like `libsql://your-db.your-org.turso.io`)
+5. Push schema + seed admin user:
+   ```bash
+   DATABASE_URL=libsql://your-db.your-org.turso.io \
+   DATABASE_AUTH_TOKEN=your-token \
+   bun run db:push:turso
+   ```
+
+> **Note:** `bun run db:push` (Prisma's native command) doesn't support libSQL URLs.
+> Use `db:push:turso` which uses the libSQL client directly.
 
 ## Default Login
 - Username: `admin`
