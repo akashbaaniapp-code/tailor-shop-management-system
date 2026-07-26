@@ -7,46 +7,52 @@ import { api, getToken, getUser } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { Skeleton } from '@/components/ui/skeleton'
 
-function getInitialUser() {
-  if (typeof window === 'undefined') return null
-  return getUser()
-}
-
-function getInitialAuthChecked() {
-  if (typeof window === 'undefined') return false
-  // No token? Nothing to verify, mark checked.
-  return !getToken()
-}
-
 export default function Home() {
-  const [user, setLocalUser] = useState(getInitialUser)
-  const [authChecked, setAuthChecked] = useState(getInitialAuthChecked)
+  // IMPORTANT: Initial state MUST be identical on server and client to avoid
+  // React hydration mismatch (error #418). We start in "loading" state and
+  // resolve the actual state inside useEffect (which only runs on client).
+  const [user, setLocalUser] = useState<any>(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const setUserStore = useAppStore(s => s.setUser)
 
   useEffect(() => {
+    let cancelled = false
     const token = getToken()
     const cachedUser = getUser()
-    if (!token) return
+
+    if (!token) {
+      // No token — nothing to verify. Mark as checked on next microtask
+      // (avoids synchronous setState in effect body lint warning).
+      Promise.resolve().then(() => {
+        if (!cancelled) setAuthChecked(true)
+      })
+      return
+    }
+
     // We have a token — verify with backend
     if (cachedUser) setUserStore(cachedUser)
-    let cancelled = false
-    api.me().then(res => {
-      if (cancelled) return
-      if (res.user) {
-        setLocalUser(res.user)
-        setUserStore(res.user)
-      } else {
+
+    api.me()
+      .then(res => {
+        if (cancelled) return
+        if (res.user) {
+          setLocalUser(res.user)
+          setUserStore(res.user)
+        } else {
+          setLocalUser(null)
+          setUserStore(null)
+        }
+      })
+      .catch(() => {
+        if (cancelled) return
         setLocalUser(null)
         setUserStore(null)
-      }
-    }).catch(() => {
-      if (cancelled) return
-      setLocalUser(null)
-      setUserStore(null)
-    }).finally(() => {
-      if (cancelled) return
-      setAuthChecked(true)
-    })
+      })
+      .finally(() => {
+        if (cancelled) return
+        setAuthChecked(true)
+      })
+
     return () => { cancelled = true }
   }, [setUserStore])
 
@@ -54,11 +60,6 @@ export default function Home() {
     setLocalUser(u)
     setUserStore(u)
   }
-
-  // Sync store user with local user
-  useEffect(() => {
-    if (user) setUserStore(user)
-  }, [user, setUserStore])
 
   if (!authChecked) {
     return (
