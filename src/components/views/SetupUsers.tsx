@@ -1,15 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, Trash2, Edit, UserCog, Shield, Lock, Save } from 'lucide-react'
+import { Plus, Trash2, Edit, UserCog, Lock, Save, CheckCircle2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
@@ -22,11 +15,17 @@ interface User {
   createdAt: string
 }
 
-const ROLE_LABELS: Record<string, { label: string; className: string; desc: string }> = {
-  admin: { label: 'Admin', className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100', desc: 'Full access — can manage users, settings, all data' },
-  manager: { label: 'Manager', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100', desc: 'Can create/edit orders, deliveries, expenses; no user management' },
-  staff: { label: 'Staff', className: 'bg-slate-100 text-slate-700 hover:bg-slate-100', desc: 'Custom access defined by permissions below' }
+const ROLE_BADGE: Record<string, { label: string; color: string; borderColor: string }> = {
+  admin: { label: 'Admin', color: '#1db954', borderColor: '#1db954' },
+  manager: { label: 'Manager', color: '#3498db', borderColor: '#3498db' },
+  staff: { label: 'Staff', color: '#d4df3a', borderColor: '#d4df3a' },
 }
+
+const ROLE_ROWS: { key: string; label: string; color: string; borderColor: string; desc: string }[] = [
+  { key: 'admin', label: 'Admin', color: '#1db954', borderColor: '#1db954', desc: 'Full access — can manage users, settings, all data' },
+  { key: 'manager', label: 'Manager', color: '#3498db', borderColor: '#3498db', desc: 'Can create/edit orders, deliveries, expenses; no user management.' },
+  { key: 'staff', label: 'Staff', color: '#d4df3a', borderColor: '#d4df3a', desc: 'Custom access defined by permissions below' },
+]
 
 // All menu items available for permission assignment
 const MENU_ITEMS = [
@@ -46,7 +45,7 @@ const MENU_ITEMS = [
   { key: 'report-receivable', label: 'Receivable Report' },
   { key: 'report-payable', label: 'Payable Report' },
   { key: 'report-orders', label: 'Order Report' },
-  { key: 'report-expense', label: 'Expense Report' }
+  { key: 'report-expense', label: 'Expense Report' },
 ]
 
 interface Permission {
@@ -63,8 +62,8 @@ interface Permission {
 }
 
 export default function SetupUsers() {
-  const setView = useAppStore(s => s.setView)
-  const setSelectedUserId = useAppStore(s => s.setSelectedUserId)
+  const setView = useAppStore((s) => s.setView)
+  const setSelectedUserId = useAppStore((s) => s.setSelectedUserId)
   const [items, setItems] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -76,7 +75,9 @@ export default function SetupUsers() {
   const [subEntities, setSubEntities] = useState<any[]>([])
   const [savingPerms, setSavingPerms] = useState(false)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -103,7 +104,9 @@ export default function SetupUsers() {
   async function handleDelete(id: string) {
     if (!confirm('Delete this user? They will no longer be able to log in.')) return
     try {
-      await api.deleteUser(id); toast.success('User deleted'); load()
+      await api.deleteUser(id)
+      toast.success('User deleted')
+      load()
     } catch (err: any) {
       toast.error(err.message)
     }
@@ -117,14 +120,23 @@ export default function SetupUsers() {
       const [permRes, entRes, subRes] = await Promise.all([
         api.getUserPermissions(user.id),
         api.listEntities(),
-        api.listSubEntities()
+        api.listSubEntities(),
       ])
-      setPermissions(permRes.permissions?.length ? permRes.permissions : [{
-        menuAccess: [],
-        entityIds: [],
-        subEntityIds: [],
-        canView: true, canCreate: false, canEdit: false, canDelete: false
-      }])
+      setPermissions(
+        permRes.permissions?.length
+          ? permRes.permissions
+          : [
+              {
+                menuAccess: [],
+                entityIds: [],
+                subEntityIds: [],
+                canView: true,
+                canCreate: false,
+                canEdit: false,
+                canDelete: false,
+              },
+            ]
+      )
       setEntities(entRes.items)
       setSubEntities(subRes.items)
     } catch (err: any) {
@@ -133,12 +145,18 @@ export default function SetupUsers() {
   }
 
   function addPermissionRow() {
-    setPermissions([...permissions, {
-      menuAccess: [],
-      entityIds: [],
-      subEntityIds: [],
-      canView: true, canCreate: false, canEdit: false, canDelete: false
-    }])
+    setPermissions([
+      ...permissions,
+      {
+        menuAccess: [],
+        entityIds: [],
+        subEntityIds: [],
+        canView: true,
+        canCreate: false,
+        canEdit: false,
+        canDelete: false,
+      },
+    ])
   }
 
   function removePermissionRow(idx: number) {
@@ -155,7 +173,7 @@ export default function SetupUsers() {
     const next = [...permissions]
     const current = next[idx].menuAccess
     if (current.includes(menuKey)) {
-      next[idx].menuAccess = current.filter(m => m !== menuKey)
+      next[idx].menuAccess = current.filter((m) => m !== menuKey)
     } else {
       next[idx].menuAccess = [...current, menuKey]
     }
@@ -166,12 +184,12 @@ export default function SetupUsers() {
     const next = [...permissions]
     const current = next[idx].entityIds || []
     if (current.includes(entityId)) {
-      next[idx].entityIds = current.filter(id => id !== entityId)
+      next[idx].entityIds = current.filter((id) => id !== entityId)
       // Also remove any sub-entities that belong to this entity
       const subIdsToRemove = new Set(
-        subEntities.filter(s => s.entityId === entityId).map(s => s.id)
+        subEntities.filter((s) => s.entityId === entityId).map((s) => s.id)
       )
-      next[idx].subEntityIds = (next[idx].subEntityIds || []).filter(id => !subIdsToRemove.has(id))
+      next[idx].subEntityIds = (next[idx].subEntityIds || []).filter((id) => !subIdsToRemove.has(id))
     } else {
       next[idx].entityIds = [...current, entityId]
     }
@@ -182,11 +200,11 @@ export default function SetupUsers() {
     const next = [...permissions]
     const current = next[idx].subEntityIds || []
     if (current.includes(subEntityId)) {
-      next[idx].subEntityIds = current.filter(id => id !== subEntityId)
+      next[idx].subEntityIds = current.filter((id) => id !== subEntityId)
     } else {
       next[idx].subEntityIds = [...current, subEntityId]
       // Auto-select parent entity if not already selected
-      const sub = subEntities.find(s => s.id === subEntityId)
+      const sub = subEntities.find((s) => s.id === subEntityId)
       if (sub && !(next[idx].entityIds || []).includes(sub.entityId)) {
         next[idx].entityIds = [...(next[idx].entityIds || []), sub.entityId]
       }
@@ -209,250 +227,736 @@ export default function SetupUsers() {
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-slate-600">Manage system users and their access rights</p>
-              <div className="mt-2 space-y-1">
-                {Object.entries(ROLE_LABELS).map(([key, val]) => (
-                  <div key={key} className="text-xs flex items-start gap-2">
-                    <Badge variant="secondary" className={val.className}>{val.label}</Badge>
-                    <span className="text-slate-500">{val.desc}</span>
-                  </div>
-                ))}
-              </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
+      {/* Control Card */}
+      <div
+        style={{
+          background: '#14161a',
+          border: '1px solid #2a2d33',
+          borderRadius: 16,
+          padding: 25,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'stretch',
+          gap: 20,
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 14, color: '#e8eae9', lineHeight: 1.6, margin: 0 }}>
+            Manage system users and their access rights
+          </p>
+          {ROLE_ROWS.map((role, i) => (
+            <div
+              key={role.key}
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 10,
+                alignItems: 'center',
+                marginTop: i === 0 ? 12 : 4,
+              }}
+            >
+              <span
+                style={{
+                  border: `1px solid ${role.borderColor}`,
+                  borderRadius: 20,
+                  padding: '4px 12px',
+                  fontSize: 12,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  color: role.color,
+                }}
+              >
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: role.color,
+                  }}
+                />
+                {role.label}
+              </span>
+              <span style={{ fontSize: 12, color: '#555', marginRight: 5 }}>{role.desc}</span>
             </div>
-            <Button onClick={handleAddNew} className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="w-4 h-4 mr-1" /> Add User
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+        <button
+          onClick={handleAddNew}
+          style={{
+            background: '#1db954',
+            color: '#fff',
+            border: 'none',
+            padding: '10px 24px',
+            borderRadius: 10,
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 14,
+            transition: '0.3s',
+            height: 'fit-content',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = '#1aa34a')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = '#1db954')}
+        >
+          <Plus size={16} /> Add User
+        </button>
+      </div>
 
-      <Card className="border-slate-200">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="p-4 space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
-          ) : items.length === 0 ? (
-            <div className="text-center py-12">
-              <UserCog className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <p className="text-slate-500">No users yet</p>
+      {/* Data Table Card */}
+      <div
+        style={{
+          background: '#14161a',
+          border: '1px solid #2a2d33',
+          borderRadius: 16,
+          overflow: 'hidden',
+        }}
+      >
+        {loading ? (
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} style={{ height: 40, background: '#1f2227', borderRadius: 8 }} />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 56,
+                height: 56,
+                border: '2px solid #2a2d33',
+                borderRadius: 12,
+                marginBottom: 8,
+              }}
+            >
+              <UserCog size={24} color="#666" />
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="text-left px-4 py-2.5 font-medium text-slate-600">Username</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-slate-600">Name</th>
-                    <th className="text-center px-4 py-2.5 font-medium text-slate-600">Role</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-slate-600">Created</th>
-                    <th className="text-center px-4 py-2.5 font-medium text-slate-600">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map(it => (
-                    <tr key={it.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-4 py-2.5 font-medium font-mono text-slate-900">{it.username}</td>
-                      <td className="px-4 py-2.5 text-slate-600">{it.name || '-'}</td>
-                      <td className="px-4 py-2.5 text-center">
-                        <Badge variant="secondary" className={(ROLE_LABELS[it.role] || ROLE_LABELS.staff).className}>
-                          <Shield className="w-3 h-3 mr-1" />
-                          {(ROLE_LABELS[it.role] || ROLE_LABELS.staff).label}
-                        </Badge>
+            <p style={{ color: '#888' }}>No users yet</p>
+            <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+              Add your first system user to get started
+            </p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+              <thead>
+                <tr style={{ background: '#1f2227' }}>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '14px 10px 14px 25px',
+                      color: '#888',
+                      fontWeight: 500,
+                      borderBottom: '1px solid #2a2d33',
+                    }}
+                  >
+                    Username
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '14px 10px',
+                      color: '#888',
+                      fontWeight: 500,
+                      borderBottom: '1px solid #2a2d33',
+                    }}
+                  >
+                    Name
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '14px 10px',
+                      color: '#888',
+                      fontWeight: 500,
+                      borderBottom: '1px solid #2a2d33',
+                    }}
+                  >
+                    Role
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '14px 10px',
+                      color: '#888',
+                      fontWeight: 500,
+                      borderBottom: '1px solid #2a2d33',
+                    }}
+                  >
+                    Created
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'right',
+                      padding: '14px 25px 14px 10px',
+                      color: '#888',
+                      fontWeight: 500,
+                      borderBottom: '1px solid #2a2d33',
+                    }}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((it) => {
+                  const role = ROLE_BADGE[it.role] || ROLE_BADGE.staff
+                  return (
+                    <tr
+                      key={it.id}
+                      style={{ borderBottom: '1px solid #1f2227' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <td
+                        style={{
+                          padding: '14px 10px 14px 25px',
+                          color: '#3498db',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {it.username}
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-slate-500">
-                        {new Date(it.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      <td style={{ padding: '14px 10px', color: '#fff', fontWeight: 500 }}>
+                        {it.name || '-'}
                       </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-center gap-1">
+                      <td style={{ padding: '14px 10px' }}>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            fontSize: 12,
+                            fontWeight: 500,
+                            padding: '4px 14px',
+                            borderRadius: 50,
+                            border: `1px solid ${role.borderColor}`,
+                            color: role.color,
+                          }}
+                        >
+                          {role.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 10px', color: '#888' }}>
+                        {new Date(it.createdAt).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </td>
+                      <td style={{ padding: '14px 25px 14px 10px', textAlign: 'right' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: 12,
+                            color: '#666',
+                            justifyContent: 'flex-end',
+                            alignItems: 'center',
+                          }}
+                        >
                           {it.role !== 'admin' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
+                            <button
                               onClick={() => openPermissions(it)}
                               title="Set Permissions"
-                              className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                              style={{
+                                background: '#0b0d0f',
+                                border: '1px solid #2a2d33',
+                                color: '#e8eae9',
+                                padding: '4px 12px',
+                                borderRadius: 20,
+                                fontSize: 12,
+                                fontWeight: 500,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                cursor: 'pointer',
+                                transition: '0.3s',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = '#d4df3a'
+                                e.currentTarget.style.color = '#d4df3a'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = '#2a2d33'
+                                e.currentTarget.style.color = '#e8eae9'
+                              }}
                             >
-                              <Lock className="w-3 h-3 mr-1" /> Permissions
-                            </Button>
+                              <CheckCircle2 size={12} /> Permissions
+                            </button>
                           )}
-                          <Button size="sm" variant="ghost" onClick={() => handleEdit(it)} title="Edit">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDelete(it.id)} title="Delete">
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
+                          <button
+                            onClick={() => handleEdit(it)}
+                            title="Edit"
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: '#666',
+                              padding: 0,
+                              display: 'inline-flex',
+                              transition: '0.3s',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#3498db')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(it.id)}
+                            title="Delete"
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: '#666',
+                              padding: 0,
+                              display: 'inline-flex',
+                              transition: '0.3s',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-      {/* Permissions editor dialog (kept as modal — quick configuration) */}
+      {/* Permissions editor dialog */}
       {showPermissions && permUser && (
         <Dialog open onOpenChange={setShowPermissions}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent
+            style={{
+              background: '#1a1c1e',
+              border: '1px solid #2a2d33',
+              maxWidth: '900px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+          >
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Lock className="w-5 h-5 text-emerald-600" />
+              <DialogTitle style={{ color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Lock size={18} color="#d4df3a" />
                 Permissions for {permUser.username}
-                {permUser.name && <span className="text-slate-500 font-normal">({permUser.name})</span>}
+                {permUser.name && (
+                  <span style={{ color: '#888', fontWeight: 400 }}>({permUser.name})</span>
+                )}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="bg-emerald-50 p-3 rounded-lg text-sm">
-                <p className="font-medium text-emerald-900 mb-1">How permissions work:</p>
-                <ul className="text-xs text-emerald-800 space-y-0.5 list-disc pl-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Help box */}
+              <div
+                style={{
+                  background: 'rgba(29, 185, 84, 0.08)',
+                  border: '1px solid rgba(29, 185, 84, 0.3)',
+                  borderRadius: 10,
+                  padding: 12,
+                  fontSize: 13,
+                }}
+              >
+                <p style={{ color: '#1db954', fontWeight: 600, marginBottom: 6 }}>How permissions work:</p>
+                <ul
+                  style={{
+                    color: '#aaa',
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    listStyle: 'disc',
+                    paddingLeft: 16,
+                    margin: 0,
+                  }}
+                >
                   <li>Each row defines a permission set with menu access + action rights</li>
                   <li>Multiple rows can be added — user gets access from all rows combined</li>
                   <li>Select which menus the user can see in the sidebar</li>
-                  <li>Check View/Create/Edit/Delete actions per row</li>
+                  <li>Check View / Create / Edit / Delete actions per row</li>
                   <li>Optionally restrict to specific Entity or Sub-Entity</li>
                 </ul>
               </div>
 
               {permissions.map((perm, idx) => (
-                <Card key={idx} className="border-slate-200">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-900">Permission Set #{idx + 1}</p>
-                      {permissions.length > 1 && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => removePermissionRow(idx)}
-                        >
-                          <Trash2 className="w-3 h-3 text-red-500" />
-                        </Button>
-                      )}
-                    </div>
+                <div
+                  key={idx}
+                  style={{
+                    background: '#0b0d0f',
+                    border: '1px solid #2a2d33',
+                    borderRadius: 12,
+                    padding: 16,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <p style={{ color: '#fff', fontWeight: 600, fontSize: 14, margin: 0 }}>
+                      Permission Set #{idx + 1}
+                    </p>
+                    {permissions.length > 1 && (
+                      <button
+                        onClick={() => removePermissionRow(idx)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#666',
+                          padding: 4,
+                          display: 'inline-flex',
+                          transition: '0.3s',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
 
-                    {/* Menu access */}
-                    <div>
-                      <Label className="text-xs font-semibold">Menu Access (what menus to show in sidebar)</Label>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 p-2 border border-slate-200 rounded">
-                        {MENU_ITEMS.map(m => (
-                          <label key={m.key} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                            <Checkbox
-                              checked={perm.menuAccess.includes(m.key)}
-                              onCheckedChange={() => toggleMenuInPermission(idx, m.key)}
+                  {/* Menu access */}
+                  <div>
+                    <label
+                      style={{
+                        color: '#888',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        display: 'block',
+                        marginBottom: 8,
+                      }}
+                    >
+                      Menu Access (what menus to show in sidebar)
+                    </label>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                        gap: 6,
+                        padding: 8,
+                        border: '1px solid #2a2d33',
+                        borderRadius: 8,
+                        background: '#14161a',
+                      }}
+                    >
+                      {MENU_ITEMS.map((m) => {
+                        const checked = perm.menuAccess.includes(m.key)
+                        return (
+                          <label
+                            key={m.key}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              fontSize: 12,
+                              color: '#ccc',
+                              cursor: 'pointer',
+                              userSelect: 'none',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleMenuInPermission(idx, m.key)}
+                              style={{ accentColor: '#d4df3a', cursor: 'pointer' }}
                             />
                             <span>{m.label}</span>
                           </label>
-                        ))}
-                      </div>
+                        )
+                      })}
                     </div>
+                  </div>
 
-                    {/* Action rights */}
-                    <div>
-                      <Label className="text-xs font-semibold">Action Rights</Label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 p-2 border border-slate-200 rounded">
-                        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                          <Checkbox
-                            checked={perm.canView}
-                            onCheckedChange={(v) => updatePermission(idx, 'canView', !!v)}
+                  {/* Action rights */}
+                  <div>
+                    <label
+                      style={{
+                        color: '#888',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        display: 'block',
+                        marginBottom: 8,
+                      }}
+                    >
+                      Action Rights
+                    </label>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gap: 6,
+                        padding: 8,
+                        border: '1px solid #2a2d33',
+                        borderRadius: 8,
+                        background: '#14161a',
+                      }}
+                    >
+                      {[
+                        { key: 'canView', label: 'Can View' },
+                        { key: 'canCreate', label: 'Can Create' },
+                        { key: 'canEdit', label: 'Can Edit' },
+                        { key: 'canDelete', label: 'Can Delete' },
+                      ].map((a) => (
+                        <label
+                          key={a.key}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            fontSize: 12,
+                            color: '#ccc',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={(perm as any)[a.key]}
+                            onChange={(e) => updatePermission(idx, a.key as keyof Permission, e.target.checked)}
+                            style={{ accentColor: '#d4df3a', cursor: 'pointer' }}
                           />
-                          <span>Can View</span>
+                          <span>{a.label}</span>
                         </label>
-                        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                          <Checkbox
-                            checked={perm.canCreate}
-                            onCheckedChange={(v) => updatePermission(idx, 'canCreate', !!v)}
-                          />
-                          <span>Can Create</span>
-                        </label>
-                        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                          <Checkbox
-                            checked={perm.canEdit}
-                            onCheckedChange={(v) => updatePermission(idx, 'canEdit', !!v)}
-                          />
-                          <span>Can Edit</span>
-                        </label>
-                        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                          <Checkbox
-                            checked={perm.canDelete}
-                            onCheckedChange={(v) => updatePermission(idx, 'canDelete', !!v)}
-                          />
-                          <span>Can Delete</span>
-                        </label>
-                      </div>
+                      ))}
                     </div>
+                  </div>
 
-                    {/* Entity access (multi-select checkboxes) */}
-                    <div>
-                      <Label className="text-xs font-semibold">
-                        Entity Access (select one or more — user will choose which to work in)
-                      </Label>
-                      {entities.length === 0 ? (
-                        <p className="text-xs text-slate-400 italic mt-2 p-2 bg-slate-50 rounded">
-                          No entities created yet. User will have access to all entities by default.
-                        </p>
-                      ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 p-2 border border-slate-200 rounded">
-                          {entities.map((e: any) => (
-                            <label key={e.id} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                              <Checkbox
-                                checked={(perm.entityIds || []).includes(e.id)}
-                                onCheckedChange={() => toggleEntityInPermission(idx, e.id)}
+                  {/* Entity access */}
+                  <div>
+                    <label
+                      style={{
+                        color: '#888',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        display: 'block',
+                        marginBottom: 8,
+                      }}
+                    >
+                      Entity Access (select one or more — user will choose which to work in)
+                    </label>
+                    {entities.length === 0 ? (
+                      <p
+                        style={{
+                          color: '#666',
+                          fontStyle: 'italic',
+                          fontSize: 12,
+                          padding: 8,
+                          background: '#14161a',
+                          borderRadius: 6,
+                          margin: 0,
+                        }}
+                      >
+                        No entities created yet. User will have access to all entities by default.
+                      </p>
+                    ) : (
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                          gap: 6,
+                          padding: 8,
+                          border: '1px solid #2a2d33',
+                          borderRadius: 8,
+                          background: '#14161a',
+                        }}
+                      >
+                        {entities.map((e: any) => {
+                          const checked = (perm.entityIds || []).includes(e.id)
+                          return (
+                            <label
+                              key={e.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: 12,
+                                color: '#ccc',
+                                cursor: 'pointer',
+                                userSelect: 'none',
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleEntityInPermission(idx, e.id)}
+                                style={{ accentColor: '#d4df3a', cursor: 'pointer' }}
                               />
-                              <span className="truncate">{e.name}</span>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {e.name}
+                              </span>
                             </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Sub-Entity access (multi-select, filtered by selected entities) */}
-                    {subEntities.length > 0 && (
-                      <div>
-                        <Label className="text-xs font-semibold">
-                          Sub-Entity Access (optional — select specific sub-entities)
-                        </Label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 p-2 border border-slate-200 rounded max-h-40 overflow-y-auto">
-                          {subEntities
-                            .filter((s: any) => (perm.entityIds || []).length === 0 || (perm.entityIds || []).includes(s.entityId))
-                            .map((s: any) => (
-                              <label key={s.id} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                                <Checkbox
-                                  checked={(perm.subEntityIds || []).includes(s.id)}
-                                  onCheckedChange={() => toggleSubEntityInPermission(idx, s.id)}
-                                />
-                                <span className="truncate">{s.name}</span>
-                                <span className="text-[10px] text-slate-400">({s.entity?.name || entities.find(e => e.id === s.entityId)?.name})</span>
-                              </label>
-                            ))}
-                          {subEntities.filter((s: any) => (perm.entityIds || []).length === 0 || (perm.entityIds || []).includes(s.entityId)).length === 0 && (
-                            <p className="text-xs text-slate-400 italic col-span-3">
-                              Select an entity above to see its sub-entities, or no sub-entities exist.
-                            </p>
-                          )}
-                        </div>
+                          )
+                        })}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+
+                  {/* Sub-Entity access */}
+                  {subEntities.length > 0 && (
+                    <div>
+                      <label
+                        style={{
+                          color: '#888',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          display: 'block',
+                          marginBottom: 8,
+                        }}
+                      >
+                        Sub-Entity Access (optional — select specific sub-entities)
+                      </label>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                          gap: 6,
+                          padding: 8,
+                          border: '1px solid #2a2d33',
+                          borderRadius: 8,
+                          background: '#14161a',
+                          maxHeight: 160,
+                          overflowY: 'auto',
+                        }}
+                      >
+                        {subEntities
+                          .filter(
+                            (s: any) =>
+                              (perm.entityIds || []).length === 0 ||
+                              (perm.entityIds || []).includes(s.entityId)
+                          )
+                          .map((s: any) => {
+                            const checked = (perm.subEntityIds || []).includes(s.id)
+                            const parentName =
+                              s.entity?.name || entities.find((e) => e.id === s.entityId)?.name
+                            return (
+                              <label
+                                key={s.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  fontSize: 12,
+                                  color: '#ccc',
+                                  cursor: 'pointer',
+                                  userSelect: 'none',
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleSubEntityInPermission(idx, s.id)}
+                                  style={{ accentColor: '#d4df3a', cursor: 'pointer' }}
+                                />
+                                <span
+                                  style={{
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {s.name}
+                                  <span style={{ color: '#555', fontSize: 10 }}> ({parentName})</span>
+                                </span>
+                              </label>
+                            )
+                          })}
+                        {subEntities.filter(
+                          (s: any) =>
+                            (perm.entityIds || []).length === 0 ||
+                            (perm.entityIds || []).includes(s.entityId)
+                        ).length === 0 && (
+                          <p
+                            style={{
+                              color: '#666',
+                              fontStyle: 'italic',
+                              fontSize: 12,
+                              gridColumn: '1 / -1',
+                              margin: 0,
+                            }}
+                          >
+                            Select an entity above to see its sub-entities, or no sub-entities exist.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))}
 
-              <Button variant="outline" onClick={addPermissionRow} className="w-full">
-                <Plus className="w-4 h-4 mr-1" /> Add Another Permission Set
-              </Button>
+              <button
+                onClick={addPermissionRow}
+                style={{
+                  background: 'transparent',
+                  border: '1px dashed #2a2d33',
+                  color: '#e8eae9',
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: '0.3s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#d4df3a'
+                  e.currentTarget.style.color = '#d4df3a'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#2a2d33'
+                  e.currentTarget.style.color = '#e8eae9'
+                }}
+              >
+                <Plus size={16} /> Add Another Permission Set
+              </button>
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPermissions(false)}>Cancel</Button>
-              <Button onClick={handleSavePermissions} disabled={savingPerms} className="bg-emerald-600 hover:bg-emerald-700">
-                <Save className="w-4 h-4 mr-1" />
+              <button
+                onClick={() => setShowPermissions(false)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #2a2d33',
+                  color: '#fff',
+                  borderRadius: 10,
+                  padding: '8px 14px',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePermissions}
+                disabled={savingPerms}
+                style={{
+                  background: '#1db954',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '8px 14px',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  opacity: savingPerms ? 0.6 : 1,
+                }}
+              >
+                <Save size={14} />
                 {savingPerms ? 'Saving...' : 'Save Permissions'}
-              </Button>
+              </button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
