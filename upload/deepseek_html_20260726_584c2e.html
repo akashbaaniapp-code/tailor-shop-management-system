@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - For The Future</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #0b0d0f;
+            /* Dark theme background */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(212, 223, 58, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(159, 165, 161, 0.05) 0%, transparent 40%);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated floating shapes */
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: 0;
+            animation: floatAnimation 20s infinite ease-in-out alternate;
+        }
+
+        .shape1 {
+            width: 400px;
+            height: 400px;
+            background: #d4df3a;
+            top: -100px;
+            right: -100px;
+            animation-duration: 25s;
+        }
+
+        .shape2 {
+            width: 300px;
+            height: 300px;
+            background: #9fa5a1;
+            bottom: -50px;
+            left: -50px;
+            animation-duration: 30s;
+            animation-delay: 2s;
+        }
+
+        .shape3 {
+            width: 150px;
+            height: 150px;
+            background: #ffffff;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-duration: 18s;
+            animation-delay: 1s;
+        }
+
+        @keyframes floatAnimation {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            33% { transform: translate(30px, -40px) scale(1.1) rotate(120deg); }
+            66% { transform: translate(-20px, 30px) scale(0.9) rotate(240deg); }
+            100% { transform: translate(20px, -20px) scale(1.05) rotate(360deg); }
+        }
+
+        /* Main Card */
+        .login-card {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 50px 45px;
+            border-radius: 32px;
+            width: 420px;
+            max-width: 100%;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            text-align: center;
+            transition: box-shadow 0.5s ease;
+        }
+
+        .login-card:hover {
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5), 0 0 40px rgba(212, 223, 58, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        /* Logo */
+        .logo-wrapper {
+            margin-bottom: 35px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .logo-wrapper img {
+            max-width: 180px;
+            height: auto;
+            max-height: 70px;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.05));
+            transition: filter 0.5s ease, transform 0.5s ease;
+        }
+
+        .logo-wrapper img:hover {
+            filter: drop-shadow(0 0 25px rgba(212, 223, 58, 0.2));
+            transform: scale(1.02);
+        }
+
+        /* If no image, text logo fallback */
+        .text-logo-fallback {
+            display: none;
+            color: #e8eae9;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+        .text-logo-fallback span {
+            color: #d4df3a;
+        }
+
+        h2 {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 14px;
+            margin-bottom: 35px;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            font-size: 14px;
+            color: #ffffff;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(212, 223, 58, 0.3);
+            box-shadow: 0 0 20px rgba(212, 223, 58, 0.04);
+        }
+
+        .input-group i {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .input-group input:focus + i {
+            color: rgba(212, 223, 58, 0.4);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            background: #d4df3a;
+            color: #0b0d0f;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            letter-spacing: 1px;
+        }
+
+        .login-btn:hover {
+            background: #c4cf2a;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(212, 223, 58, 0.15);
+        }
+
+        .login-btn:active {
+            transform: scale(0.96);
+        }
+
+        .login-btn i {
+            margin-right: 8px;
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            font-size: 13px;
+            font-weight: 400;
+        }
+
+        .options a {
+            color: rgba(255, 255, 255, 0.3);
+            text-decoration: none;
+            transition: color 0.3s;
+            position: relative;
+        }
+
+        .options a:after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #d4df3a;
+            transition: width 0.3s;
+        }
+
+        .options a:hover {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .options a:hover:after {
+            width: 100%;
+        }
+
+        .footer-tagline {
+            margin-top: 40px;
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 12px;
+            font-style: italic;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        /* Checkbox styling */
+        .remember-me {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 13px;
+        }
+
+        .remember-me input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-right: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .remember-me input[type="checkbox"]:checked {
+            background: #d4df3a;
+            border-color: #d4df3a;
+        }
+
+        .remember-me input[type="checkbox"]:checked:after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0b0d0f;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 500px) {
+            .login-card {
+                padding: 35px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating animated shapes -->
+    <div class="floating-shape shape1"></div>
+    <div class="floating-shape shape2"></div>
+    <div class="floating-shape shape3"></div>
+
+    <div class="login-card">
+        
+        <!-- Logo Section -->
+        <div class="logo-wrapper">
+            <!-- 🔴 আপনার লোগো ইমেজ এখানে বসান -->
+            <img src="logo.png" alt="For The Future Logo" onerror="this.style.display='none'; document.getElementById('text-logo').style.display='block';">
+            
+            <!-- ইমেজ না থাকলে এই টেক্সট লোগো দেখাবে -->
+            <div id="text-logo" class="text-logo-fallback">
+                FOR THE<br><span>FUTURE</span>
+            </div>
+        </div>
+
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Sign in to continue to your dashboard</p>
+
+        <form>
+            <div class="input-group">
+                <input type="email" placeholder="Email address" required>
+                <i class="fa-regular fa-envelope"></i>
+            </div>
+            
+            <div class="input-group">
+                <input type="password" placeholder="Password" required>
+                <i class="fa-solid fa-lock"></i>
+            </div>
+
+            <div class="remember-me">
+                <input type="checkbox" id="remember">
+                <label for="remember">Remember me</label>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> Log In
+            </button>
+            
+            <div class="options">
+                <a href="#">Forgot password?</a>
+                <a href="#">Create new account</a>
+            </div>
+        </form>
+
+        <div class="footer-tagline">
+            Believe in progression
+        </div>
+
+    </div>
+
+</body>
+</html>

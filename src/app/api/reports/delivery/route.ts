@@ -9,14 +9,15 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
 
-  const { searchParams } = new URL(request.url)
-  const from = searchParams.get('from')
-  const to = searchParams.get('to')
-  const status = searchParams.get('status')
-  const search = searchParams.get('search') || ''
+  try {
+    const { searchParams } = new URL(request.url)
+    const from = searchParams.get('from')
+    const to = searchParams.get('to')
+    const status = searchParams.get('status')
+    const search = searchParams.get('search') || ''
 
-  const ctx = await getEntityContext(request)
-  const client = _getClient()
+    const ctx = await getEntityContext(request)
+    const client = _getClient()
 
   // Build the main query — one big JOIN that gets everything:
   // Order + Customer + Tailor + each item in the order + how much was delivered
@@ -71,21 +72,24 @@ export async function GET(request: NextRequest) {
   })
 
   // Transform flat rows into nested objects
-  const dateFields = ['orderDate', 'deliveryDate']
   const orders = ordersRes.rows.map((raw: any) => {
     const order: any = {}
     const customer: any = {}
     const tailor: any = {}
     for (const k of Object.keys(raw)) {
       if (/^\d+$/.test(k)) continue
-      const val = dateFields.includes(k) && typeof raw[k] === 'string' ? new Date(raw[k]) : raw[k]
-      if (k.startsWith('customer.')) customer[k.slice('customer.'.length)] = raw[k]
-      else if (k.startsWith('tailor.')) tailor[k.slice('tailor.'.length)] = raw[k]
-      else order[k] = val
+      if (k.startsWith('customer.')) {
+        customer[k.slice('customer.'.length)] = raw[k]
+      } else if (k.startsWith('tailor.')) {
+        tailor[k.slice('tailor.'.length)] = raw[k]
+      } else {
+        // Keep dates as-is (string) — frontend formatDate handles both
+        order[k] = raw[k]
+      }
     }
     order.customer = customer
-    order.tailor = tailor.id ? tailor : null
-    order.totalRemainingQty = Number(order.totalOrderedQty) - Number(order.totalDeliveredQty)
+    order.tailor = tailor.name ? tailor : null
+    order.totalRemainingQty = Number(order.totalOrderedQty || 0) - Number(order.totalDeliveredQty || 0)
     return order
   })
 
@@ -199,4 +203,12 @@ export async function GET(request: NextRequest) {
   })
   response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
   return response
+
+  } catch (err: any) {
+    console.error('Delivery report error:', err)
+    return NextResponse.json(
+      { error: 'Failed to load delivery report', detail: err instanceof Error ? err.message : 'Unknown error' },
+      { status: 500 }
+    )
+  }
 }
