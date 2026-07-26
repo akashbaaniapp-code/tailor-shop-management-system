@@ -68,6 +68,14 @@ const statements = [
     "updatedAt" DATETIME NOT NULL
   )`,
 
+  `CREATE TABLE IF NOT EXISTS "ExpenseHead" (
+    "id" TEXT PRIMARY KEY NOT NULL,
+    "name" TEXT NOT NULL UNIQUE,
+    "description" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+  )`,
+
   `CREATE TABLE IF NOT EXISTS "SalesOrder" (
     "id" TEXT PRIMARY KEY NOT NULL,
     "orderId" TEXT NOT NULL UNIQUE,
@@ -145,6 +153,10 @@ const statements = [
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // Add expenseHeadId column to Expense if it doesn't exist (idempotent)
+  // We use a separate try-catch since SQLite doesn't have IF NOT EXISTS for ADD COLUMN
+  `ALTER TABLE "Expense" ADD COLUMN "expenseHeadId" TEXT`,
+
   `CREATE TABLE IF NOT EXISTS "Income" (
     "id" TEXT PRIMARY KEY NOT NULL,
     "title" TEXT NOT NULL,
@@ -186,12 +198,20 @@ async function main() {
   for (const sql of statements) {
     try {
       await client.execute(sql)
-      const tableName = sql.match(/CREATE TABLE IF NOT EXISTS "(\w+)"/)?.[1] || 'unknown'
+      const tableName = sql.match(/CREATE TABLE IF NOT EXISTS "(\w+)"/)?.[1]
+        || sql.match(/ALTER TABLE "(\w+)"/)?.[1]
+        || 'unknown'
       console.log(`  ✓ ${tableName}`)
     } catch (err: any) {
-      console.error('  ✗ Error:', err.message)
-      console.error('  SQL:', sql.substring(0, 100) + '...')
-      throw err
+      // For ALTER TABLE ADD COLUMN, ignore "duplicate column" errors (column already exists)
+      if (sql.startsWith('ALTER TABLE') && (err.message.includes('duplicate column') || err.message.includes('already exists'))) {
+        const tableName = sql.match(/ALTER TABLE "(\w+)"/)?.[1] || 'unknown'
+        console.log(`  ⊙ ${tableName} (column already exists, skipped)`)
+      } else {
+        console.error('  ✗ Error:', err.message)
+        console.error('  SQL:', sql.substring(0, 100) + '...')
+        throw err
+      }
     }
   }
 
@@ -215,6 +235,8 @@ async function main() {
     `CREATE INDEX IF NOT EXISTS "idx_billCollection_orderId" ON "BillCollection"("orderId")`,
     `CREATE INDEX IF NOT EXISTS "idx_billCollection_collectDate" ON "BillCollection"("collectDate")`,
     `CREATE INDEX IF NOT EXISTS "idx_expense_expenseDate" ON "Expense"("expenseDate")`,
+    `CREATE INDEX IF NOT EXISTS "idx_expense_expenseHeadId" ON "Expense"("expenseHeadId")`,
+    `CREATE INDEX IF NOT EXISTS "idx_expenseHead_name" ON "ExpenseHead"("name")`,
     `CREATE INDEX IF NOT EXISTS "idx_income_incomeDate" ON "Income"("incomeDate")`,
     `CREATE INDEX IF NOT EXISTS "idx_payablePayment_payableId" ON "PayablePayment"("payableId")`,
     `CREATE INDEX IF NOT EXISTS "idx_payable_status" ON "Payable"("status")`

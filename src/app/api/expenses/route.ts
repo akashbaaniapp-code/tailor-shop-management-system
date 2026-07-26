@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
 
   const items = await db.expense.findMany({
     where,
+    include: { head: true },
     orderBy: { expenseDate: 'desc' },
     take: 500
   })
@@ -28,16 +29,18 @@ export async function POST(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
   const body = await request.json()
-  const { title, category, amount, expenseDate, note } = body
+  const { title, expenseHeadId, amount, expenseDate, note } = body
   if (!title || !amount) return NextResponse.json({ error: 'Title and amount required' }, { status: 400 })
+  if (!expenseHeadId) return NextResponse.json({ error: 'Expense head required' }, { status: 400 })
   const item = await db.expense.create({
     data: {
       title,
-      category: category || 'general',
+      expenseHeadId,
       amount: Number(amount),
       expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
       note: note || null
-    }
+    },
+    include: { head: true }
   })
   return NextResponse.json({ item })
 }

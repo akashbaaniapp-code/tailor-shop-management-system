@@ -246,6 +246,7 @@ const MODEL_CONFIG: Record<string, ModelConfig> = {
   tailor: { name: 'Tailor', dateFields: ['createdAt', 'updatedAt'] },
   customer: { name: 'Customer', dateFields: ['createdAt', 'updatedAt'] },
   deliveryInfo: { name: 'DeliveryInfo', dateFields: ['createdAt', 'updatedAt'] },
+  expenseHead: { name: 'ExpenseHead', dateFields: ['createdAt', 'updatedAt'] },
   salesOrder: { name: 'SalesOrder', dateFields: ['orderDate', 'deliveryDate', 'createdAt', 'updatedAt'] },
   salesOrderItem: { name: 'SalesOrderItem', dateFields: ['createdAt'] },
   delivery: { name: 'Delivery', dateFields: ['deliveryDate', 'createdAt'] },
@@ -539,6 +540,7 @@ const RELATIONS: Record<string, Record<string, { model: string; fk: string; isLi
   tailor: { orders: { model: 'salesOrder', fk: 'tailorId', isList: true, isOptional: true } },
   customer: { orders: { model: 'salesOrder', fk: 'customerId', isList: true, isOptional: false } },
   deliveryInfo: {},
+  expenseHead: {},
   salesOrder: {
     customer: { model: 'customer', fk: 'customerId', isList: false, isOptional: false },
     tailor: { model: 'tailor', fk: 'tailorId', isList: false, isOptional: true },
@@ -562,7 +564,7 @@ const RELATIONS: Record<string, Record<string, { model: string; fk: string; isLi
   billCollection: {
     order: { model: 'salesOrder', fk: 'orderId', isList: false, isOptional: false }
   },
-  expense: {},
+  expense: { head: { model: 'expenseHead', fk: 'expenseHeadId', isList: false, isOptional: true } },
   income: {},
   payable: { payments: { model: 'payablePayment', fk: 'payableId', isList: true, isOptional: false } },
   payablePayment: { payable: { model: 'payable', fk: 'payableId', isList: false, isOptional: false } }
@@ -715,6 +717,7 @@ export const db: any = {
   tailor: makeModel('tailor'),
   customer: makeModel('customer'),
   deliveryInfo: makeModel('deliveryInfo'),
+  expenseHead: makeModel('expenseHead'),
   salesOrder: makeModel('salesOrder'),
   salesOrderItem: makeModel('salesOrderItem'),
   delivery: makeModel('delivery'),

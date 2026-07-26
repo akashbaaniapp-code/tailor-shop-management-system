@@ -6,34 +6,20 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Plus, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { api, formatCurrency } from '@/lib/api'
+import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 
 export default function ReportPnl() {
+  const setView = useAppStore(s => s.setView)
   const now = new Date()
   const [period, setPeriod] = useState('monthly')
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-  const [showExpense, setShowExpense] = useState(false)
-  const [showIncome, setShowIncome] = useState(false)
-  // Expense form
-  const [expTitle, setExpTitle] = useState('')
-  const [expAmount, setExpAmount] = useState(0)
-  const [expCategory, setExpCategory] = useState('general')
-  const [expDate, setExpDate] = useState(new Date().toISOString().split('T')[0])
-  const [expNote, setExpNote] = useState('')
-  // Income form
-  const [incTitle, setIncTitle] = useState('')
-  const [incAmount, setIncAmount] = useState(0)
-  const [incCategory, setIncCategory] = useState('general')
-  const [incDate, setIncDate] = useState(new Date().toISOString().split('T')[0])
-  const [incNote, setIncNote] = useState('')
 
   async function load() {
     setLoading(true)
@@ -48,28 +34,6 @@ export default function ReportPnl() {
   }
 
   useEffect(() => { load() }, [period, year, month])
-
-  async function handleAddExpense() {
-    if (!expTitle || expAmount <= 0) { toast.error('Title and amount required'); return }
-    try {
-      await api.createExpense({ title: expTitle, amount: expAmount, category: expCategory, expenseDate: expDate, note: expNote })
-      toast.success('Expense added')
-      setShowExpense(false)
-      setExpTitle(''); setExpAmount(0); setExpNote('')
-      load()
-    } catch (err: any) { toast.error(err.message) }
-  }
-
-  async function handleAddIncome() {
-    if (!incTitle || incAmount <= 0) { toast.error('Title and amount required'); return }
-    try {
-      await api.createIncome({ title: incTitle, amount: incAmount, category: incCategory, incomeDate: incDate, note: incNote })
-      toast.success('Income added')
-      setShowIncome(false)
-      setIncTitle(''); setIncAmount(0); setIncNote('')
-      load()
-    } catch (err: any) { toast.error(err.message) }
-  }
 
   return (
     <div className="space-y-4">
@@ -105,14 +69,11 @@ export default function ReportPnl() {
               </div>
             )}
             <Button onClick={load} className="bg-emerald-600 hover:bg-emerald-700">Refresh</Button>
-            <div className="flex-1" />
-            <Button variant="outline" onClick={() => setShowIncome(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Other Income
-            </Button>
-            <Button variant="outline" onClick={() => setShowExpense(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Expense
-            </Button>
           </div>
+          <p className="text-xs text-slate-500 mt-3">
+            💡 Tip: To record expenses, use the <button onClick={() => setView('expense-entry')} className="text-emerald-700 underline font-medium">Expense Entry</button> page.
+            To create expense heads (categories), go to <button onClick={() => setView('setup-expense-head')} className="text-emerald-700 underline font-medium">Setup → Expense Heads</button>.
+          </p>
         </CardContent>
       </Card>
 
@@ -192,76 +153,6 @@ export default function ReportPnl() {
           </Card>
         </>
       ) : null}
-
-      {/* Expense dialog */}
-      {showExpense && (
-        <Dialog open onOpenChange={setShowExpense}>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Add Expense</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs">Title *</Label>
-                <Input value={expTitle} onChange={e => setExpTitle(e.target.value)} />
-              </div>
-              <div>
-                <Label className="text-xs">Amount *</Label>
-                <Input type="number" value={expAmount} onChange={e => setExpAmount(parseFloat(e.target.value) || 0)} />
-              </div>
-              <div>
-                <Label className="text-xs">Category</Label>
-                <Input value={expCategory} onChange={e => setExpCategory(e.target.value)} />
-              </div>
-              <div>
-                <Label className="text-xs">Date</Label>
-                <Input type="date" value={expDate} onChange={e => setExpDate(e.target.value)} />
-              </div>
-              <div>
-                <Label className="text-xs">Note</Label>
-                <Textarea rows={2} value={expNote} onChange={e => setExpNote(e.target.value)} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowExpense(false)}>Cancel</Button>
-              <Button onClick={handleAddExpense} className="bg-emerald-600 hover:bg-emerald-700">Add Expense</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Income dialog */}
-      {showIncome && (
-        <Dialog open onOpenChange={setShowIncome}>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Add Other Income</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs">Title *</Label>
-                <Input value={incTitle} onChange={e => setIncTitle(e.target.value)} />
-              </div>
-              <div>
-                <Label className="text-xs">Amount *</Label>
-                <Input type="number" value={incAmount} onChange={e => setIncAmount(parseFloat(e.target.value) || 0)} />
-              </div>
-              <div>
-                <Label className="text-xs">Category</Label>
-                <Input value={incCategory} onChange={e => setIncCategory(e.target.value)} />
-              </div>
-              <div>
-                <Label className="text-xs">Date</Label>
-                <Input type="date" value={incDate} onChange={e => setIncDate(e.target.value)} />
-              </div>
-              <div>
-                <Label className="text-xs">Note</Label>
-                <Textarea rows={2} value={incNote} onChange={e => setIncNote(e.target.value)} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowIncome(false)}>Cancel</Button>
-              <Button onClick={handleAddIncome} className="bg-emerald-600 hover:bg-emerald-700">Add Income</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   )
 }

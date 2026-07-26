@@ -173,6 +173,15 @@ export const api = {
   createExpense: (data: any) => apiFetch('/api/expenses', { method: 'POST', body: JSON.stringify(data) }),
   deleteExpense: (id: string) => apiFetch(`/api/expenses?id=${id}`, { method: 'DELETE' }),
 
+  // Expense Heads
+  listExpenseHeads: () => apiFetch('/api/expense-heads'),
+  createExpenseHead: (data: any) => apiFetch('/api/expense-heads', { method: 'POST', body: JSON.stringify(data) }),
+  updateExpenseHead: (data: any) => apiFetch('/api/expense-heads', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteExpenseHead: (id: string) => apiFetch(`/api/expense-heads?id=${id}`, { method: 'DELETE' }),
+
+  // Sales Order Close
+  closeSalesOrder: (id: string) => apiFetch(`/api/sales-orders/${id}/close`, { method: 'POST' }),
+
   // Incomes
   listIncomes: () => apiFetch('/api/incomes'),
   createIncome: (data: any) => apiFetch('/api/incomes', { method: 'POST', body: JSON.stringify(data) }),

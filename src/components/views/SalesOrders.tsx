@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, Search, Eye, Edit, FileText, Printer } from 'lucide-react'
+import { Plus, Search, Eye, Edit, FileText, Printer, Lock } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
@@ -109,6 +109,19 @@ export default function SalesOrders() {
     }
   }
 
+  async function handleClose(o: SalesOrder) {
+    if (!confirm(`Close order ${o.orderId}?\n\nOnce closed, the order cannot be modified. This is typically done after the order is fully delivered and payment is complete.`)) {
+      return
+    }
+    try {
+      await api.closeSalesOrder(o.id)
+      toast.success(`Order ${o.orderId} closed`)
+      load()
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to close order')
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -136,6 +149,7 @@ export default function SalesOrders() {
                   <SelectItem value="full_pending">Full Pending</SelectItem>
                   <SelectItem value="partial_pending">Partial Pending</SelectItem>
                   <SelectItem value="full_delivered">Full Delivered</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -194,12 +208,26 @@ export default function SalesOrders() {
                           <Button size="sm" variant="ghost" onClick={() => setViewOrder(o)} title="View">
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleEdit(o)} title="Edit">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handlePrint(o)} title="Print Invoice">
-                            <Printer className="w-4 h-4 text-emerald-600" />
-                          </Button>
+                          {o.status !== 'closed' && (
+                            <>
+                              <Button size="sm" variant="ghost" onClick={() => handleEdit(o)} title="Edit">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => handlePrint(o)} title="Print Invoice">
+                                <Printer className="w-4 h-4 text-emerald-600" />
+                              </Button>
+                              {o.status === 'full_delivered' && (
+                                <Button size="sm" variant="ghost" onClick={() => handleClose(o)} title="Close Order">
+                                  <Lock className="w-4 h-4 text-slate-600" />
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          {o.status === 'closed' && (
+                            <Button size="sm" variant="ghost" onClick={() => handlePrint(o)} title="Print Invoice">
+                              <Printer className="w-4 h-4 text-emerald-600" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -222,7 +250,8 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
     full_pending: { label: 'Full Pending', className: 'bg-amber-100 text-amber-700 hover:bg-amber-100' },
     partial_pending: { label: 'Partial', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100' },
-    full_delivered: { label: 'Delivered', className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' }
+    full_delivered: { label: 'Delivered', className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' },
+    closed: { label: 'Closed', className: 'bg-slate-800 text-white hover:bg-slate-800' }
   }
   const v = map[status] || { label: status, className: 'bg-slate-100 text-slate-700' }
   return <Badge variant="secondary" className={v.className}>{v.label}</Badge>

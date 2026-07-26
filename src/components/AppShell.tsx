@@ -21,6 +21,7 @@ import {
   FileText,
   TrendingUp,
   Receipt,
+  Tag,
   ChevronRight,
   Menu,
   X
@@ -34,11 +35,13 @@ import SalesOrderFormPage from '@/components/views/SalesOrderFormPage'
 import Delivery from '@/components/views/Delivery'
 import DeliveryFormPage from '@/components/views/DeliveryFormPage'
 import BillCollection from '@/components/views/BillCollection'
+import ExpenseEntry from '@/components/views/ExpenseEntry'
 import SetupUom from '@/components/views/SetupUom'
 import SetupItem from '@/components/views/SetupItem'
 import SetupTailor from '@/components/views/SetupTailor'
 import SetupCustomer from '@/components/views/SetupCustomer'
 import SetupDeliveryInfo from '@/components/views/SetupDeliveryInfo'
+import SetupExpenseHead from '@/components/views/SetupExpenseHead'
 import ReportPnl from '@/components/views/ReportPnl'
 import ReportReceivable from '@/components/views/ReportReceivable'
 import ReportPayable from '@/components/views/ReportPayable'
@@ -56,7 +59,8 @@ const navGroups: NavGroup[] = [
       { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { key: 'sales-orders', label: 'Sales Orders', icon: ShoppingCart },
       { key: 'delivery', label: 'Delivery', icon: Truck },
-      { key: 'bill-collection', label: 'Bill Collection', icon: Wallet }
+      { key: 'bill-collection', label: 'Bill Collection', icon: Wallet },
+      { key: 'expense-entry', label: 'Expense Entry', icon: Receipt }
     ]
   },
   {
@@ -66,7 +70,8 @@ const navGroups: NavGroup[] = [
       { key: 'setup-item', label: 'Items', icon: Package },
       { key: 'setup-tailor', label: 'Tailors', icon: Scissors },
       { key: 'setup-customer', label: 'Customers', icon: Users },
-      { key: 'setup-delivery-info', label: 'Delivery Info', icon: FileText }
+      { key: 'setup-delivery-info', label: 'Delivery Info', icon: FileText },
+      { key: 'setup-expense-head', label: 'Expense Heads', icon: Tag }
     ]
   },
   {
@@ -89,11 +94,13 @@ const viewTitles: Record<ViewKey, string> = {
   'delivery': 'Sales Order Delivery',
   'delivery-create': 'Create Delivery',
   'bill-collection': 'Bill Collection',
+  'expense-entry': 'Expense Entry',
   'setup-uom': 'Setup - Unit of Measure',
   'setup-item': 'Setup - Items',
   'setup-tailor': 'Setup - Tailors',
   'setup-customer': 'Setup - Customers',
   'setup-delivery-info': 'Setup - Delivery Information',
+  'setup-expense-head': 'Setup - Expense Heads',
   'report-pnl': 'P&L Report',
   'report-receivable': 'Receivable Report',
   'report-payable': 'Payable Report',
@@ -126,11 +133,13 @@ export default function AppShell() {
       case 'delivery': return <Delivery />
       case 'delivery-create': return <DeliveryFormPage />
       case 'bill-collection': return <BillCollection />
+      case 'expense-entry': return <ExpenseEntry />
       case 'setup-uom': return <SetupUom />
       case 'setup-item': return <SetupItem />
       case 'setup-tailor': return <SetupTailor />
       case 'setup-customer': return <SetupCustomer />
       case 'setup-delivery-info': return <SetupDeliveryInfo />
+      case 'setup-expense-head': return <SetupExpenseHead />
       case 'report-pnl': return <ReportPnl />
       case 'report-receivable': return <ReportReceivable />
       case 'report-payable': return <ReportPayable />
