@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, Trash2, Edit, UserCog, Shield, Lock, Save } from 'lucide-react'
 import { api } from '@/lib/api'
+import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 
 interface User {
@@ -61,14 +61,10 @@ interface Permission {
 }
 
 export default function SetupUsers() {
+  const setView = useAppStore(s => s.setView)
+  const setSelectedUserId = useAppStore(s => s.setSelectedUserId)
   const [items, setItems] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editItem, setEditItem] = useState<User | null>(null)
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-  const [role, setRole] = useState('staff')
 
   // Permissions state
   const [showPermissions, setShowPermissions] = useState(false)
@@ -92,38 +88,14 @@ export default function SetupUsers() {
     }
   }
 
-  function openCreate() {
-    setEditItem(null); setUsername(''); setPassword(''); setName(''); setRole('staff'); setShowForm(true)
+  function handleAddNew() {
+    setSelectedUserId(null)
+    setView('setup-user-create')
   }
 
-  function openEdit(it: User) {
-    setEditItem(it)
-    setUsername(it.username)
-    setPassword('')
-    setName(it.name || '')
-    setRole(it.role)
-    setShowForm(true)
-  }
-
-  async function handleSave() {
-    if (!username.trim()) { toast.error('Username required'); return }
-    if (!editItem && !password) { toast.error('Password required for new user'); return }
-
-    try {
-      const data: any = { username: username.trim(), name, role }
-      if (password) data.password = password
-
-      if (editItem) {
-        await api.updateUser({ id: editItem.id, ...data })
-        toast.success('User updated')
-      } else {
-        await api.createUser(data)
-        toast.success('User created')
-      }
-      setShowForm(false); load()
-    } catch (err: any) {
-      toast.error(err.message)
-    }
+  function handleEdit(u: User) {
+    setSelectedUserId(u.id)
+    setView('setup-user-edit')
   }
 
   async function handleDelete(id: string) {
@@ -212,7 +184,7 @@ export default function SetupUsers() {
                 ))}
               </div>
             </div>
-            <Button onClick={openCreate} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleAddNew} className="bg-emerald-600 hover:bg-emerald-700">
               <Plus className="w-4 h-4 mr-1" /> Add User
             </Button>
           </div>
@@ -267,10 +239,10 @@ export default function SetupUsers() {
                               <Lock className="w-3 h-3 mr-1" /> Permissions
                             </Button>
                           )}
-                          <Button size="sm" variant="ghost" onClick={() => openEdit(it)}>
+                          <Button size="sm" variant="ghost" onClick={() => handleEdit(it)} title="Edit">
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDelete(it.id)}>
+                          <Button size="sm" variant="ghost" onClick={() => handleDelete(it.id)} title="Delete">
                             <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
                         </div>
@@ -284,61 +256,7 @@ export default function SetupUsers() {
         </CardContent>
       </Card>
 
-      {/* User create/edit dialog */}
-      {showForm && (
-        <Dialog open onOpenChange={setShowForm}>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>{editItem ? 'Edit User' : 'Add User'}</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs">Username *</Label>
-                <Input value={username} onChange={e => setUsername(e.target.value)} autoFocus disabled={!!editItem} />
-                {editItem && <p className="text-xs text-slate-500 mt-1">Username cannot be changed</p>}
-              </div>
-              <div>
-                <Label className="text-xs">
-                  Password {editItem ? '(leave blank to keep current)' : '*'}
-                </Label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder={editItem ? '••••••••' : 'Enter password'}
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Full Name</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Karim Ahmed" />
-              </div>
-              <div>
-                <Label className="text-xs">Role / Access Rights</Label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin — Full access</SelectItem>
-                    <SelectItem value="manager">Manager — Orders, deliveries, expenses</SelectItem>
-                    <SelectItem value="staff">Staff — Custom permissions</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-slate-500 mt-1">{(ROLE_LABELS[role] || ROLE_LABELS.staff).desc}</p>
-                {role === 'staff' && !editItem && (
-                  <p className="text-xs text-amber-700 mt-2 bg-amber-50 p-2 rounded">
-                    💡 After creating this user, click the "Permissions" button to define which menus and actions they can access.
-                  </p>
-                )}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
-                {editItem ? 'Update User' : 'Create User'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Permissions editor dialog */}
+      {/* Permissions editor dialog (kept as modal — quick configuration) */}
       {showPermissions && permUser && (
         <Dialog open onOpenChange={setShowPermissions}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -364,9 +282,9 @@ export default function SetupUsers() {
 
               {permissions.map((perm, idx) => (
                 <Card key={idx} className="border-slate-200">
-                  <CardHeader className="pb-2">
+                  <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm">Permission Set #{idx + 1}</CardTitle>
+                      <p className="text-sm font-semibold text-slate-900">Permission Set #{idx + 1}</p>
                       {permissions.length > 1 && (
                         <Button
                           size="sm"
@@ -377,8 +295,7 @@ export default function SetupUsers() {
                         </Button>
                       )}
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
+
                     {/* Menu access */}
                     <div>
                       <Label className="text-xs font-semibold">Menu Access (what menus to show in sidebar)</Label>

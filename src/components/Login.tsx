@@ -13,8 +13,9 @@ import { toast } from 'sonner'
 
 export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
   const setUserStore = useAppStore(s => s.setUser)
-  const [username, setUsername] = useState('admin')
-  const [password, setPassword] = useState('admin123')
+  const setAccessibleMenus = useAppStore(s => s.setAccessibleMenus)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -29,6 +30,11 @@ export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
       setToken(res.token)
       setUser(res.user)
       setUserStore(res.user)
+      if (res.user?.accessibleMenus) {
+        setAccessibleMenus(res.user.accessibleMenus)
+      } else {
+        setAccessibleMenus(['*'])
+      }
       onLogin?.(res.user)
       toast.success('Login successful')
     } catch (err: any) {
@@ -39,7 +45,7 @@ export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/40 to-slate-100 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/40 to-slate-100 p-4">
       <Card className="w-full max-w-md shadow-xl border-slate-200">
         <CardHeader className="space-y-3 text-center">
           <div className="mx-auto w-28 h-28 rounded-2xl bg-white shadow-lg flex items-center justify-center overflow-hidden border border-slate-100">
@@ -70,7 +76,7 @@ export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter username"
-                autoComplete="username"
+                autoComplete="off"
               />
             </div>
             <div className="space-y-2">
@@ -81,7 +87,7 @@ export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
-                autoComplete="current-password"
+                autoComplete="new-password"
               />
             </div>
             <Button
@@ -97,12 +103,16 @@ export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
                 'Sign In'
               )}
             </Button>
-            <p className="text-xs text-center text-slate-500 pt-2">
-              Default credentials: <span className="font-mono font-semibold">admin / admin123</span>
-            </p>
           </form>
         </CardContent>
       </Card>
+
+      {/* Credit line */}
+      <p className="text-xs text-slate-500 mt-6 text-center px-4">
+        Idea and developed by <span className="font-semibold text-slate-700">Abdur Rahman Akash</span>
+        <br />
+        <span className="text-slate-400">WhatsApp: +8801534955065</span>
+      </p>
     </div>
   )
 }

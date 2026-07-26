@@ -19,6 +19,8 @@ export type ViewKey =
   | 'setup-delivery-info'
   | 'setup-expense-head'
   | 'setup-users'
+  | 'setup-user-create'
+  | 'setup-user-edit'
   | 'setup-entity'
   | 'report-pnl'
   | 'report-receivable'
@@ -45,6 +47,8 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'setup-delivery-info': 'setup-delivery-info',
   'setup-expense-head': 'setup-expense-heads',
   'setup-users': 'setup-users',
+  'setup-user-create': 'setup-users-new',
+  'setup-user-edit': 'setup-users-edit',
   'setup-entity': 'setup-entities',
   'report-pnl': 'report-pnl',
   'report-receivable': 'report-receivable',
@@ -84,6 +88,8 @@ interface AppState {
   setSelectedOrderId: (id: string | null) => void
   selectedExpenseId: string | null
   setSelectedExpenseId: (id: string | null) => void
+  selectedUserId: string | null
+  setSelectedUserId: (id: string | null) => void
   // List of menu keys the current user can access.
   // ['*'] means all menus (admin). Empty array means none (will be refetched).
   accessibleMenus: string[]
@@ -113,6 +119,8 @@ export const useAppStore = create<AppState>((set) => ({
   setSelectedOrderId: (id) => set({ selectedOrderId: id }),
   selectedExpenseId: null,
   setSelectedExpenseId: (id) => set({ selectedExpenseId: id }),
+  selectedUserId: null,
+  setSelectedUserId: (id) => set({ selectedUserId: id }),
   accessibleMenus: ['*'], // default to all; will be overridden after /api/auth/me
   setAccessibleMenus: (menus) => set({ accessibleMenus: menus })
 }))

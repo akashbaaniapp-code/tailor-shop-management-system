@@ -48,6 +48,7 @@ import SetupCustomer from '@/components/views/SetupCustomer'
 import SetupDeliveryInfo from '@/components/views/SetupDeliveryInfo'
 import SetupExpenseHead from '@/components/views/SetupExpenseHead'
 import SetupUsers from '@/components/views/SetupUsers'
+import UserFormPage from '@/components/views/UserFormPage'
 import SetupEntity from '@/components/views/SetupEntity'
 import ReportPnl from '@/components/views/ReportPnl'
 import ReportReceivable from '@/components/views/ReportReceivable'
@@ -115,6 +116,8 @@ const viewTitles: Record<ViewKey, string> = {
   'setup-delivery-info': 'Setup - Delivery Information',
   'setup-expense-head': 'Setup - Expense Heads',
   'setup-users': 'Setup - Users & Access Rights',
+  'setup-user-create': 'Add User',
+  'setup-user-edit': 'Edit User',
   'setup-entity': 'Setup - Entities & Sub-Entities',
   'report-pnl': 'P&L Report',
   'report-receivable': 'Receivable Report',
@@ -170,6 +173,8 @@ export default function AppShell() {
       case 'setup-delivery-info': return <SetupDeliveryInfo />
       case 'setup-expense-head': return <SetupExpenseHead />
       case 'setup-users': return <SetupUsers />
+      case 'setup-user-create': return <UserFormPage />
+      case 'setup-user-edit': return <UserFormPage />
       case 'setup-entity': return <SetupEntity />
       case 'report-pnl': return <ReportPnl />
       case 'report-receivable': return <ReportReceivable />

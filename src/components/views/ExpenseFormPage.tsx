@@ -184,25 +184,24 @@ export default function ExpenseFormPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs">Expense Head *</Label>
-                <Select value={expenseHeadId} onValueChange={setExpenseHeadId}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select head" /></SelectTrigger>
-                  <SelectContent>
-                    {heads.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Date *</Label>
-                <Input
-                  type="date"
-                  value={expenseDate}
-                  onChange={e => setExpenseDate(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
+            <div>
+              <Label className="text-xs">Date *</Label>
+              <Input
+                type="date"
+                value={expenseDate}
+                onChange={e => setExpenseDate(e.target.value)}
+                className="mt-1 max-w-xs"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs">Expense Head *</Label>
+              <Select value={expenseHeadId} onValueChange={setExpenseHeadId}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select head" /></SelectTrigger>
+                <SelectContent>
+                  {heads.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
