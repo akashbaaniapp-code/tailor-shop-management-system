@@ -280,381 +280,437 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
   if (savedOrderId && savedOrderData) {
     return (
       <div className="space-y-4 max-w-2xl mx-auto pt-8">
-        <Card className="border-emerald-300 bg-emerald-50">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-10 h-10 text-emerald-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-emerald-900">
-              {orderId ? 'Order Updated Successfully!' : 'Order Created Successfully!'}
-            </h2>
-            <p className="text-sm text-emerald-700 mt-2">
-              Order ID: <span className="font-mono font-bold">{savedOrderData.orderId}</span>
-            </p>
-            <p className="text-sm text-emerald-700 mt-1">
-              Customer: <span className="font-semibold">{savedOrderData.customer?.name}</span>
-            </p>
-            <p className="text-lg font-bold text-emerald-900 mt-3">
-              Grand Total: {formatCurrency(savedOrderData.grandTotal)}
-            </p>
-            <p className="text-xs italic text-emerald-700 mt-1">
-              {savedOrderData.inWords || ''}
-            </p>
+        <div
+          className="rounded-2xl p-8 text-center"
+          style={{
+            background: 'rgba(212, 223, 58, 0.05)',
+            border: '1px solid rgba(212, 223, 58, 0.15)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(212, 223, 58, 0.1)' }}>
+            <CheckCircle2 className="w-10 h-10" style={{ color: '#d4df3a' }} />
+          </div>
+          <h2 className="text-2xl font-bold" style={{ color: '#d4df3a' }}>
+            {orderId ? 'Order Updated Successfully!' : 'Order Created Successfully!'}
+          </h2>
+          <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Order ID: <span className="font-mono font-bold" style={{ color: '#fff' }}>{savedOrderData.orderId}</span>
+          </p>
+          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Customer: <span className="font-semibold" style={{ color: '#fff' }}>{savedOrderData.customer?.name}</span>
+          </p>
+          <p className="text-lg font-bold mt-3" style={{ color: '#d4df3a' }}>
+            Grand Total: {formatCurrency(savedOrderData.grandTotal)}
+          </p>
+          <p className="text-xs italic mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            {savedOrderData.inWords || ''}
+          </p>
 
-            <div className="flex flex-wrap justify-center gap-2 mt-6">
-              <Button onClick={handlePrintSaved} className="bg-emerald-600 hover:bg-emerald-700">
-                <Printer className="w-4 h-4 mr-1" /> Print Invoice
-              </Button>
-              {!orderId && (
-                <Button variant="outline" onClick={handleCreateAnother} className="border-emerald-600 text-emerald-700 hover:bg-emerald-100">
-                  <Plus className="w-4 h-4 mr-1" /> Create Another
-                </Button>
-              )}
-              <Button variant="outline" onClick={handleBackToList}>
-                Back to Orders
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="flex flex-wrap justify-center gap-2 mt-6">
+            <button
+              onClick={handlePrintSaved}
+              className="px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 hover:-translate-y-0.5"
+              style={{ background: '#d4df3a', color: '#0b0d0f', fontSize: '14px' }}
+            >
+              <Printer className="w-4 h-4 inline mr-1" /> Print Invoice
+            </button>
+            {!orderId && (
+              <button
+                onClick={handleCreateAnother}
+                className="px-6 py-2.5 rounded-xl font-medium transition-all duration-300"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'rgba(255,255,255,0.7)',
+                  fontSize: '14px',
+                }}
+              >
+                <Plus className="w-4 h-4 inline mr-1" /> Create Another
+              </button>
+            )}
+            <button
+              onClick={handleBackToList}
+              className="px-6 py-2.5 rounded-xl font-medium transition-all duration-300"
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.7)',
+                fontSize: '14px',
+              }}
+            >
+              Back to Orders
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
+
+  // Dark theme styles for reuse
+  const darkCard = {
+    background: 'rgba(255, 255, 255, 0.03)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.06)',
+    borderRadius: '16px',
+  }
+  const darkInput = {
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    color: '#ffffff',
+    borderRadius: '10px',
+  }
+  const darkLabel = { color: 'rgba(255, 255, 255, 0.4)', fontSize: '12px', fontWeight: 500 }
+  const darkText = { color: '#ffffff' }
+  const darkTextMuted = { color: 'rgba(255, 255, 255, 0.4)' }
+  const btnPrimary = { background: '#d4df3a', color: '#0b0d0f', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }
+  const btnSecondary = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', borderRadius: '10px', fontSize: '14px', fontWeight: 500 }
 
   return (
     <div className="space-y-4 pb-8">
       {/* Header with back button */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={() => setView('sales-orders')}>
+          <button
+            onClick={() => setView('sales-orders')}
+            className="p-2 rounded-xl transition-all duration-300"
+            style={btnSecondary}
+          >
             <ArrowLeft className="w-4 h-4" />
-          </Button>
+          </button>
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 className="text-xl font-bold" style={darkText}>
               {orderId ? 'Edit Sales Order' : 'Create New Sales Order'}
             </h2>
-            <p className="text-sm text-slate-500">Fill in the order details below</p>
+            <p className="text-sm" style={darkTextMuted}>Fill in the order details below</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setView('sales-orders')}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
-            <Save className="w-4 h-4 mr-1" />
+          <button
+            onClick={() => setView('sales-orders')}
+            className="px-5 py-2 transition-all duration-300"
+            style={btnSecondary}
+          >Cancel</button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-2 flex items-center gap-1.5 transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50"
+            style={btnPrimary}
+          >
+            <Save className="w-4 h-4" />
             {saving ? 'Saving...' : orderId ? 'Update Order' : 'Create Order'}
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* Order info card */}
-      <Card className="border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-base">Order Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div>
-              <Label className="text-xs">Order Date *</Label>
-              <Input type="date" value={orderDate} onChange={e => setOrderDate(e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <Label className="text-xs">Delivery Date</Label>
-              <Input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <Label className="text-xs">Tailor</Label>
-              <Select value={tailorId} onValueChange={setTailorId}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select tailor" /></SelectTrigger>
-                <SelectContent>
-                  {tailors.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Customer * (search & select)</Label>
-              <div className="flex gap-2 mt-1">
-                <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-between font-normal"
-                    >
-                      {customerId
-                        ? (() => {
-                            const c = customers.find(c => c.id === customerId)
-                            return c ? `${c.name} — ${c.phone}` : 'Select customer'
-                          })()
-                        : 'Select customer...'}
-                      <ChevronDown className="w-4 h-4 ml-2 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0" align="start">
-                    <div className="p-2 border-b">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input
-                          placeholder="Search by name or phone..."
-                          value={customerSearch}
-                          onChange={e => setCustomerSearch(e.target.value)}
-                          className="pl-8"
-                          autoFocus
-                        />
-                      </div>
+      <div className="p-6" style={darkCard}>
+        <p className="text-sm font-medium mb-5" style={darkText}>Order Information</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <Label className="text-xs" style={darkLabel}>Order Date *</Label>
+            <Input type="date" value={orderDate} onChange={e => setOrderDate(e.target.value)} className="mt-1.5" style={darkInput} />
+          </div>
+          <div>
+            <Label className="text-xs" style={darkLabel}>Delivery Date</Label>
+            <Input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="mt-1.5" style={darkInput} />
+          </div>
+          <div>
+            <Label className="text-xs" style={darkLabel}>Tailor</Label>
+            <Select value={tailorId} onValueChange={setTailorId}>
+              <SelectTrigger className="mt-1.5" style={darkInput}><SelectValue placeholder="Select tailor" /></SelectTrigger>
+              <SelectContent style={{ background: '#1a1c1e', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {tailors.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs" style={darkLabel}>Customer * (search & select)</Label>
+            <div className="flex gap-2 mt-1.5">
+              <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm font-normal"
+                    style={darkInput}
+                  >
+                    {customerId
+                      ? (() => {
+                          const c = customers.find(c => c.id === customerId)
+                          return c ? `${c.name} — ${c.phone}` : 'Select customer'
+                        })()
+                      : 'Select customer...'}
+                    <ChevronDown className="w-4 h-4 ml-2 shrink-0 opacity-30" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0" align="start" style={{ background: '#1a1c1e', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="p-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'rgba(255,255,255,0.2)' }} />
+                      <Input
+                        placeholder="Search by name or phone..."
+                        value={customerSearch}
+                        onChange={e => setCustomerSearch(e.target.value)}
+                        className="pl-8"
+                        style={darkInput}
+                        autoFocus
+                      />
                     </div>
-                    <div className="max-h-60 overflow-y-auto">
-                      {customers
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {customers
+                      .filter(c => {
+                        if (!customerSearch) return true
+                        const q = customerSearch.toLowerCase()
+                        return c.name.toLowerCase().includes(q) || c.phone.includes(q)
+                      })
+                      .length === 0 ? (
+                      <p className="p-3 text-sm text-center" style={darkTextMuted}>No customers found</p>
+                    ) : (
+                      customers
                         .filter(c => {
                           if (!customerSearch) return true
                           const q = customerSearch.toLowerCase()
                           return c.name.toLowerCase().includes(q) || c.phone.includes(q)
                         })
-                        .length === 0 ? (
-                        <p className="p-3 text-sm text-slate-500 text-center">No customers found</p>
-                      ) : (
-                        customers
-                          .filter(c => {
-                            if (!customerSearch) return true
-                            const q = customerSearch.toLowerCase()
-                            return c.name.toLowerCase().includes(q) || c.phone.includes(q)
-                          })
-                          .map(c => (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => selectCustomer(c)}
-                              className={`w-full text-left px-3 py-2 hover:bg-emerald-50 border-b border-slate-100 last:border-0 ${
-                                c.id === customerId ? 'bg-emerald-50' : ''
-                              }`}
-                            >
-                              <p className="text-sm font-medium text-slate-900">{c.name}</p>
-                              <p className="text-xs text-slate-500">{c.phone}</p>
-                              {c.address && <p className="text-xs text-slate-400 truncate">{c.address}</p>}
-                            </button>
-                          ))
-                      )}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <Button type="button" size="icon" variant="outline" onClick={() => setShowNewCustomer(true)} title="Add new customer">
-                  <UserPlus className="w-4 h-4" />
-                </Button>
-              </div>
+                        .map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => selectCustomer(c)}
+                            className="w-full text-left px-3 py-2 border-b transition-colors"
+                            style={{
+                              borderColor: 'rgba(255,255,255,0.04)',
+                              background: c.id === customerId ? 'rgba(212,223,58,0.08)' : 'transparent',
+                            }}
+                            onMouseEnter={(e) => { if (c.id !== customerId) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                            onMouseLeave={(e) => { if (c.id !== customerId) e.currentTarget.style.background = 'transparent' }}
+                          >
+                            <p className="text-sm font-medium" style={darkText}>{c.name}</p>
+                            <p className="text-xs" style={darkTextMuted}>{c.phone}</p>
+                            {c.address && <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.2)' }}>{c.address}</p>}
+                          </button>
+                        ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <button
+                type="button"
+                onClick={() => setShowNewCustomer(true)}
+                title="Add new customer"
+                className="p-2.5 rounded-xl shrink-0 transition-all duration-300"
+                style={btnSecondary}
+              >
+                <UserPlus className="w-4 h-4" />
+              </button>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-            <div>
-              <Label className="text-xs">Sales Note</Label>
-              <Textarea value={salesNote} onChange={e => setSalesNote(e.target.value)} rows={2} placeholder="Internal sales note..." className="mt-1" />
-            </div>
-            <div>
-              <Label className="text-xs">Delivery Instructions (optional)</Label>
-              <Textarea
-                value={deliveryInfo}
-                onChange={e => setDeliveryInfo(e.target.value)}
-                rows={2}
-                placeholder="Any special delivery instructions..."
-                className="mt-1"
-              />
-              {deliveryInfos.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {deliveryInfos.map(d => (
-                    <button
-                      key={d.id}
-                      type="button"
-                      onClick={() => setDeliveryInfo(d.note)}
-                      className="text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600"
-                    >
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <Label className="text-xs" style={darkLabel}>Sales Note</Label>
+            <Textarea value={salesNote} onChange={e => setSalesNote(e.target.value)} rows={2} placeholder="Internal sales note..." className="mt-1.5" style={darkInput} />
           </div>
+          <div>
+            <Label className="text-xs" style={darkLabel}>Delivery Instructions (optional)</Label>
+            <Textarea
+              value={deliveryInfo}
+              onChange={e => setDeliveryInfo(e.target.value)}
+              rows={2}
+              placeholder="Any special delivery instructions..."
+              className="mt-1.5"
+              style={darkInput}
+            />
+            {deliveryInfos.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {deliveryInfos.map(d => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => setDeliveryInfo(d.note)}
+                    className="text-xs px-2 py-0.5 rounded-full transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
-          {/* Delivery Contact Info */}
-          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <Label className="text-xs font-semibold text-amber-800 mb-2 block">
-              📦 Delivery Contact Information (actual recipient details)
-            </Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs">Delivery Name</Label>
-                <Input
-                  value={deliveryName}
-                  onChange={e => setDeliveryName(e.target.value)}
-                  placeholder="Recipient name"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Contact Number</Label>
-                <Input
-                  value={deliveryContact}
-                  onChange={e => setDeliveryContact(e.target.value)}
-                  placeholder="01XXXXXXXXX"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Delivery Address</Label>
-                <Textarea
-                  value={deliveryAddress}
-                  onChange={e => setDeliveryAddress(e.target.value)}
-                  rows={1}
-                  placeholder="Full delivery address"
-                  className="mt-1"
-                />
-              </div>
+        {/* Delivery Contact Info — glow box */}
+        <div
+          className="mt-4 p-5 rounded-2xl"
+          style={{
+            background: 'rgba(212, 223, 58, 0.05)',
+            border: '1px solid rgba(212, 223, 58, 0.15)',
+            boxShadow: 'inset 0 0 30px rgba(212, 223, 58, 0.02)',
+          }}
+        >
+          <p className="text-sm font-medium mb-4" style={{ color: 'rgba(212, 223, 58, 0.8)' }}>
+            📦 Delivery Contact Information (actual recipient details)
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-xs" style={darkLabel}>Delivery Name</Label>
+              <Input value={deliveryName} onChange={e => setDeliveryName(e.target.value)} placeholder="Recipient name" className="mt-1.5" style={darkInput} />
             </div>
-            <p className="text-xs text-amber-700 mt-2">
-              💡 Auto-filled from customer when selected. Edit if delivery is to a different person/address.
-            </p>
+            <div>
+              <Label className="text-xs" style={darkLabel}>Contact Number</Label>
+              <Input value={deliveryContact} onChange={e => setDeliveryContact(e.target.value)} placeholder="01XXXXXXXXX" className="mt-1.5" style={darkInput} />
+            </div>
+            <div>
+              <Label className="text-xs" style={darkLabel}>Delivery Address</Label>
+              <Textarea value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} rows={1} placeholder="Full delivery address" className="mt-1.5" style={darkInput} />
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <p className="text-xs mt-3" style={{ color: 'rgba(212, 223, 58, 0.5)' }}>
+            💡 Auto-filled from customer when selected. Edit if delivery is to a different person/address.
+          </p>
+        </div>
+      </div>
 
       {/* Items card */}
-      <Card className="border-slate-200">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-base">Items</CardTitle>
-            <Button type="button" size="sm" variant="outline" onClick={addItem}>
-              <Plus className="w-3 h-3 mr-1" /> Add Item
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="border border-slate-200 rounded-lg overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="text-left px-3 py-2 font-medium text-slate-600 min-w-[200px]">Item</th>
-                  <th className="text-right px-3 py-2 font-medium text-slate-600 w-20">Qty</th>
-                  <th className="text-left px-3 py-2 font-medium text-slate-600 w-20">UoM</th>
-                  <th className="text-right px-3 py-2 font-medium text-slate-600 w-28">Unit Price</th>
-                  <th className="text-right px-3 py-2 font-medium text-slate-600 w-32">Total</th>
-                  <th className="w-10"></th>
+      <div className="p-6" style={darkCard}>
+        <div className="flex justify-between items-center mb-5">
+          <p className="text-sm font-medium" style={darkText}>Items</p>
+          <button
+            type="button"
+            onClick={addItem}
+            className="px-4 py-1.5 rounded-full text-sm flex items-center gap-1.5 transition-all duration-300"
+            style={btnSecondary}
+          >
+            <Plus className="w-3 h-3" /> Add Item
+          </button>
+        </div>
+        <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(255,255,255,0.04)' }}>
+          <table className="w-full text-sm">
+            <thead style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <tr>
+                <th className="text-left px-3 py-2.5 font-medium min-w-[200px]" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Item</th>
+                <th className="text-right px-3 py-2.5 font-medium w-20" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Qty</th>
+                <th className="text-left px-3 py-2.5 font-medium w-20" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>UoM</th>
+                <th className="text-right px-3 py-2.5 font-medium w-28" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Unit Price</th>
+                <th className="text-right px-3 py-2.5 font-medium w-32" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Total</th>
+                <th className="w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((it, idx) => (
+                <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <td className="px-3 py-2">
+                    <Select value={it.itemId} onValueChange={(v) => updateItem(idx, 'itemId', v)}>
+                      <SelectTrigger className="h-9" style={darkInput}><SelectValue placeholder="Select item" /></SelectTrigger>
+                      <SelectContent style={{ background: '#1a1c1e', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        {dbItems.map(i => <SelectItem key={i.id} value={i.id}>{i.name} ({i.uom.name})</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-3 py-2">
+                    <Input type="number" value={it.qty} onChange={e => updateItem(idx, 'qty', parseFloat(e.target.value) || 0)} className="h-9 text-right" style={darkInput} />
+                  </td>
+                  <td className="px-3 py-2" style={darkTextMuted}>{it.uom || '-'}</td>
+                  <td className="px-3 py-2">
+                    <Input type="number" value={it.unitPrice} onChange={e => updateItem(idx, 'unitPrice', parseFloat(e.target.value) || 0)} className="h-9 text-right" style={darkInput} />
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold" style={darkText}>{formatCurrency(it.total)}</td>
+                  <td className="px-3 py-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => removeItem(idx)}
+                      className="p-1 transition-colors"
+                      style={{ color: 'rgba(255,100,100,0.4)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#ff6b6b'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,100,100,0.4)'}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {items.map((it, idx) => (
-                  <tr key={idx} className="border-b border-slate-100">
-                    <td className="px-3 py-2">
-                      <Select value={it.itemId} onValueChange={(v) => updateItem(idx, 'itemId', v)}>
-                        <SelectTrigger className="h-9"><SelectValue placeholder="Select item" /></SelectTrigger>
-                        <SelectContent>
-                          {dbItems.map(i => <SelectItem key={i.id} value={i.id}>{i.name} ({i.uom.name})</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <Input
-                        type="number"
-                        value={it.qty}
-                        onChange={e => updateItem(idx, 'qty', parseFloat(e.target.value) || 0)}
-                        className="h-9 text-right"
-                      />
-                    </td>
-                    <td className="px-3 py-2 text-slate-600">{it.uom || '-'}</td>
-                    <td className="px-3 py-2">
-                      <Input
-                        type="number"
-                        value={it.unitPrice}
-                        onChange={e => updateItem(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                        className="h-9 text-right"
-                      />
-                    </td>
-                    <td className="px-3 py-2 text-right font-medium">{formatCurrency(it.total)}</td>
-                    <td className="px-3 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => removeItem(idx)}
-                        className="text-red-500 hover:text-red-700 p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Totals + In Words */}
-      <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 bg-emerald-50 p-4 rounded-lg">
-              <p className="text-xs text-emerald-700">In Words</p>
-              <p className="text-base font-medium text-emerald-900 italic mt-1">
-                {numberToWords(grandTotal)}
-              </p>
+      <div className="p-6" style={darkCard}>
+        <div className="flex flex-col md:flex-row gap-5">
+          <div className="flex-1 p-4 rounded-xl" style={{ background: 'rgba(212, 223, 58, 0.05)', border: '1px solid rgba(212, 223, 58, 0.1)' }}>
+            <p className="text-xs" style={{ color: 'rgba(212, 223, 58, 0.6)' }}>In Words</p>
+            <p className="text-sm font-medium italic mt-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              {numberToWords(grandTotal)}
+            </p>
+          </div>
+          <div className="w-full md:w-80 space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span style={darkTextMuted}>Sub Total</span>
+              <span className="font-medium" style={darkText}>{formatCurrency(subTotal)}</span>
             </div>
-            <div className="w-full md:w-80 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-600">Sub Total</span>
-                <span className="font-medium">{formatCurrency(subTotal)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Discount</span>
-                <Input
-                  type="number"
-                  value={discount}
-                  onChange={e => setDiscount(parseFloat(e.target.value) || 0)}
-                  className="h-8 w-32 text-right"
-                />
-              </div>
-              <div className="flex justify-between text-base border-t border-slate-200 pt-2">
-                <span className="font-semibold">Grand Total</span>
-                <span className="font-bold">{formatCurrency(grandTotal)}</span>
-              </div>
+            <div className="flex justify-between items-center">
+              <span style={darkTextMuted}>Discount</span>
+              <Input
+                type="number"
+                value={discount}
+                onChange={e => setDiscount(parseFloat(e.target.value) || 0)}
+                className="h-8 w-32 text-right"
+                style={darkInput}
+              />
+            </div>
+            <div className="flex justify-between text-lg pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <span className="font-bold" style={darkText}>Grand Total</span>
+              <span className="font-bold text-xl" style={{ color: '#d4df3a' }}>{formatCurrency(grandTotal)}</span>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Action buttons at bottom */}
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="outline" onClick={() => setView('sales-orders')}>Cancel</Button>
-        <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
-          <Save className="w-4 h-4 mr-1" />
+      <div className="flex justify-end gap-3 pt-2">
+        <button
+          onClick={() => setView('sales-orders')}
+          className="px-5 py-2 transition-all duration-300"
+          style={btnSecondary}
+        >Cancel</button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-2 flex items-center gap-1.5 transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50"
+          style={btnPrimary}
+        >
+          <Save className="w-4 h-4" />
           {saving ? 'Saving...' : orderId ? 'Update Order' : 'Create Order'}
-        </Button>
+        </button>
       </div>
 
       {/* New customer dialog (kept as modal — quick add) */}
       {showNewCustomer && (
         <Dialog open onOpenChange={setShowNewCustomer}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" style={{ background: '#1a1c1e', border: '1px solid rgba(255,255,255,0.08)' }}>
             <DialogHeader>
-              <DialogTitle>Add New Customer</DialogTitle>
+              <DialogTitle style={darkText}>Add New Customer</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div>
-                <Label className="text-xs">Name *</Label>
-                <Input value={ncName} onChange={e => setNcName(e.target.value)} autoFocus />
+                <Label className="text-xs" style={darkLabel}>Name *</Label>
+                <Input value={ncName} onChange={e => setNcName(e.target.value)} autoFocus className="mt-1.5" style={darkInput} />
               </div>
               <div>
-                <Label className="text-xs">Contact Number * (unique)</Label>
-                <Input
-                  value={ncPhone}
-                  onChange={e => setNcPhone(e.target.value)}
-                  placeholder="01XXXXXXXXX"
-                />
-                <p className="text-xs text-slate-500 mt-1">Duplicates will be blocked automatically</p>
+                <Label className="text-xs" style={darkLabel}>Contact Number * (unique)</Label>
+                <Input value={ncPhone} onChange={e => setNcPhone(e.target.value)} placeholder="01XXXXXXXXX" className="mt-1.5" style={darkInput} />
+                <p className="text-xs mt-1" style={darkTextMuted}>Duplicates will be blocked automatically</p>
               </div>
               <div>
-                <Label className="text-xs">Address</Label>
-                <Textarea rows={2} value={ncAddress} onChange={e => setNcAddress(e.target.value)} />
+                <Label className="text-xs" style={darkLabel}>Address</Label>
+                <Textarea rows={2} value={ncAddress} onChange={e => setNcAddress(e.target.value)} className="mt-1.5" style={darkInput} />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowNewCustomer(false)}>Cancel</Button>
-              <Button onClick={handleCreateCustomer} className="bg-emerald-600 hover:bg-emerald-700">Add Customer</Button>
+              <button onClick={() => setShowNewCustomer(false)} className="px-5 py-2" style={btnSecondary}>Cancel</button>
+              <button onClick={handleCreateCustomer} className="px-5 py-2" style={btnPrimary}>Add Customer</button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
