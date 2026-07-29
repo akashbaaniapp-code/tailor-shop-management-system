@@ -21,6 +21,8 @@ interface SalesOrderItem {
   itemName?: string
   uom: string
   qty: number
+  qtyFeet?: number | null
+  qtyPiece?: number | null
   unitPrice: number
   total: number
 }
@@ -137,6 +139,8 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
           itemName: it.item.name,
           uom: it.uom,
           qty: it.qty,
+          qtyFeet: it.qtyFeet ?? null,
+          qtyPiece: it.qtyPiece ?? null,
           unitPrice: it.unitPrice,
           total: it.total
         })))
@@ -146,12 +150,12 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
         setLoading(false)
       })
     } else {
-      setItems([{ itemId: '', uom: '', qty: 1, unitPrice: 0, total: 0 }])
+      setItems([{ itemId: '', uom: '', qty: 0, qtyFeet: null, qtyPiece: null, unitPrice: 0, total: 0 }])
     }
   }, [orderId])
 
   function addItem() {
-    setItems([...items, { itemId: '', uom: '', qty: 1, unitPrice: 0, total: 0 }])
+    setItems([...items, { itemId: '', uom: '', qty: 0, qtyFeet: null, qtyPiece: null, unitPrice: 0, total: 0 }])
   }
 
   function removeItem(idx: number) {
@@ -171,7 +175,22 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
         next[idx].uom = dbItem.uom.name
         next[idx].unitPrice = dbItem.unitPrice
         next[idx].itemName = dbItem.name
+        // Reset qty split fields when item changes (they depend on UoM)
+        next[idx].qtyFeet = null
+        next[idx].qtyPiece = null
+        next[idx].qty = 0
       }
+    }
+    // Recompute effective qty + total
+    // For Feet UoM, qty = (qtyFeet || 0) + (qtyPiece || 0) — both fields can be filled independently.
+    // For other UoMs, qty stays as the single input value.
+    const isFeet = (next[idx].uom || '').toLowerCase() === 'feet'
+    if (isFeet) {
+      const feet = Number(next[idx].qtyFeet) || 0
+      const piece = Number(next[idx].qtyPiece) || 0
+      next[idx].qty = feet + piece
+    } else {
+      next[idx].qty = Number(next[idx].qty) || 0
     }
     next[idx].total = (Number(next[idx].qty) || 0) * (Number(next[idx].unitPrice) || 0)
     setItems(next)
@@ -179,6 +198,12 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
 
   const subTotal = items.reduce((s, it) => s + (Number(it.total) || 0), 0)
   const grandTotal = subTotal - (Number(discount) || 0)
+
+  // Whether ANY row in the items list currently has UoM = "Feet"
+  // (case-insensitive). When true, the table renders two qty columns
+  // (Feet Qty + Piece Qty) so users can record how many feet AND how many
+  // loose pieces were ordered for fabric-like items.
+  const anyFeetItem = items.some((it) => it.itemId && (it.uom || '').toLowerCase() === 'feet')
 
   async function handleCreateCustomer() {
     if (!ncName || !ncPhone) {
@@ -200,6 +225,29 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
   async function handleSave() {
     if (!customerId) { toast.error('Customer required'); return }
     if (!orderDate) { toast.error('Order date required'); return }
+
+    // Validate items: each must have an item selected and at least one qty filled.
+    // For Feet UoM: at least one of qtyFeet/qtyPiece must be > 0 (either can be blank).
+    // For other UoMs: qty must be > 0.
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i]
+      if (!it.itemId) continue // skip empty rows
+      const isFeet = (it.uom || '').toLowerCase() === 'feet'
+      if (isFeet) {
+        const feet = Number(it.qtyFeet) || 0
+        const piece = Number(it.qtyPiece) || 0
+        if (feet <= 0 && piece <= 0) {
+          toast.error(`Row ${i + 1}: Fill at least one of Feet or Piece quantity`)
+          return
+        }
+      } else {
+        if ((Number(it.qty) || 0) <= 0) {
+          toast.error(`Row ${i + 1}: Quantity required`)
+          return
+        }
+      }
+    }
+
     const validItems = items.filter(it => it.itemId && it.qty > 0)
     if (validItems.length === 0) { toast.error('At least one valid item required'); return }
 
@@ -218,6 +266,8 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
         items: validItems.map(it => ({
           itemId: it.itemId,
           qty: it.qty,
+          qtyFeet: it.qtyFeet,
+          qtyPiece: it.qtyPiece,
           uom: it.uom,
           unitPrice: it.unitPrice,
           total: it.total
@@ -257,7 +307,7 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
   function handleCreateAnother() {
     setSavedOrderId(null)
     setSavedOrderData(null)
-    setItems([{ itemId: '', uom: '', qty: 1, unitPrice: 0, total: 0 }])
+    setItems([{ itemId: '', uom: '', qty: 0, qtyFeet: null, qtyPiece: null, unitPrice: 0, total: 0 }])
     setCustomerId('')
     setTailorId('')
     setSalesNote('')
@@ -591,7 +641,14 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
             <thead style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
               <tr>
                 <th className="text-left px-3 py-2.5 font-medium min-w-[200px]" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Item</th>
-                <th className="text-right px-3 py-2.5 font-medium w-20" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Qty</th>
+                {anyFeetItem ? (
+                  <>
+                    <th className="text-right px-3 py-2.5 font-medium w-24" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Feet Qty</th>
+                    <th className="text-right px-3 py-2.5 font-medium w-24" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Piece Qty</th>
+                  </>
+                ) : (
+                  <th className="text-right px-3 py-2.5 font-medium w-20" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Qty</th>
+                )}
                 <th className="text-left px-3 py-2.5 font-medium w-20" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>UoM</th>
                 <th className="text-right px-3 py-2.5 font-medium w-28" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Unit Price</th>
                 <th className="text-right px-3 py-2.5 font-medium w-32" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Total</th>
@@ -599,7 +656,9 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
               </tr>
             </thead>
             <tbody>
-              {items.map((it, idx) => (
+              {items.map((it, idx) => {
+                const isFeet = (it.uom || '').toLowerCase() === 'feet'
+                return (
                 <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                   <td className="px-3 py-2">
                     <Select value={it.itemId} onValueChange={(v) => updateItem(idx, 'itemId', v)}>
@@ -609,9 +668,48 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="px-3 py-2">
-                    <Input type="number" value={it.qty} onChange={e => updateItem(idx, 'qty', parseFloat(e.target.value) || 0)} className="h-9 text-right" style={darkInput} />
-                  </td>
+                  {anyFeetItem ? (
+                    <>
+                      <td className="px-3 py-2">
+                        {isFeet ? (
+                          <Input
+                            type="number"
+                            value={it.qtyFeet ?? ''}
+                            onChange={e => updateItem(idx, 'qtyFeet', e.target.value === '' ? null : parseFloat(e.target.value))}
+                            placeholder="0"
+                            className="h-9 text-right"
+                            style={darkInput}
+                          />
+                        ) : (
+                          <Input
+                            type="number"
+                            value={it.qty}
+                            onChange={e => updateItem(idx, 'qty', parseFloat(e.target.value) || 0)}
+                            className="h-9 text-right"
+                            style={darkInput}
+                          />
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {isFeet ? (
+                          <Input
+                            type="number"
+                            value={it.qtyPiece ?? ''}
+                            onChange={e => updateItem(idx, 'qtyPiece', e.target.value === '' ? null : parseFloat(e.target.value))}
+                            placeholder="0"
+                            className="h-9 text-right"
+                            style={darkInput}
+                          />
+                        ) : (
+                          <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
+                        )}
+                      </td>
+                    </>
+                  ) : (
+                    <td className="px-3 py-2">
+                      <Input type="number" value={it.qty} onChange={e => updateItem(idx, 'qty', parseFloat(e.target.value) || 0)} className="h-9 text-right" style={darkInput} />
+                    </td>
+                  )}
                   <td className="px-3 py-2" style={darkTextMuted}>{it.uom || '-'}</td>
                   <td className="px-3 py-2">
                     <Input type="number" value={it.unitPrice} onChange={e => updateItem(idx, 'unitPrice', parseFloat(e.target.value) || 0)} className="h-9 text-right" style={darkInput} />
@@ -630,10 +728,16 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
                     </button>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
+        {anyFeetItem && (
+          <p className="text-xs mt-3" style={{ color: 'rgba(212, 223, 58, 0.5)' }}>
+            💡 For Feet items: fill at least one of Feet Qty or Piece Qty. Either can be blank — both together count as total quantity for pricing.
+          </p>
+        )}
       </div>
 
       {/* Totals + In Words */}

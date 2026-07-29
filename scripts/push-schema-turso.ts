@@ -163,6 +163,11 @@ const statements = [
   // Payable
   `ALTER TABLE "Payable" ADD COLUMN "entityId" TEXT`,
   `ALTER TABLE "Payable" ADD COLUMN "subEntityId" TEXT`,
+  // SalesOrderItem — qtyFeet/qtyPiece for items whose UoM is Feet (e.g. fabric rolls)
+  // Both nullable; at least one must be filled when UoM=Feet. The "qty" column holds
+  // the combined total (qtyFeet + qtyPiece) used for price calculation.
+  `ALTER TABLE "SalesOrderItem" ADD COLUMN "qtyFeet" REAL`,
+  `ALTER TABLE "SalesOrderItem" ADD COLUMN "qtyPiece" REAL`,
 
   `CREATE TABLE IF NOT EXISTS "SalesOrder" (
     "id" TEXT PRIMARY KEY NOT NULL,
@@ -191,6 +196,8 @@ const statements = [
     "orderId" TEXT NOT NULL,
     "itemId" TEXT NOT NULL,
     "qty" REAL NOT NULL DEFAULT 0,
+    "qtyFeet" REAL,
+    "qtyPiece" REAL,
     "uom" TEXT NOT NULL,
     "unitPrice" REAL NOT NULL DEFAULT 0,
     "total" REAL NOT NULL DEFAULT 0,

@@ -5,6 +5,8 @@ import { BRAND, buildShopHeaderHtml } from './brand'
 interface InvoiceItem {
   item: { name: string }
   qty: number
+  qtyFeet?: number | null
+  qtyPiece?: number | null
   uom: string
   unitPrice: number
   total: number
@@ -77,15 +79,27 @@ export function printInvoice(order: InvoiceOrder) {
     : order.paymentStatus === 'partial' ? 'Partial Paid'
     : 'Unpaid'
 
-  const itemsRows = order.items.map((it, idx) => `
+  const itemsRows = order.items.map((it, idx) => {
+    // For Feet items, show "X ft + Y pc" format when split quantities are present.
+    const isFeet = (it.uom || '').toLowerCase() === 'feet'
+    let qtyDisplay: string
+    if (isFeet && (it.qtyFeet != null || it.qtyPiece != null)) {
+      const feetPart = it.qtyFeet != null ? `${it.qtyFeet} ft` : ''
+      const piecePart = it.qtyPiece != null ? `${it.qtyPiece} pc` : ''
+      qtyDisplay = [feetPart, piecePart].filter(Boolean).join(' + ')
+    } else {
+      qtyDisplay = `${it.qty} ${it.uom}`
+    }
+    return `
     <tr>
       <td>${idx + 1}</td>
       <td>${it.item.name}</td>
-      <td class="center">${it.qty} ${it.uom}</td>
+      <td class="center">${qtyDisplay}</td>
       <td class="right">${formatCurrency(it.unitPrice)}</td>
       <td class="right">${formatCurrency(it.total)}</td>
     </tr>
-  `).join('')
+  `
+  }).join('')
 
   const html = `
     <div class="header">

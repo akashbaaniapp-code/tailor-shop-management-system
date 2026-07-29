@@ -98,6 +98,8 @@ export async function PUT(
           orderId: id,
           itemId: it.itemId,
           qty: Number(it.qty) || 0,
+          qtyFeet: it.qtyFeet !== undefined && it.qtyFeet !== null && it.qtyFeet !== '' ? Number(it.qtyFeet) : null,
+          qtyPiece: it.qtyPiece !== undefined && it.qtyPiece !== null && it.qtyPiece !== '' ? Number(it.qtyPiece) : null,
           uom: it.uom,
           unitPrice: Number(it.unitPrice) || 0,
           total: Number(it.total) || 0,
