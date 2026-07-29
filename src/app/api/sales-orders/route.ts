@@ -195,30 +195,62 @@ export async function POST(request: NextRequest) {
   })
 
   // Batch-insert all line items in a single round-trip (much faster than sequential create)
+  let savedItems: any[] = []
   if (items.length > 0) {
     const { _getClient } = await import('@/lib/db')
     const client = _getClient()
-    const stmts = items.map((it: any) => {
+    const now = new Date().toISOString()
+    const rowsToInsert = items.map((it: any) => {
       const id = crypto.randomUUID()
       const qtyFeet = it.qtyFeet !== undefined && it.qtyFeet !== null && it.qtyFeet !== '' ? Number(it.qtyFeet) : null
       const qtyPiece = it.qtyPiece !== undefined && it.qtyPiece !== null && it.qtyPiece !== '' ? Number(it.qtyPiece) : null
       return {
-        sql: `INSERT INTO "SalesOrderItem" (id, orderId, itemId, qty, qtyFeet, qtyPiece, uom, unitPrice, total, deliveredQty, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
-        args: [id, order.id, it.itemId, Number(it.qty) || 0, qtyFeet, qtyPiece, it.uom, Number(it.unitPrice) || 0, Number(it.total) || 0, new Date().toISOString()]
+        id,
+        itemId: it.itemId,
+        qty: Number(it.qty) || 0,
+        qtyFeet,
+        qtyPiece,
+        uom: it.uom,
+        unitPrice: Number(it.unitPrice) || 0,
+        total: Number(it.total) || 0,
+        deliveredQty: 0
       }
     })
+    const stmts = rowsToInsert.map((r) => ({
+      sql: `INSERT INTO "SalesOrderItem" (id, orderId, itemId, qty, qtyFeet, qtyPiece, uom, unitPrice, total, deliveredQty, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+      args: [r.id, order.id, r.itemId, r.qty, r.qtyFeet, r.qtyPiece, r.uom, r.unitPrice, r.total, now]
+    }))
     await client.batch(stmts)
+    savedItems = rowsToInsert
   }
 
-  // Fetch the order with items for the response
-  const orderWithItems = await db.salesOrder.findUnique({
-    where: { id: order.id },
-    include: {
-      customer: true,
-      tailor: true,
-      items: { include: { item: { include: { uom: true } } } }
+  // Build response order without an extra DB round-trip.
+  // We already have the order object from create() and the items we just inserted;
+  // we just need to attach customer/tailor/item names for printing.
+  const [customer, tailor, dbItemsLookup] = await Promise.all([
+    db.customer.findUnique({ where: { id: customerId } }),
+    tailorId ? db.tailor.findUnique({ where: { id: tailorId } }) : Promise.resolve(null),
+    // Fetch all items in a single query (instead of one-per-item)
+    db.item.findMany({ where: { id: { in: savedItems.map((r: any) => r.itemId) } }, include: { uom: true } })
+  ])
+
+  // Build items array in the same shape the client expects for invoice printing
+  const itemsForResponse = savedItems.map((r: any) => {
+    const dbItem = dbItemsLookup.find((i: any) => i.id === r.itemId)
+    return {
+      ...r,
+      item: dbItem ? { name: dbItem.name, uom: dbItem.uom } : { name: '', uom: { name: r.uom } }
     }
   })
+
+  const orderWithItems = {
+    ...order,
+    customer,
+    tailor,
+    items: itemsForResponse,
+    deliveries: [],
+    bills: []
+  }
 
   const inWords = numberToWords(grandTotal)
 
