@@ -181,18 +181,20 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
         next[idx].qty = 0
       }
     }
-    // Recompute effective qty + total
-    // For Feet UoM, qty = (qtyFeet || 0) + (qtyPiece || 0) — both fields can be filled independently.
-    // For other UoMs, qty stays as the single input value.
+    // Recompute effective qty + total.
+    // For Feet UoM: unit price is per foot, so total = qtyFeet × unitPrice.
+    // qtyPiece is recorded for reference only — it does NOT multiply with unit price.
+    // The "qty" field stored in DB = qtyFeet (used for invoice line total).
+    // For other UoMs: qty stays as the single input value.
     const isFeet = (next[idx].uom || '').toLowerCase() === 'feet'
     if (isFeet) {
       const feet = Number(next[idx].qtyFeet) || 0
-      const piece = Number(next[idx].qtyPiece) || 0
-      next[idx].qty = feet + piece
+      next[idx].qty = feet
+      next[idx].total = feet * (Number(next[idx].unitPrice) || 0)
     } else {
       next[idx].qty = Number(next[idx].qty) || 0
+      next[idx].total = (Number(next[idx].qty) || 0) * (Number(next[idx].unitPrice) || 0)
     }
-    next[idx].total = (Number(next[idx].qty) || 0) * (Number(next[idx].unitPrice) || 0)
     setItems(next)
   }
 
@@ -275,12 +277,11 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
         discount: Number(discount) || 0
       }
       if (orderId) {
-        await api.updateSalesOrder(orderId, payload)
+        const updateRes = await api.updateSalesOrder(orderId, payload)
         toast.success('Sales order updated')
-        // Fetch the updated order for printing
-        const res = await api.getSalesOrder(orderId)
+        // PUT response already returns the full order with items/deliveries/bills included
         setSavedOrderId(orderId)
-        setSavedOrderData(res.order)
+        setSavedOrderData(updateRes.order)
       } else {
         const res = await api.createSalesOrder(payload)
         toast.success('Sales order created')
@@ -735,7 +736,7 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
         </div>
         {anyFeetItem && (
           <p className="text-xs mt-3" style={{ color: 'rgba(212, 223, 58, 0.5)' }}>
-            💡 For Feet items: fill at least one of Feet Qty or Piece Qty. Either can be blank — both together count as total quantity for pricing.
+            💡 For Feet items: enter Feet Qty (priced) and Piece Qty (reference only — not priced). Unit price multiplies with Feet Qty only. At least one of the two must be filled.
           </p>
         )}
       </div>

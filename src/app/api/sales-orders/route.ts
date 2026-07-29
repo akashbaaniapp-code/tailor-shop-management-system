@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
   const discountAmount = Number(discount) || 0
   const grandTotal = subTotal - discountAmount
 
-  // Create sales order with items — tagged with entity context
+  // Create sales order first (items will be inserted in a single batch for speed)
   const order = await db.salesOrder.create({
     data: {
       orderId,
@@ -190,20 +190,29 @@ export async function POST(request: NextRequest) {
       status: 'full_pending',
       paymentStatus: 'unpaid',
       entityId: ctx.entityId,
-      subEntityId: ctx.subEntityId,
-      items: {
-        create: items.map((it: any) => ({
-          itemId: it.itemId,
-          qty: Number(it.qty) || 0,
-          qtyFeet: it.qtyFeet !== undefined && it.qtyFeet !== null && it.qtyFeet !== '' ? Number(it.qtyFeet) : null,
-          qtyPiece: it.qtyPiece !== undefined && it.qtyPiece !== null && it.qtyPiece !== '' ? Number(it.qtyPiece) : null,
-          uom: it.uom,
-          unitPrice: Number(it.unitPrice) || 0,
-          total: Number(it.total) || 0,
-          deliveredQty: 0
-        }))
+      subEntityId: ctx.subEntityId
+    }
+  })
+
+  // Batch-insert all line items in a single round-trip (much faster than sequential create)
+  if (items.length > 0) {
+    const { _getClient } = await import('@/lib/db')
+    const client = _getClient()
+    const stmts = items.map((it: any) => {
+      const id = crypto.randomUUID()
+      const qtyFeet = it.qtyFeet !== undefined && it.qtyFeet !== null && it.qtyFeet !== '' ? Number(it.qtyFeet) : null
+      const qtyPiece = it.qtyPiece !== undefined && it.qtyPiece !== null && it.qtyPiece !== '' ? Number(it.qtyPiece) : null
+      return {
+        sql: `INSERT INTO "SalesOrderItem" (id, orderId, itemId, qty, qtyFeet, qtyPiece, uom, unitPrice, total, deliveredQty, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+        args: [id, order.id, it.itemId, Number(it.qty) || 0, qtyFeet, qtyPiece, it.uom, Number(it.unitPrice) || 0, Number(it.total) || 0, new Date().toISOString()]
       }
-    },
+    })
+    await client.batch(stmts)
+  }
+
+  // Fetch the order with items for the response
+  const orderWithItems = await db.salesOrder.findUnique({
+    where: { id: order.id },
     include: {
       customer: true,
       tailor: true,
@@ -213,5 +222,5 @@ export async function POST(request: NextRequest) {
 
   const inWords = numberToWords(grandTotal)
 
-  return NextResponse.json({ order, inWords })
+  return NextResponse.json({ order: orderWithItems, inWords })
 }

@@ -89,24 +89,21 @@ export async function PUT(
     }
   })
 
-  // Replace items if provided
-  if (items && Array.isArray(items)) {
+  // Replace items if provided — use batch insert for speed (single round-trip)
+  if (items && Array.isArray(items) && items.length > 0) {
     await db.salesOrderItem.deleteMany({ where: { orderId: id } })
-    for (const it of items) {
-      await db.salesOrderItem.create({
-        data: {
-          orderId: id,
-          itemId: it.itemId,
-          qty: Number(it.qty) || 0,
-          qtyFeet: it.qtyFeet !== undefined && it.qtyFeet !== null && it.qtyFeet !== '' ? Number(it.qtyFeet) : null,
-          qtyPiece: it.qtyPiece !== undefined && it.qtyPiece !== null && it.qtyPiece !== '' ? Number(it.qtyPiece) : null,
-          uom: it.uom,
-          unitPrice: Number(it.unitPrice) || 0,
-          total: Number(it.total) || 0,
-          deliveredQty: 0
-        }
-      })
-    }
+    const { _getClient } = await import('@/lib/db')
+    const client = _getClient()
+    const stmts = items.map((it: any) => {
+      const itemId = crypto.randomUUID()
+      const qtyFeet = it.qtyFeet !== undefined && it.qtyFeet !== null && it.qtyFeet !== '' ? Number(it.qtyFeet) : null
+      const qtyPiece = it.qtyPiece !== undefined && it.qtyPiece !== null && it.qtyPiece !== '' ? Number(it.qtyPiece) : null
+      return {
+        sql: `INSERT INTO "SalesOrderItem" (id, orderId, itemId, qty, qtyFeet, qtyPiece, uom, unitPrice, total, deliveredQty, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+        args: [itemId, id, it.itemId, Number(it.qty) || 0, qtyFeet, qtyPiece, it.uom, Number(it.unitPrice) || 0, Number(it.total) || 0, new Date().toISOString()]
+      }
+    })
+    await client.batch(stmts)
   }
 
   const updated = await db.salesOrder.findUnique({
