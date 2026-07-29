@@ -236,14 +236,8 @@ export async function POST(request: NextRequest) {
 
   await client.batch(batchStmts)
 
-  // Build response order object (without an extra DB round-trip).
-  // We already have everything we need — just attach customer/tailor/items.
-  const [customer, tailor, dbItemsLookup] = await Promise.all([
-    db.customer.findUnique({ where: { id: customerId } }),
-    tailorId ? db.tailor.findUnique({ where: { id: tailorId } }) : Promise.resolve(null),
-    db.item.findMany({ where: { id: { in: itemRows.map((r) => r.itemId) } }, include: { uom: true } })
-  ])
-
+  // Build response order object WITHOUT any extra DB round-trip.
+  // Client-side enrichment adds customer/tailor/item names from its existing state.
   const order = {
     id: orderId_short,
     orderId: orderId_short,
@@ -265,18 +259,13 @@ export async function POST(request: NextRequest) {
     entityId: ctx.entityId,
     subEntityId: ctx.subEntityId,
     createdAt: nowIso,
-    customer,
-    tailor,
-    items: itemRows.map((r) => {
-      const dbItem = dbItemsLookup.find((i: any) => i.id === r.itemId)
-      return {
-        ...r,
-        orderId: orderId_short,
-        deliveredQty: 0,
-        createdAt: nowIso,
-        item: dbItem ? { name: dbItem.name, uom: dbItem.uom } : { name: '', uom: { name: r.uom } }
-      }
-    }),
+    items: itemRows.map((r) => ({
+      ...r,
+      orderId: orderId_short,
+      deliveredQty: 0,
+      createdAt: nowIso,
+      itemName: '' // client will fill this in via dbItems lookup
+    })),
     deliveries: [],
     bills: []
   }

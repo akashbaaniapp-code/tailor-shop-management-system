@@ -285,8 +285,22 @@ export default function SalesOrderFormPage({ orderId }: { orderId?: string }) {
       } else {
         const res = await api.createSalesOrder(payload)
         toast.success('Sales order created')
+        // Server returns order without customer/tailor/item names (to skip a DB round-trip).
+        // We enrich it client-side using data we already have in state.
+        const enrichedOrder = {
+          ...res.order,
+          customer: customers.find((c) => c.id === customerId) || null,
+          tailor: tailors.find((t) => t.id === tailorId) || null,
+          items: (res.order.items || []).map((it: any) => {
+            const dbItem = dbItems.find((i) => i.id === it.itemId)
+            return {
+              ...it,
+              item: dbItem ? { name: dbItem.name, uom: dbItem.uom } : { name: it.itemName || '', uom: { name: it.uom } }
+            }
+          })
+        }
         setSavedOrderId(res.order.id)
-        setSavedOrderData(res.order)
+        setSavedOrderData(enrichedOrder)
       }
     } catch (err: any) {
       toast.error(err.message)
