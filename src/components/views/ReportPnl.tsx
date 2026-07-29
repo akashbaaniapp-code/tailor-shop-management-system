@@ -473,3 +473,4 @@ function StatCard({ label, value, color }: { label: string; value: number; color
     </div>
   )
 }
+// P&L Report - dark theme deployed Wed Jul 29 08:21:49 UTC 2026
