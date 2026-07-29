@@ -1,25 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, CheckCircle2, Layers, ChevronRight, MapPin, Phone, Globe } from 'lucide-react'
+import { Building2, CheckCircle2, Layers, ChevronRight, MapPin, Phone } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { BRAND } from '@/lib/brand'
 
 export default function EntitySelection() {
   const { user, accessibleEntities, accessibleSubEntities, setSelectedEntityContext, setEntityContextConfirmed } = useAppStore()
-  const [selection, setSelection] = useState<{ type: 'all' | 'entity' | 'subEntity'; id?: string } | null>(null)
+  const [selection, setSelection] = useState<{ type: 'entity' | 'subEntity'; id: string } | null>(null)
 
-  const isAdmin = user?.role === 'admin'
-
-  function handleSelectAll() { setSelection({ type: 'all' }) }
   function handleSelectEntity(entityId: string) { setSelection({ type: 'entity', id: entityId }) }
   function handleSelectSubEntity(subEntityId: string) { setSelection({ type: 'subEntity', id: subEntityId }) }
 
   function handleConfirm() {
     if (!selection) return
-    if (selection.type === 'all') {
-      setSelectedEntityContext(null, null)
-    } else if (selection.type === 'entity') {
+    if (selection.type === 'entity') {
       const entity = accessibleEntities.find(e => e.id === selection.id) || null
       setSelectedEntityContext(entity, null)
     } else {
@@ -75,42 +70,9 @@ export default function EntitySelection() {
             Welcome, {user?.name || user?.username}!
           </h1>
           <p className="text-sm mt-2" style={{ color: '#666' }}>
-            {isAdmin
-              ? 'Select an entity to work in, or choose "All Entities" to see everything.'
-              : 'Click on an entity or sub-entity below to enter and start working.'}
+            Click on an entity or sub-entity below to enter and start working.
           </p>
         </div>
-
-        {/* All Entities — admin only */}
-        {isAdmin && (
-          <>
-            <div className="flex items-center gap-2 mt-6 mb-4">
-              <Globe className="w-3.5 h-3.5" style={{ color: '#6c7a89' }} />
-              <span className="text-sm font-medium" style={{ color: '#6c7a89' }}>Overview (Admin)</span>
-            </div>
-            <button
-              onClick={handleSelectAll}
-              className="w-full p-5 rounded-2xl flex items-center gap-5 transition-all duration-300 mb-4"
-              style={{
-                background: selection?.type === 'all' ? '#1f2227' : '#1a1c1e',
-                border: selection?.type === 'all' ? '1px solid #d4df3a' : '1px solid #2a2d33',
-                transform: selection?.type === 'all' ? 'translateY(-2px)' : 'none',
-                boxShadow: selection?.type === 'all' ? '0 5px 20px rgba(212,223,58,0.05)' : 'none',
-              }}
-              onMouseEnter={(e) => { if (selection?.type !== 'all') { e.currentTarget.style.borderColor = '#d4df3a'; e.currentTarget.style.background = '#1f2227'; e.currentTarget.style.transform = 'translateY(-2px)' } }}
-              onMouseLeave={(e) => { if (selection?.type !== 'all') { e.currentTarget.style.borderColor = '#2a2d33'; e.currentTarget.style.background = '#1a1c1e'; e.currentTarget.style.transform = 'none' } }}
-            >
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#0b0d0f' }}>
-                <Globe className="w-5 h-5" style={{ color: selection?.type === 'all' ? '#d4df3a' : '#888' }} />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="text-base font-semibold" style={{ color: '#fff' }}>All Entities</p>
-                <p className="text-xs" style={{ color: '#888' }}>View data across all entities (admin overview)</p>
-              </div>
-              {selection?.type === 'all' && <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: '#d4df3a' }} />}
-            </button>
-          </>
-        )}
 
         {/* Entities */}
         {hasEntities && (
@@ -207,15 +169,13 @@ export default function EntitySelection() {
           <p className="text-xs font-semibold" style={{ color: '#aaa' }}>Your selection:</p>
           {selection ? (
             <p className="text-sm mt-1" style={{ color: '#1db954' }}>
-              {selection.type === 'all'
-                ? 'All Entities (Admin Overview)'
-                : selection.type === 'entity'
+              {selection.type === 'entity'
                 ? `Entity: ${accessibleEntities.find(e => e.id === selection.id)?.name || 'Unknown'}`
                 : `Sub-Entity: ${accessibleSubEntities.find(s => s.id === selection.id)?.name || 'Unknown'}`}
             </p>
           ) : (
             <p className="text-sm italic mt-1" style={{ color: '#666' }}>
-              {isAdmin ? 'Choose "All Entities" for overview, or click a specific entity to work in.' : 'Please click on an entity or sub-entity above to select it.'}
+              Please click on an entity or sub-entity above to select it.
             </p>
           )}
         </div>

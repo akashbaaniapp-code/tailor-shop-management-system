@@ -19,3 +19,39 @@ Stage Summary:
 - Users & Access Rights page fully converted from light Tailwind theme to dark glassmorphism, including role pill badges, blue usernames, permissions pill button, and dark-themed permissions editor dialog with lime-accent checkboxes.
 - Both files type-check clean.
 - Remaining dark-theme conversion work (not in this task): SetupUom, SetupCustomer, SetupDeliveryInfo, SetupEntity, UserFormPage, and all Report* views.
+
+---
+Task ID: entity-selection-no-all-entities
+Agent: main
+Task: Remove "All Entities" overview option from entity selection page. Every user (including admin) should see ONLY the entities assigned to them via UserPermission rows. Admin no longer auto-gets all entities — assignment-based access for everyone. Lockout fallback for users with zero permission rows.
+
+Work Log:
+- Read EntitySelection.tsx — confirmed it had an "All Entities" button shown for admins, and a selection state type that included 'all'.
+- Read /api/auth/login/route.ts and /api/auth/me/route.ts — confirmed admin branch auto-populated accessibleEntities/accessibleSubEntities with ALL entities from DB.
+- Updated /api/auth/login/route.ts:
+  * Removed the `user.role === 'admin'` branch that returned all entities.
+  * New logic: every user (admin or not) sees only entities whose IDs appear in their UserPermission.entityIds / subEntityIds arrays.
+  * Lockout fallback: if a user has zero UserPermission rows at all (e.g. freshly seeded admin with no permissions yet), fall back to showing all entities so they can still log in.
+- Updated /api/auth/me/route.ts with identical logic (so the page-refresh revalidation matches login).
+- Updated EntitySelection.tsx:
+  * Removed the Globe icon import (no longer needed).
+  * Removed `handleSelectAll` function and `isAdmin` variable.
+  * Removed the entire "All Entities" overview card UI (admin-only block).
+  * Simplified selection state type from `'all' | 'entity' | 'subEntity'` to `'entity' | 'subEntity'`.
+  * Updated welcome message — removed the admin-specific "or choose All Entities" text.
+  * Updated selection summary text — removed the "All Entities (Admin Overview)" option.
+  * Updated empty-state hint — same message for everyone now.
+- Updated AppShell.tsx — the entity-switch button's fallback text changed from "All Entities" to "Select Entity" (just a display label; users always have an entity selected after entering).
+- Ran `npx tsc --noEmit` — no type errors from any of the changed files.
+- Verified no leftover `isAdmin`, `handleSelectAll`, or `type: 'all'` references in EntitySelection.tsx.
+
+Stage Summary:
+- "All Entities" overview option is fully removed from the entity selection page.
+- All users (admin, manager, staff) see ONLY entities explicitly assigned via UserPermission rows.
+- Existing permission multi-select system (entityIds + subEntityIds arrays) already supports assigning main entity OR sub-entity in any combination — no further schema changes needed.
+- Lockout protection: users with zero permission rows (e.g. default seeded admin) still see all entities so they're never locked out of the system.
+- Files updated:
+  * /home/z/my-project/src/app/api/auth/login/route.ts
+  * /home/z/my-project/src/app/api/auth/me/route.ts
+  * /home/z/my-project/src/components/EntitySelection.tsx
+  * /home/z/my-project/src/components/AppShell.tsx

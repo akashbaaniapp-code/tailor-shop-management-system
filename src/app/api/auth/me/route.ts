@@ -27,21 +27,25 @@ export async function GET(request: NextRequest) {
     if (p.subEntityId) subEntityIds.add(p.subEntityId)
   }
 
+  // Every user (including admin) sees ONLY the entities assigned to them
+  // via UserPermission rows. Fallback to all entities if user has no
+  // permission rows yet (avoids lockout for freshly seeded admin).
+  const hasAssignedEntities = entityIds.size > 0 || subEntityIds.size > 0
   let accessibleEntities: any[] = []
   let accessibleSubEntities: any[] = []
-  if (entityIds.size > 0 || subEntityIds.size > 0 || user.role === 'admin') {
+  if (hasAssignedEntities || permissions.length === 0) {
     const [allEntities, allSubEntities] = await Promise.all([
       db.entity.findMany({ orderBy: { name: 'asc' } }),
       db.subEntity.findMany({ include: { entity: true }, orderBy: { name: 'asc' } })
     ])
-    if (user.role === 'admin') {
-      accessibleEntities = allEntities
-      accessibleSubEntities = allSubEntities
-    } else {
+    if (hasAssignedEntities) {
       accessibleEntities = allEntities.filter((e: any) => entityIds.has(e.id))
       accessibleSubEntities = allSubEntities.filter((s: any) =>
         subEntityIds.has(s.id) || (s.entityId && entityIds.has(s.entityId))
       )
+    } else {
+      accessibleEntities = allEntities
+      accessibleSubEntities = allSubEntities
     }
   }
 

@@ -59,22 +59,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch entity + sub-entity names
+    // Every user (including admin) sees ONLY the entities assigned to them
+    // via UserPermission rows. If a user has no permission rows at all,
+    // we fall back to showing all entities so they don't get locked out
+    // (e.g. the default seeded admin with no permissions yet).
+    const hasAssignedEntities = entityIds.size > 0 || subEntityIds.size > 0
     let accessibleEntities: any[] = []
     let accessibleSubEntities: any[] = []
-    if (entityIds.size > 0 || subEntityIds.size > 0 || user.role === 'admin') {
+    if (hasAssignedEntities || permissions.length === 0) {
       const [allEntities, allSubEntities] = await Promise.all([
         db.entity.findMany({ orderBy: { name: 'asc' } }),
         db.subEntity.findMany({ include: { entity: true }, orderBy: { name: 'asc' } })
       ])
-      if (user.role === 'admin') {
-        accessibleEntities = allEntities
-        accessibleSubEntities = allSubEntities
-      } else {
+      if (hasAssignedEntities) {
         accessibleEntities = allEntities.filter((e: any) => entityIds.has(e.id))
         // Sub-entities: include those directly allowed, or those under allowed entities
         accessibleSubEntities = allSubEntities.filter((s: any) =>
           subEntityIds.has(s.id) || (s.entityId && entityIds.has(s.entityId))
         )
+      } else {
+        // No permission rows at all — fallback to all entities (avoids lockout)
+        accessibleEntities = allEntities
+        accessibleSubEntities = allSubEntities
       }
     }
 

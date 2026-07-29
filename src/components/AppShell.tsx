@@ -294,7 +294,7 @@ export default function AppShell() {
             >
               <Building2 className="w-4 h-4 mr-1" />
               <span className="hidden sm:inline truncate max-w-[140px]">
-                {selectedSubEntity?.name || selectedEntity?.name || 'All Entities'}
+                {selectedSubEntity?.name || selectedEntity?.name || 'Select Entity'}
               </span>
             </Button>
             <Avatar className="w-8 h-8" style={{ background: '#d4df3a' }}>
