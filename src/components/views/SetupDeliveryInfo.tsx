@@ -61,17 +61,50 @@ export default function SetupDeliveryInfo() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ background: '#14161a', border: '1px solid #2a2d33', borderRadius: 16, padding: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ fontSize: 14, color: '#666' }}>Save reusable delivery information templates (e.g. home delivery, office pickup)</p>
-          <button
-            onClick={() => setShowForm(true)}
-            style={{ background: '#1db954', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-          >
-            <Plus size={16} /> Add Info
-          </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
+      {/* Control Card */}
+      <div
+        style={{
+          background: '#14161a',
+          border: '1px solid #2a2d33',
+          borderRadius: 16,
+          padding: 25,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 20,
+        }}
+      >
+        <div>
+          <p style={{ fontSize: 14, color: '#e8eae9', lineHeight: 1.6, margin: 0 }}>
+            Save reusable delivery information templates
+            <span style={{ display: 'block', marginTop: 2, color: '#555', fontSize: 12 }}>
+              Examples: Home Delivery, Office Pickup, Courier Pickup
+            </span>
+          </p>
         </div>
+        <button
+          onClick={() => setShowForm(true)}
+          style={{
+            background: '#1db954',
+            color: '#fff',
+            border: 'none',
+            padding: '10px 24px',
+            borderRadius: 10,
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 14,
+            transition: '0.3s',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = '#1aa34a')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = '#1db954')}
+        >
+          <Plus size={16} /> Add Info
+        </button>
       </div>
 
       <div style={{ background: '#14161a', border: '1px solid #2a2d33', borderRadius: 16, overflow: 'hidden' }}>
@@ -94,23 +127,24 @@ export default function SetupDeliveryInfo() {
               <div
                 key={it.id}
                 style={{
-                  padding: 16,
+                  padding: '20px 25px',
                   display: 'flex',
                   alignItems: 'flex-start',
                   justifyContent: 'space-between',
                   gap: 12,
-                  borderBottom: idx === items.length - 1 ? 'none' : '1px solid #1f2227',
+                  borderBottom: idx === items.length - 1 ? 'none' : '1px solid #2a2d33',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <div>
-                  <p style={{ color: '#fff', fontWeight: 600 }}>{it.label}</p>
-                  <p style={{ fontSize: 14, color: '#888', marginTop: 2 }}>{it.note}</p>
+                  <p style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>{it.label}</p>
+                  <p style={{ fontSize: 14, color: '#888', marginTop: 4 }}>{it.note}</p>
                 </div>
                 <button
                   onClick={() => handleDelete(it.id)}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 4, display: 'inline-flex' }}
+                  title="Delete"
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 0, display: 'inline-flex', transition: '0.3s' }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
                   onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
                 >

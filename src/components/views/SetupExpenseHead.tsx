@@ -158,14 +158,14 @@ export default function SetupExpenseHead() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
-                <tr style={{ background: '#1f2227' }}>
+                <tr style={{ background: '#ffffff' }}>
                   <th
                     style={{
                       textAlign: 'left',
-                      padding: '14px 10px 14px 25px',
-                      color: '#888',
-                      fontWeight: 500,
-                      borderBottom: '1px solid #2a2d33',
+                      padding: '16px 10px 16px 25px',
+                      color: '#333',
+                      fontWeight: 600,
+                      borderBottom: '1px solid #e0e0e0',
                     }}
                   >
                     Name
@@ -173,10 +173,10 @@ export default function SetupExpenseHead() {
                   <th
                     style={{
                       textAlign: 'left',
-                      padding: '14px 10px',
-                      color: '#888',
-                      fontWeight: 500,
-                      borderBottom: '1px solid #2a2d33',
+                      padding: '16px 10px',
+                      color: '#333',
+                      fontWeight: 600,
+                      borderBottom: '1px solid #e0e0e0',
                     }}
                   >
                     Description
@@ -184,10 +184,10 @@ export default function SetupExpenseHead() {
                   <th
                     style={{
                       textAlign: 'right',
-                      padding: '14px 25px 14px 10px',
-                      color: '#888',
-                      fontWeight: 500,
-                      borderBottom: '1px solid #2a2d33',
+                      padding: '16px 25px 16px 10px',
+                      color: '#333',
+                      fontWeight: 600,
+                      borderBottom: '1px solid #e0e0e0',
                     }}
                   >
                     Action
@@ -198,15 +198,23 @@ export default function SetupExpenseHead() {
                 {items.map((it) => (
                   <tr
                     key={it.id}
-                    style={{ borderBottom: '1px solid #1f2227' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    style={{ borderBottom: '1px solid #2a2d33' }}
+                    onMouseEnter={(e) => {
+                      Array.from(e.currentTarget.children).forEach((td) => {
+                        ;(td as HTMLElement).style.background = 'rgba(255,255,255,0.02)'
+                      })
+                    }}
+                    onMouseLeave={(e) => {
+                      Array.from(e.currentTarget.children).forEach((td) => {
+                        ;(td as HTMLElement).style.background = 'transparent'
+                      })
+                    }}
                   >
-                    <td style={{ padding: '14px 10px 14px 25px', color: '#fff', fontWeight: 500 }}>
+                    <td style={{ padding: '16px 10px 16px 25px', color: '#fff', fontWeight: 500 }}>
                       {it.name}
                     </td>
-                    <td style={{ padding: '14px 10px', color: '#888' }}>{it.description || '-'}</td>
-                    <td style={{ padding: '14px 25px 14px 10px', textAlign: 'right' }}>
+                    <td style={{ padding: '16px 10px', color: '#888' }}>{it.description || '-'}</td>
+                    <td style={{ padding: '16px 25px 16px 10px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: 15, color: '#666', justifyContent: 'flex-end', alignItems: 'center' }}>
                         <button
                           onClick={() => openEdit(it)}

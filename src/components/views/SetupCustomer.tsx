@@ -82,10 +82,18 @@ export default function SetupCustomer() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ background: '#14161a', border: '1px solid #2a2d33', borderRadius: 16, padding: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
+      {/* Control Card */}
+      <div
+        style={{
+          background: '#14161a',
+          border: '1px solid #2a2d33',
+          borderRadius: 16,
+          padding: 25,
+        }}
+      >
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
+          <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
             <Search size={16} color="#888" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
             <input
               value={search}
@@ -98,12 +106,28 @@ export default function SetupCustomer() {
           </div>
           <button
             onClick={openCreate}
-            style={{ background: '#1db954', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            style={{
+              background: '#1db954',
+              color: '#fff',
+              border: 'none',
+              padding: '10px 24px',
+              borderRadius: 10,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 14,
+              transition: '0.3s',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#1aa34a')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#1db954')}
           >
             <Plus size={16} /> Add Customer
           </button>
         </div>
-        <p style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
+        <p style={{ fontSize: 12, color: '#555', marginTop: 12 }}>
           Note: Contact number must be unique. System will block duplicate entries automatically.
         </p>
       </div>
@@ -124,29 +148,40 @@ export default function SetupCustomer() {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', fontSize: 14, borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
-                <tr style={{ background: '#1f2227' }}>
-                  <th style={{ textAlign: 'left', padding: '10px 16px', color: '#888', fontWeight: 500, borderBottom: '1px solid #2a2d33' }}>Name</th>
-                  <th style={{ textAlign: 'left', padding: '10px 16px', color: '#888', fontWeight: 500, borderBottom: '1px solid #2a2d33' }}>Phone</th>
-                  <th style={{ textAlign: 'left', padding: '10px 16px', color: '#888', fontWeight: 500, borderBottom: '1px solid #2a2d33' }}>Address</th>
-                  <th style={{ textAlign: 'center', padding: '10px 16px', color: '#888', fontWeight: 500, borderBottom: '1px solid #2a2d33' }}>Action</th>
+                <tr style={{ background: '#ffffff' }}>
+                  <th style={{ textAlign: 'left', padding: '16px 10px 16px 25px', color: '#333', fontWeight: 600, borderBottom: '1px solid #e0e0e0' }}>Name</th>
+                  <th style={{ textAlign: 'left', padding: '16px 10px', color: '#333', fontWeight: 600, borderBottom: '1px solid #e0e0e0' }}>Phone</th>
+                  <th style={{ textAlign: 'left', padding: '16px 10px', color: '#333', fontWeight: 600, borderBottom: '1px solid #e0e0e0' }}>Address</th>
+                  <th style={{ textAlign: 'right', padding: '16px 25px 16px 10px', color: '#333', fontWeight: 600, borderBottom: '1px solid #e0e0e0' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map(it => (
-                  <tr key={it.id} style={{ borderBottom: '1px solid #1f2227' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  <tr
+                    key={it.id}
+                    style={{ borderBottom: '1px solid #2a2d33' }}
+                    onMouseEnter={(e) => {
+                      Array.from(e.currentTarget.children).forEach((td) => {
+                        ;(td as HTMLElement).style.background = 'rgba(255,255,255,0.02)'
+                      })
+                    }}
+                    onMouseLeave={(e) => {
+                      Array.from(e.currentTarget.children).forEach((td) => {
+                        ;(td as HTMLElement).style.background = 'transparent'
+                      })
+                    }}
                   >
-                    <td style={{ padding: '10px 16px', color: '#fff', fontWeight: 500 }}>{it.name}</td>
-                    <td style={{ padding: '10px 16px', color: '#888', fontFamily: 'monospace' }}>{it.phone}</td>
-                    <td style={{ padding: '10px 16px', color: '#888' }}>{it.address || '-'}</td>
-                    <td style={{ padding: '10px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                    <td style={{ padding: '16px 10px 16px 25px', color: '#fff', fontWeight: 500 }}>{it.name}</td>
+                    <td style={{ padding: '16px 10px', color: '#3498db', fontFamily: 'monospace' }}>{it.phone}</td>
+                    <td style={{ padding: '16px 10px', color: '#888' }}>{it.address || '-'}</td>
+                    <td style={{ padding: '16px 25px 16px 10px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 15 }}>
                         <button
                           onClick={() => openEdit(it)}
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 4, display: 'inline-flex' }}
+                          title="Edit"
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 0, display: 'inline-flex', transition: '0.3s' }}
                           onMouseEnter={(e) => (e.currentTarget.style.color = '#3498db')}
                           onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
                         >
@@ -154,7 +189,8 @@ export default function SetupCustomer() {
                         </button>
                         <button
                           onClick={() => handleDelete(it.id)}
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 4, display: 'inline-flex' }}
+                          title="Delete"
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 0, display: 'inline-flex', transition: '0.3s' }}
                           onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
                           onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
                         >

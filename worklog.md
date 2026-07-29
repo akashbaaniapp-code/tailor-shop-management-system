@@ -89,3 +89,66 @@ Stage Summary:
 - Permissions button is now a prominent white pill with a blue shield icon — draws attention as the key action for staff/manager users.
 - File updated:
   * /home/z/my-project/src/components/views/SetupUsers.tsx
+
+---
+Task ID: setup-pages-standard-theme
+Agent: main
+Task: Extract the theme from the latest Users & Rights HTML mockup and apply it consistently across ALL remaining setup pages. User said "ager page gulo theme change kore diso, ekhane kebol theme ta nao" — meaning use the Users mockup's theme as the standard and apply it everywhere.
+
+Work Log:
+- Identified the standard theme from Users mockup:
+  * Card: #14161a bg, #2a2d33 border, 16px radius, 25px padding
+  * Green button: #1db954, 10px radius, 24px horizontal padding, 600 weight
+  * Table header: WHITE (#fff bg, #333 text, #e0e0e0 border, 600 weight)
+  * Table cells: 16px vertical padding, #e8eae9 text, #2a2d33 border
+  * Row hover: rgba(255,255,255,0.02) applied to TDs (not TR, to avoid tinting white header)
+  * Action icons: #666 muted with colored hover (blue edit, red delete)
+  * Badge pills: colored border + 10% tinted bg
+
+- SetupUom.tsx — converted grid layout to standard theme. Card 25px padding, green Add UoM button with 24px padding, grid items use dark cards (#0b0d0f) with lime border on hover.
+
+- SetupCustomer.tsx — converted table from dark header (#1f2227) to WHITE header (#fff). 25px control card padding, 16px table cell padding, td-hover pattern, blue phone numbers (#3498db), action icons with colored hover, 15px gap between action icons.
+
+- SetupDeliveryInfo.tsx — converted list layout. 25px control card with green Add Info button, list items with 20px/25px padding, white title, muted note, red trash on hover, rgba(255,255,255,0.02) row hover.
+
+- SetupEntity.tsx — COMPLETE rewrite from light shadcn (slate-* classes) to dark inline-style theme:
+  * Control card with 25px padding, dark "Add Sub-Entity" outline button + green "Add Entity" button
+  * List rows with expand/collapse chevron, white entity name, muted address/phone, pill badge showing sub-entity count, action icons
+  * Expanded sub-entity section uses nested #0b0d0f cards with #2a2d33 border
+  * Both Entity and Sub-Entity form dialogs refactored to dark theme with Building2/Layers icons in title
+  * Native <select> replaced shadcn Select for parent entity dropdown (dark styling)
+
+- UserFormPage.tsx — COMPLETE rewrite from light shadcn to dark theme:
+  * Header with back button, title, Cancel/Save buttons (green Save)
+  * Form card with #14161a bg, 25px padding, all dark inputs with lime focus border
+  * Native <select> for role dropdown with dark option backgrounds
+  * Staff role shows lime-tinted info banner about post-create Permissions setup
+  * Success state card uses emerald-tinted border + dark bg, role badge as colored pill, action buttons all dark-themed
+
+- Retrofit SetupItem.tsx — converted dark header (#1f2227) → WHITE (#fff). 25px control card padding, 16px cells, td-hover pattern, blue item names (#3498db), green prices (#1db954).
+
+- Retrofit SetupTailor.tsx — converted dark header → WHITE. 25px padding, 16px cells, td-hover, blue phone numbers, white names.
+
+- Retrofit SetupExpenseHead.tsx — converted dark header → WHITE. Already had 25px padding. 16px cells, td-hover pattern applied.
+
+- Ran `npx tsc --noEmit` — no type errors from any of the updated files.
+- Verified remaining `#1f2227` references are only skeleton loaders (shimmer placeholders), not table headers.
+
+Stage Summary:
+- ALL 8 setup pages now use the same standardized theme extracted from the Users mockup:
+  * SetupUom, SetupItem, SetupTailor, SetupCustomer, SetupDeliveryInfo, SetupExpenseHead, SetupEntity, SetupUsers
+  * UserFormPage (form page)
+- Consistent visual identity: dark cards (#14161a / #2a2d33), striking WHITE table headers with dark text, 25px card padding, 16px cell padding, green primary buttons, colored action icons with hover states.
+- Badges and pills use colored borders + subtle tinted backgrounds (admin/manager/staff colors).
+- All form dialogs use #1a1c1e bg with #d4df3a lime focus borders on inputs.
+- All hover effects use rgba(255,255,255,0.02) on TDs (not TR) to avoid affecting the white table header.
+- TypeScript compiles clean across all changes.
+- Files updated:
+  * /home/z/my-project/src/components/views/SetupUom.tsx
+  * /home/z/my-project/src/components/views/SetupCustomer.tsx
+  * /home/z/my-project/src/components/views/SetupDeliveryInfo.tsx
+  * /home/z/my-project/src/components/views/SetupEntity.tsx
+  * /home/z/my-project/src/components/views/UserFormPage.tsx
+  * /home/z/my-project/src/components/views/SetupItem.tsx
+  * /home/z/my-project/src/components/views/SetupTailor.tsx
+  * /home/z/my-project/src/components/views/SetupExpenseHead.tsx
