@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
 
+  try {
   const body = await request.json()
   const {
     orderDate,
@@ -274,4 +275,8 @@ export async function POST(request: NextRequest) {
   const inWords = numberToWords(grandTotal)
 
   return NextResponse.json({ order, inWords })
+  } catch (err: any) {
+    console.error('POST /api/sales-orders error:', err)
+    return NextResponse.json({ error: err.message || 'Failed to create order', stack: err.stack?.split('\n').slice(0, 5).join('\n') }, { status: 500 })
+  }
 }
