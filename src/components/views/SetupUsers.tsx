@@ -40,7 +40,7 @@ const MENU_ITEMS = [
   { key: 'setup-tailor', label: 'Setup - Tailors' },
   { key: 'setup-customer', label: 'Setup - Customers' },
   { key: 'setup-delivery-info', label: 'Setup - Delivery Info' },
-  { key: 'setup-expense-head', label: 'Setup - Expense Heads' },
+  { key: 'setup-expense-head', label: 'Setup - Heads Create' },
   { key: 'setup-entity', label: 'Setup - Entities' },
   { key: 'report-pnl', label: 'P&L Report' },
   { key: 'report-receivable', label: 'Receivable Report' },

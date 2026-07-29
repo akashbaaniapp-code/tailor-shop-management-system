@@ -2,66 +2,125 @@
 
 import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Trash2, Edit, Tag } from 'lucide-react'
+import { Plus, Trash2, Edit, Tag, TrendingDown, TrendingUp } from 'lucide-react'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
 
-interface ExpenseHead {
+interface Head {
   id: string
   name: string
   description?: string | null
 }
 
+type TabKey = 'expense' | 'income'
+
 export default function SetupExpenseHead() {
-  const [items, setItems] = useState<ExpenseHead[]>([])
-  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<TabKey>('expense')
+
+  // Expense heads state
+  const [expenseItems, setExpenseItems] = useState<Head[]>([])
+  const [expenseLoading, setExpenseLoading] = useState(true)
+
+  // Income heads state
+  const [incomeItems, setIncomeItems] = useState<Head[]>([])
+  const [incomeLoading, setIncomeLoading] = useState(true)
+
+  // Form state (shared between both tabs, re-used for whichever tab is active)
   const [showForm, setShowForm] = useState(false)
-  const [editItem, setEditItem] = useState<ExpenseHead | null>(null)
+  const [editItem, setEditItem] = useState<Head | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    loadExpense()
+    loadIncome()
+  }, [])
 
-  async function load() {
-    setLoading(true)
+  async function loadExpense() {
+    setExpenseLoading(true)
     try {
       const res = await api.listExpenseHeads()
-      setItems(res.items)
+      setExpenseItems(res.items)
     } catch (err: any) {
       toast.error(err.message)
     } finally {
-      setLoading(false)
+      setExpenseLoading(false)
+    }
+  }
+
+  async function loadIncome() {
+    setIncomeLoading(true)
+    try {
+      const res = await api.listIncomeHeads()
+      setIncomeItems(res.items)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setIncomeLoading(false)
     }
   }
 
   function openCreate() {
-    setEditItem(null); setName(''); setDescription(''); setShowForm(true)
+    setEditItem(null)
+    setName('')
+    setDescription('')
+    setShowForm(true)
   }
 
-  function openEdit(it: ExpenseHead) {
-    setEditItem(it); setName(it.name); setDescription(it.description || ''); setShowForm(true)
+  function openEdit(it: Head) {
+    setEditItem(it)
+    setName(it.name)
+    setDescription(it.description || '')
+    setShowForm(true)
   }
 
   async function handleSave() {
-    if (!name.trim()) { toast.error('Name required'); return }
+    if (!name.trim()) {
+      toast.error('Name required')
+      return
+    }
     try {
-      if (editItem) {
-        await api.updateExpenseHead({ id: editItem.id, name: name.trim(), description })
-        toast.success('Expense head updated')
+      if (activeTab === 'expense') {
+        if (editItem) {
+          await api.updateExpenseHead({ id: editItem.id, name: name.trim(), description })
+          toast.success('Expense head updated')
+        } else {
+          await api.createExpenseHead({ name: name.trim(), description })
+          toast.success('Expense head created')
+        }
+        loadExpense()
       } else {
-        await api.createExpenseHead({ name: name.trim(), description })
-        toast.success('Expense head created')
+        if (editItem) {
+          await api.updateIncomeHead({ id: editItem.id, name: name.trim(), description })
+          toast.success('Income head updated')
+        } else {
+          await api.createIncomeHead({ name: name.trim(), description })
+          toast.success('Income head created')
+        }
+        loadIncome()
       }
-      setShowForm(false); load()
+      setShowForm(false)
     } catch (err: any) {
       toast.error(err.message)
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this expense head? Existing expenses linked to it will keep their records but show "no head".')) return
+    const kind = activeTab === 'expense' ? 'expense' : 'income'
+    const msg =
+      activeTab === 'expense'
+        ? 'Delete this expense head? Existing expenses linked to it will keep their records but show "no head".'
+        : 'Delete this income head? Existing incomes linked to it will keep their records but show "no head".'
+    if (!confirm(msg)) return
     try {
-      await api.deleteExpenseHead(id); toast.success('Deleted'); load()
+      if (activeTab === 'expense') {
+        await api.deleteExpenseHead(id)
+      } else {
+        await api.deleteIncomeHead(id)
+      }
+      toast.success(`${kind.charAt(0).toUpperCase() + kind.slice(1)} head deleted`)
+      if (activeTab === 'expense') loadExpense()
+      else loadIncome()
     } catch (err: any) {
       toast.error(err.message)
     }
@@ -78,8 +137,44 @@ export default function SetupExpenseHead() {
     outline: 'none',
   }
 
+  // Active tab data
+  const activeItems = activeTab === 'expense' ? expenseItems : incomeItems
+  const activeLoading = activeTab === 'expense' ? expenseLoading : incomeLoading
+  const activeColor = activeTab === 'expense' ? '#ff6b6b' : '#1db954'
+  const activeIcon = activeTab === 'expense' ? <TrendingDown size={16} /> : <TrendingUp size={16} />
+
+  const expenseExamples = 'Examples: Rent, Salary, Utility Bill, Fabric Purchase, Electricity, Transport'
+  const incomeExamples = 'Examples: Service Charge, Commission, Interest, Rental Income, Sale of Asset, Refund'
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
+      {/* Tabs */}
+      <div
+        style={{
+          display: 'inline-flex',
+          background: '#14161a',
+          border: '1px solid #2a2d33',
+          borderRadius: 12,
+          padding: 4,
+          alignSelf: 'flex-start',
+        }}
+      >
+        <TabButton
+          label="Expense Heads"
+          icon={<TrendingDown size={14} />}
+          isActive={activeTab === 'expense'}
+          activeColor="#ff6b6b"
+          onClick={() => setActiveTab('expense')}
+        />
+        <TabButton
+          label="Income Heads"
+          icon={<TrendingUp size={14} />}
+          isActive={activeTab === 'income'}
+          activeColor="#1db954"
+          onClick={() => setActiveTab('income')}
+        />
+      </div>
+
       {/* Control Card */}
       <div
         style={{
@@ -91,15 +186,19 @@ export default function SetupExpenseHead() {
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 20,
+          flexWrap: 'wrap',
         }}
       >
         <div>
-          <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, margin: 0 }}>
-            Create expense heads (categories) for organizing your expenses
-            <span style={{ display: 'block', marginTop: 2, color: '#555', fontSize: 12 }}>
-              Examples: Rent, Salary, Utility Bill, Fabric Purchase, Electricity, Transport
-            </span>
+          <p style={{ fontSize: 14, color: '#e8eae9', lineHeight: 1.6, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {activeIcon}
+            {activeTab === 'expense'
+              ? 'Create expense heads (categories) for organizing your expenses'
+              : 'Create income heads (categories) for organizing your other incomes'}
           </p>
+          <span style={{ display: 'block', marginTop: 6, color: '#555', fontSize: 12 }}>
+            {activeTab === 'expense' ? expenseExamples : incomeExamples}
+          </span>
         </div>
         <button
           onClick={openCreate}
@@ -121,19 +220,19 @@ export default function SetupExpenseHead() {
           onMouseEnter={(e) => (e.currentTarget.style.background = '#1aa34a')}
           onMouseLeave={(e) => (e.currentTarget.style.background = '#1db954')}
         >
-          <Plus size={16} /> Add Head
+          <Plus size={16} /> Add {activeTab === 'expense' ? 'Expense' : 'Income'} Head
         </button>
       </div>
 
       {/* Data Table Card */}
       <div style={{ background: '#14161a', border: '1px solid #2a2d33', borderRadius: 16, overflow: 'hidden' }}>
-        {loading ? (
+        {activeLoading ? (
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[...Array(4)].map((_, i) => (
               <div key={i} style={{ height: 40, background: '#1f2227', borderRadius: 8 }} />
             ))}
           </div>
-        ) : items.length === 0 ? (
+        ) : activeItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0' }}>
             <div
               style={{
@@ -147,11 +246,17 @@ export default function SetupExpenseHead() {
                 marginBottom: 8,
               }}
             >
-              <Tag size={24} color="#666" />
+              {activeTab === 'expense' ? (
+                <TrendingDown size={24} color="#666" />
+              ) : (
+                <TrendingUp size={24} color="#666" />
+              )}
             </div>
-            <p style={{ color: '#888' }}>No expense heads yet</p>
+            <p style={{ color: '#888' }}>
+              No {activeTab === 'expense' ? 'expense' : 'income'} heads yet
+            </p>
             <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
-              Create one to start categorizing your expenses
+              Create one to start categorizing your {activeTab === 'expense' ? 'expenses' : 'incomes'}
             </p>
           </div>
         ) : (
@@ -195,7 +300,7 @@ export default function SetupExpenseHead() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((it) => (
+                {activeItems.map((it) => (
                   <tr
                     key={it.id}
                     style={{ borderBottom: '1px solid #2a2d33' }}
@@ -215,7 +320,15 @@ export default function SetupExpenseHead() {
                     </td>
                     <td style={{ padding: '16px 10px', color: '#888' }}>{it.description || '-'}</td>
                     <td style={{ padding: '16px 25px 16px 10px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: 15, color: '#666', justifyContent: 'flex-end', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: 15,
+                          color: '#666',
+                          justifyContent: 'flex-end',
+                          alignItems: 'center',
+                        }}
+                      >
                         <button
                           onClick={() => openEdit(it)}
                           title="Edit"
@@ -260,11 +373,14 @@ export default function SetupExpenseHead() {
         )}
       </div>
 
+      {/* Form dialog */}
       {showForm && (
         <Dialog open onOpenChange={setShowForm}>
           <DialogContent style={{ background: '#1a1c1e', border: '1px solid #2a2d33', maxWidth: 400 }}>
             <DialogHeader>
-              <DialogTitle style={{ color: '#fff' }}>{editItem ? 'Edit Expense Head' : 'Add Expense Head'}</DialogTitle>
+              <DialogTitle style={{ color: '#fff' }}>
+                {editItem ? `Edit ${activeTab === 'expense' ? 'Expense' : 'Income'} Head` : `Add ${activeTab === 'expense' ? 'Expense' : 'Income'} Head`}
+              </DialogTitle>
             </DialogHeader>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
@@ -274,7 +390,7 @@ export default function SetupExpenseHead() {
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Rent"
+                  placeholder={activeTab === 'expense' ? 'e.g. Rent' : 'e.g. Service Charge'}
                   autoFocus
                   style={inputStyle}
                   onFocus={(e) => (e.currentTarget.style.borderColor = '#d4df3a')}
@@ -331,5 +447,55 @@ export default function SetupExpenseHead() {
         </Dialog>
       )}
     </div>
+  )
+}
+
+function TabButton({
+  label,
+  icon,
+  isActive,
+  activeColor,
+  onClick,
+}: {
+  label: string
+  icon: React.ReactNode
+  isActive: boolean
+  activeColor: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: isActive ? '#1f2227' : 'transparent',
+        color: isActive ? activeColor : '#888',
+        border: 'none',
+        padding: '8px 18px',
+        borderRadius: 8,
+        fontSize: 14,
+        fontWeight: 600,
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        transition: '0.3s',
+        borderBottom: isActive ? `2px solid ${activeColor}` : '2px solid transparent',
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.color = '#fff'
+          e.currentTarget.style.background = '#1f2227'
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.color = '#888'
+          e.currentTarget.style.background = 'transparent'
+        }
+      }}
+    >
+      {icon}
+      {label}
+    </button>
   )
 }

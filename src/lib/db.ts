@@ -248,6 +248,7 @@ const MODEL_CONFIG: Record<string, ModelConfig> = {
   customer: { name: 'Customer', dateFields: ['createdAt', 'updatedAt'] },
   deliveryInfo: { name: 'DeliveryInfo', dateFields: ['createdAt', 'updatedAt'] },
   expenseHead: { name: 'ExpenseHead', dateFields: ['createdAt', 'updatedAt'] },
+  incomeHead: { name: 'IncomeHead', dateFields: ['createdAt', 'updatedAt'] },
   entity: { name: 'Entity', dateFields: ['createdAt', 'updatedAt'] },
   subEntity: { name: 'SubEntity', dateFields: ['createdAt', 'updatedAt'] },
   salesOrder: { name: 'SalesOrder', dateFields: ['orderDate', 'deliveryDate', 'createdAt', 'updatedAt'] },
@@ -546,6 +547,7 @@ const RELATIONS: Record<string, Record<string, { model: string; fk: string; isLi
   customer: { orders: { model: 'salesOrder', fk: 'customerId', isList: true, isOptional: false } },
   deliveryInfo: {},
   expenseHead: {},
+  incomeHead: {},
   entity: { subEntities: { model: 'subEntity', fk: 'entityId', isList: true, isOptional: false } },
   subEntity: { entity: { model: 'entity', fk: 'entityId', isList: false, isOptional: false } },
   salesOrder: {
@@ -727,6 +729,7 @@ export const db: any = {
   customer: makeModel('customer'),
   deliveryInfo: makeModel('deliveryInfo'),
   expenseHead: makeModel('expenseHead'),
+  incomeHead: makeModel('incomeHead'),
   entity: makeModel('entity'),
   subEntity: makeModel('subEntity'),
   salesOrder: makeModel('salesOrder'),

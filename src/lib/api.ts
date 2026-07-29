@@ -266,6 +266,12 @@ export const api = {
   updateExpenseHead: (data: any) => apiFetch('/api/expense-heads', { method: 'PUT', body: JSON.stringify(data) }),
   deleteExpenseHead: (id: string) => apiFetch(`/api/expense-heads?id=${id}`, { method: 'DELETE' }),
 
+  // Income Heads
+  listIncomeHeads: () => apiFetch('/api/income-heads'),
+  createIncomeHead: (data: any) => apiFetch('/api/income-heads', { method: 'POST', body: JSON.stringify(data) }),
+  updateIncomeHead: (data: any) => apiFetch('/api/income-heads', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteIncomeHead: (id: string) => apiFetch(`/api/income-heads?id=${id}`, { method: 'DELETE' }),
+
   // Sales Order Close
   closeSalesOrder: (id: string) => apiFetch(`/api/sales-orders/${id}/close`, { method: 'POST' }),
 

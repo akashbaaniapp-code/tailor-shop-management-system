@@ -93,7 +93,7 @@ const navGroups: NavGroup[] = [
       { key: 'setup-tailor', label: 'Tailors', icon: Scissors },
       { key: 'setup-customer', label: 'Customers', icon: Users },
       { key: 'setup-delivery-info', label: 'Delivery Info', icon: FileText },
-      { key: 'setup-expense-head', label: 'Expense Heads', icon: Tag },
+      { key: 'setup-expense-head', label: 'Heads Create', icon: Tag },
       { key: 'setup-entity', label: 'Entities', icon: Layers },
       { key: 'setup-users', label: 'Users & Rights', icon: UserCog }
     ]
@@ -132,7 +132,7 @@ const viewTitles: Record<ViewKey, string> = {
   'setup-tailor': 'Setup - Tailors',
   'setup-customer': 'Setup - Customers',
   'setup-delivery-info': 'Setup - Delivery Information',
-  'setup-expense-head': 'Setup - Expense Heads',
+  'setup-expense-head': 'Setup - Heads Create',
   'setup-users': 'Setup - Users & Access Rights',
   'setup-user-create': 'Add User',
   'setup-user-edit': 'Edit User',
