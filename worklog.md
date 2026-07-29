@@ -152,3 +152,42 @@ Stage Summary:
   * /home/z/my-project/src/components/views/SetupItem.tsx
   * /home/z/my-project/src/components/views/SetupTailor.tsx
   * /home/z/my-project/src/components/views/SetupExpenseHead.tsx
+
+---
+Task ID: heads-create-with-income-heads
+Agent: main
+Task: Rename "Expense Heads" menu to "Heads Create" and add the ability to create both expense heads AND income heads in the same page.
+
+Work Log:
+- Renamed sidebar menu item "Expense Heads" → "Heads Create" in AppShell.tsx navGroups.
+- Renamed page title "Setup - Expense Heads" → "Setup - Heads Create" in AppShell.tsx viewTitles.
+- Updated SetupUsers.tsx permission menu list to "Setup - Heads Create" (label only — view key 'setup-expense-head' kept same to avoid permission migration).
+- Created new IncomeHead table in scripts/push-schema-turso.ts (parallel to ExpenseHead).
+- Registered IncomeHead model in db.ts (3 places: MODEL_CONFIG, RELATIONS, db object).
+- Created migration endpoint /api/migrate-income-heads that runs CREATE TABLE IF NOT EXISTS on production.
+- Created /api/income-heads route with GET/POST/PUT/DELETE (admin-only create/edit, all users can read).
+- Added client-side API methods: listIncomeHeads, createIncomeHead, updateIncomeHead, deleteIncomeHead in api.ts.
+- Completely rewrote SetupExpenseHead.tsx with two-tab design:
+  * Tab 1: Expense Heads (red TrendingDown icon) — existing CRUD preserved
+  * Tab 2: Income Heads (green TrendingUp icon) — new CRUD for income heads
+  * Tab switcher styled as pill toggle at top of page
+  * Each tab loads its own data independently
+  * Form dialog reused for both — labels/placeholders/examples change based on active tab
+  * White table header per the standard dark theme
+  * Empty states show appropriate TrendingDown/TrendingUp icon
+- Production deployment: pushed commit 67f3f0d, waited for Vercel deploy, ran /api/migrate-income-heads → table created successfully.
+- Verified live:
+  * Menu shows "Heads Create"
+  * Page header shows "Setup - Heads Create"
+  * Both tabs visible and clickable
+  * Expense Heads tab shows existing heads (Electric Bill, Rent, Salary, Service Charge, Wages)
+  * Income Heads tab initially empty, created "Service Charge" head successfully via UI
+  * API /api/income-heads returns the new head correctly
+- Resolved a git rebase conflict in SetupExpenseHead.tsx by keeping my full-rewrite version.
+
+Stage Summary:
+- "Heads Create" page now provides unified management for BOTH expense heads and income heads via a two-tab interface.
+- Income Head table is live in production database.
+- /api/income-heads endpoint fully functional.
+- Future Income Entry form can now reference these income heads (currently Income Entry uses free-text 'category' field — could be linked to IncomeHead in a future iteration).
+- All Expense Head functionality is preserved (existing API routes unchanged, just renamed in UI).
