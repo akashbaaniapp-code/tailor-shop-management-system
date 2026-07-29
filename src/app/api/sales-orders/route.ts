@@ -203,8 +203,8 @@ export async function POST(request: NextRequest) {
   // Compose a single batch: order insert + all item inserts (count was already done above)
   const batchStmts: { sql: string; args: any[] }[] = [
     {
-      sql: `INSERT INTO "SalesOrder" (id, orderId, orderDate, deliveryDate, tailorId, customerId, salesNote, deliveryInfo, deliveryName, deliveryContact, deliveryAddress, subTotal, discount, grandTotal, dueAmount, status, paymentStatus, entityId, subEntityId, createdAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO "SalesOrder" (id, orderId, orderDate, deliveryDate, tailorId, customerId, salesNote, deliveryInfo, deliveryName, deliveryContact, deliveryAddress, subTotal, discount, grandTotal, dueAmount, status, paymentStatus, entityId, subEntityId, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         crypto.randomUUID(),
         orderId_short,
@@ -225,7 +225,8 @@ export async function POST(request: NextRequest) {
         'unpaid',
         ctx.entityId,
         ctx.subEntityId,
-        nowIso
+        nowIso,
+        nowIso // updatedAt
       ]
     },
     ...itemRows.map((r) => ({
