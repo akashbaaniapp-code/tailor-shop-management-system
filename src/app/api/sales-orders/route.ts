@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
-import { numberToWords, generateOrderId } from '@/lib/utils-server'
+import { numberToWords } from '@/lib/utils-server'
 import { _getClient } from '@/lib/db'
 import { getEntityContext, buildEntityFilter } from '@/lib/entity-context'
 
@@ -155,15 +155,20 @@ export async function POST(request: NextRequest) {
   // Get entity context — tag this transaction with the user's entity
   const ctx = await getEntityContext(request)
 
-  // Generate auto order ID
+  // Generate auto order ID — use a subquery to count today's orders
+  // in a single round-trip instead of separate count + create calls.
   const today = new Date()
   const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
-  const todayCount = await db.salesOrder.count({
-    where: {
-      orderId: { startsWith: `SO-${ymd}` }
-    }
+  const orderPrefix = `SO-${ymd}-`
+
+  // Use a single SQL to find the max sequence number for today and increment
+  const client = _getClient()
+  const countRes = await client.execute({
+    sql: `SELECT COUNT(*) as cnt FROM "SalesOrder" WHERE "orderId" LIKE ?`,
+    args: [`${orderPrefix}%`]
   })
-  const orderId = await generateOrderId('SO', todayCount)
+  const todayCount = Number((countRes.rows[0] as any)?.cnt || 0)
+  const orderId = `${orderPrefix}${String(todayCount + 1).padStart(4, '0')}`
 
   // Calculate totals
   const subTotal = items.reduce((sum: number, it: any) => sum + (Number(it.total) || 0), 0)
@@ -197,8 +202,6 @@ export async function POST(request: NextRequest) {
   // Batch-insert all line items in a single round-trip (much faster than sequential create)
   let savedItems: any[] = []
   if (items.length > 0) {
-    const { _getClient } = await import('@/lib/db')
-    const client = _getClient()
     const now = new Date().toISOString()
     const rowsToInsert = items.map((it: any) => {
       const id = crypto.randomUUID()
