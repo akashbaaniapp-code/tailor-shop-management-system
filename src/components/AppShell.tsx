@@ -149,6 +149,21 @@ const viewTitles: Record<ViewKey, string> = {
 export default function AppShell() {
   const { currentView, setView, user, setUser, selectedOrderId, accessibleMenus, selectedEntity, selectedSubEntity, setEntityContextConfirmed } = useAppStore()
   const [mobileOpen, setMobileOpen] = useState(false)
+  // Persist sidebar collapse state across page refreshes
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return sessionStorage.getItem('tsms_sidebar_collapsed') === '1'
+  })
+
+  function toggleSidebar() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('tsms_sidebar_collapsed', next ? '1' : '0')
+      }
+      return next
+    })
+  }
 
   // Filter nav groups to only show menus the user can access.
   // accessibleMenus === ['*'] means admin (all menus).
@@ -221,9 +236,9 @@ export default function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#0b0d0f', color: '#e8eae9' }}>
-      {/* Sidebar - desktop */}
+      {/* Sidebar - desktop (collapsible) */}
       <aside
-        className="hidden md:flex w-64 flex-col shrink-0"
+        className={`hidden md:flex ${sidebarCollapsed ? 'w-16' : 'w-64'} flex-col shrink-0 transition-all duration-300`}
         style={{
           background: 'rgba(255, 255, 255, 0.03)',
           backdropFilter: 'blur(20px)',
@@ -235,6 +250,8 @@ export default function AppShell() {
           currentView={currentView}
           setView={setView}
           navGroups={filteredNavGroups}
+          collapsed={sidebarCollapsed}
+          onToggle={toggleSidebar}
         />
       </aside>
 
@@ -345,11 +362,15 @@ export default function AppShell() {
   function SidebarContent({
     currentView,
     setView,
-    navGroups
+    navGroups,
+    collapsed = false,
+    onToggle
   }: {
     currentView: ViewKey
     setView: (v: ViewKey) => void
     navGroups: NavGroup[]
+    collapsed?: boolean
+    onToggle?: () => void
   }) {
     return (
       <>
@@ -363,21 +384,38 @@ export default function AppShell() {
           >
             <img src={BRAND.logoPath} alt={BRAND.shortName} className="w-full h-full object-contain p-0.5" />
           </div>
-          <div className="min-w-0">
-            <p className="font-bold text-sm leading-tight truncate" style={{ color: '#e8eae9' }}>{BRAND.name}</p>
-            <p className="text-[10px] uppercase tracking-wider leading-tight" style={{ color: '#d4df3a' }}>{BRAND.tagline}</p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-sm leading-tight truncate" style={{ color: '#e8eae9' }}>{BRAND.name}</p>
+              <p className="text-[10px] uppercase tracking-wider leading-tight" style={{ color: '#d4df3a' }}>{BRAND.tagline}</p>
+            </div>
+          )}
+          {/* Collapse/expand toggle button — only on desktop (md+). Hidden on mobile drawer. */}
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="p-1.5 rounded-lg transition-colors shrink-0"
+              style={{ color: 'rgba(255,255,255,0.4)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
+            >
+              {collapsed ? <ChevronRight className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          )}
         </div>
         <ScrollArea className="flex-1">
-          <div className="p-3 space-y-5">
+          <div className={`p-3 ${collapsed ? 'space-y-3' : 'space-y-5'}`}>
             {navGroups.map(group => (
               <div key={group.label} className="space-y-1">
-                <p
-                  className="text-xs font-semibold uppercase tracking-wide px-3 mb-1"
-                  style={{ color: 'rgba(255,255,255,0.2)' }}
-                >
-                  {group.label}
-                </p>
+                {!collapsed && (
+                  <p
+                    className="text-xs font-semibold uppercase tracking-wide px-3 mb-1"
+                    style={{ color: 'rgba(255,255,255,0.2)' }}
+                  >
+                    {group.label}
+                  </p>
+                )}
                 {group.items.map(item => {
                   const Icon = item.icon
                   const active = currentView === item.key
@@ -386,10 +424,16 @@ export default function AppShell() {
                       key={item.key}
                       href={buildViewUrl(item.key)}
                       onClick={(e) => {
+                        // Only intercept left-clicks (button === 0).
+                        // Right-click (button === 2) and middle-click (button === 1) fall through
+                        // to the browser's default behavior — so users can right-click →
+                        // "Open in New Tab" or middle-click to open in a new tab.
+                        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return
                         e.preventDefault()
                         setView(item.key)
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all text-left"
+                      title={collapsed ? item.label : undefined}
+                      className={`w-full flex items-center gap-2.5 ${collapsed ? 'px-2 justify-center' : 'px-3'} py-2 rounded-lg text-sm transition-all ${collapsed ? '' : 'text-left'}`}
                       style={{
                         color: active ? '#d4df3a' : 'rgba(255,255,255,0.4)',
                         background: active ? 'rgba(212,223,58,0.08)' : 'transparent',
@@ -410,8 +454,8 @@ export default function AppShell() {
                       }}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
-                      <span className="flex-1 truncate">{item.label}</span>
-                      {active && <ChevronRight className="w-4 h-4" />}
+                      {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                      {!collapsed && active && <ChevronRight className="w-4 h-4" />}
                     </a>
                   )
                 })}

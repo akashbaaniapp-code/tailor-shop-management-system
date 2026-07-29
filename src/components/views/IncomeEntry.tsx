@@ -15,6 +15,13 @@ interface Income {
   incomeDate: string
   note?: string | null
   category?: string | null
+  incomeHeadId?: string | null
+  head?: { id: string; name: string } | null
+}
+
+interface IncomeHead {
+  id: string
+  name: string
 }
 
 const darkCard = { background: '#14161a', border: '1px solid #2a2d33', borderRadius: '16px' }
@@ -22,25 +29,13 @@ const darkInput = { background: '#0b0d0f', border: '1px solid #2a2d33', color: '
 const btnGreen = { background: '#1db954', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }
 const darkTextMuted = { color: '#888' }
 
-// Common income categories users can pick from
-const CATEGORY_OPTIONS = [
-  'general',
-  'service',
-  'commission',
-  'interest',
-  'rental',
-  'sale-asset',
-  'refund',
-  'donation',
-  'other'
-]
-
 export default function IncomeEntry() {
   const setView = useAppStore((s) => s.setView)
   const setSelectedIncomeId = useAppStore((s) => s.setSelectedIncomeId)
   const [items, setItems] = useState<Income[]>([])
+  const [heads, setHeads] = useState<IncomeHead[]>([])
   const [loading, setLoading] = useState(true)
-  const [filterCategory, setFilterCategory] = useState('all')
+  const [filterHeadId, setFilterHeadId] = useState('all')
 
   useEffect(() => {
     load()
@@ -49,8 +44,9 @@ export default function IncomeEntry() {
   async function load() {
     setLoading(true)
     try {
-      const res = await api.listIncomes()
-      setItems(res.items)
+      const [incRes, headRes] = await Promise.all([api.listIncomes(), api.listIncomeHeads()])
+      setItems(incRes.items)
+      setHeads(headRes.items || [])
     } catch (err: any) {
       toast.error(err.message)
     } finally {
@@ -79,12 +75,11 @@ export default function IncomeEntry() {
     }
   }
 
-  // Build list of categories present in actual data + standard options
-  const presentCategories = Array.from(new Set(items.map((i) => i.category || 'general').filter(Boolean)))
-  const allCategories = Array.from(new Set([...CATEGORY_OPTIONS, ...presentCategories])).sort()
-
+  // Filter by income head ID (falls back to category text matching for legacy data without incomeHeadId)
   const filteredItems =
-    filterCategory === 'all' ? items : items.filter((it) => (it.category || 'general') === filterCategory)
+    filterHeadId === 'all'
+      ? items
+      : items.filter((it) => it.incomeHeadId === filterHeadId)
   const totalAmount = filteredItems.reduce((s, it) => s + it.amount, 0)
   const totalAll = items.reduce((s, it) => s + it.amount, 0)
 
@@ -122,10 +117,10 @@ export default function IncomeEntry() {
         </div>
         <div className="p-5 relative" style={darkCard}>
           <p className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            Categories
+            Income Heads
           </p>
           <p className="text-2xl font-bold" style={{ color: '#d4df3a' }}>
-            {allCategories.length}
+            {heads.length}
           </p>
           <div
             className="absolute right-5 top-5 w-9 h-9 rounded-xl flex items-center justify-center"
@@ -141,17 +136,17 @@ export default function IncomeEntry() {
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <div>
             <p className="text-xs mb-1.5" style={{ color: '#666' }}>
-              Filter by Category
+              Filter by Head
             </p>
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <Select value={filterHeadId} onValueChange={setFilterHeadId}>
               <SelectTrigger style={{ ...darkInput, minWidth: '200px' }}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent style={{ background: '#1a1c1e', border: '1px solid #2a2d33' }}>
-                <SelectItem value="all">All Categories</SelectItem>
-                {allCategories.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
+                <SelectItem value="all">All Heads</SelectItem>
+                {heads.map((h) => (
+                  <SelectItem key={h.id} value={h.id}>
+                    {h.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -221,7 +216,7 @@ export default function IncomeEntry() {
                     Date
                   </th>
                   <th style={headerCell}>Title</th>
-                  <th style={headerCell}>Category</th>
+                  <th style={headerCell}>Head</th>
                   <th style={headerCell}>Note</th>
                   <th
                     style={{
@@ -276,7 +271,7 @@ export default function IncomeEntry() {
                           border: '1px solid rgba(29, 185, 84, 0.3)',
                         }}
                       >
-                        {it.category || 'general'}
+                        {it.head?.name || it.category || 'general'}
                       </span>
                     </td>
                     <td

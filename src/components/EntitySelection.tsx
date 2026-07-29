@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, CheckCircle2, Layers, ChevronRight, MapPin, Phone } from 'lucide-react'
+import { Building2, CheckCircle2, Layers, ChevronRight, MapPin, Phone, LogOut } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
+import { api, clearToken } from '@/lib/api'
 import { BRAND } from '@/lib/brand'
+import { toast } from 'sonner'
 
 export default function EntitySelection() {
-  const { user, accessibleEntities, accessibleSubEntities, setSelectedEntityContext, setEntityContextConfirmed } = useAppStore()
+  const { user, accessibleEntities, accessibleSubEntities, setSelectedEntityContext, setEntityContextConfirmed, setUser, setAccessibleMenus, setAccessibleEntities } = useAppStore()
   const [selection, setSelection] = useState<{ type: 'entity' | 'subEntity'; id: string } | null>(null)
 
   function handleSelectEntity(entityId: string) { setSelection({ type: 'entity', id: entityId }) }
@@ -27,12 +29,44 @@ export default function EntitySelection() {
     setEntityContextConfirmed(true)
   }
 
+  async function handleLogout() {
+    try {
+      await api.logout()
+    } catch {}
+    clearToken()
+    setUser(null)
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('tsms_entity_context')
+      sessionStorage.removeItem('tsms_sidebar_collapsed')
+    }
+    setAccessibleMenus(['*'])
+    setAccessibleEntities([], [])
+    setSelectedEntityContext(null, null)
+    setEntityContextConfirmed(false)
+    toast.success('Logged out')
+  }
+
   const hasEntities = accessibleEntities.length > 0
   const hasSubEntities = accessibleSubEntities.length > 0
 
   if (!hasEntities && !hasSubEntities) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#0b0d0f' }}>
+      <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ background: '#0b0d0f' }}>
+        <button
+          onClick={handleLogout}
+          title="Logout"
+          className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid #2a2d33',
+            color: 'rgba(255,255,255,0.6)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#ff6b6b'; e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.background = 'rgba(255,107,107,0.05)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2a2d33'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Logout</span>
+        </button>
         <div className="max-w-md w-full p-8 text-center rounded-3xl" style={{ background: '#14161a', border: '1px solid #2a2d33' }}>
           <Building2 className="w-12 h-12 mx-auto mb-3" style={{ color: '#333' }} />
           <h2 className="text-lg font-bold" style={{ color: '#e8eae9' }}>No Entity Access</h2>
@@ -52,7 +86,24 @@ export default function EntitySelection() {
   }
 
   return (
-    <div className="min-h-screen flex justify-center items-center p-4" style={{ background: '#0b0d0f' }}>
+    <div className="min-h-screen flex justify-center items-center p-4 relative" style={{ background: '#0b0d0f' }}>
+      {/* Logout button — top-right corner */}
+      <button
+        onClick={handleLogout}
+        title="Logout"
+        className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300"
+        style={{
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid #2a2d33',
+          color: 'rgba(255,255,255,0.6)',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#ff6b6b'; e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.background = 'rgba(255,107,107,0.05)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2a2d33'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+      >
+        <LogOut className="w-4 h-4" />
+        <span>Logout</span>
+      </button>
+
       <div
         className="max-w-[800px] w-full rounded-3xl p-10 relative"
         style={{ background: '#14161a', border: '1px solid #2a2d33', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}

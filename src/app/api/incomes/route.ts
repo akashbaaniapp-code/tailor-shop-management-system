@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
   const items = await db.income.findMany({
     where,
     orderBy: { incomeDate: 'desc' },
-    take: 500
+    take: 500,
+    include: { head: true }
   })
   return NextResponse.json({ items })
 }
@@ -32,19 +33,29 @@ export async function POST(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
   const body = await request.json()
-  const { title, category, amount, incomeDate, note } = body
+  const { title, category, amount, incomeDate, note, incomeHeadId } = body
   if (!title || !amount) return NextResponse.json({ error: 'Title and amount required' }, { status: 400 })
 
   const ctx = await getEntityContext(request)
-  const entityWhere = buildEntityWhere(ctx)
+
+  // If an incomeHeadId is provided, fetch the head name and use it as the `category`
+  // for backward compatibility with P&L report and IncomeEntry list (which filter by category).
+  let finalCategory = category || 'general'
+  if (incomeHeadId) {
+    try {
+      const head = await db.incomeHead.findUnique({ where: { id: incomeHeadId } })
+      if (head) finalCategory = head.name
+    } catch {}
+  }
 
   const item = await db.income.create({
     data: {
       title,
-      category: category || 'general',
+      category: finalCategory,
       amount: Number(amount),
       incomeDate: incomeDate ? new Date(incomeDate) : new Date(),
       note: note || null,
+      incomeHeadId: incomeHeadId || null,
       entityId: ctx.entityId,
       subEntityId: ctx.subEntityId
     }
@@ -56,17 +67,27 @@ export async function PUT(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
   const body = await request.json()
-  const { id, title, category, amount, incomeDate, note } = body
+  const { id, title, category, amount, incomeDate, note, incomeHeadId } = body
   if (!id || !title || !amount) return NextResponse.json({ error: 'ID, title and amount required' }, { status: 400 })
+
+  // Sync category with head name when a head is provided
+  let finalCategory = category || 'general'
+  if (incomeHeadId) {
+    try {
+      const head = await db.incomeHead.findUnique({ where: { id: incomeHeadId } })
+      if (head) finalCategory = head.name
+    } catch {}
+  }
 
   const item = await db.income.update({
     where: { id },
     data: {
       title,
-      category: category || 'general',
+      category: finalCategory,
       amount: Number(amount),
       incomeDate: incomeDate ? new Date(incomeDate) : new Date(),
-      note: note || null
+      note: note || null,
+      incomeHeadId: incomeHeadId || null
     }
   })
   return NextResponse.json({ item })
@@ -81,5 +102,3 @@ export async function DELETE(request: NextRequest) {
   await db.income.delete({ where: { id } })
   return NextResponse.json({ success: true })
 }
-
-

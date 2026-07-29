@@ -20,17 +20,11 @@ const darkInput = {
 const btnGreen = { background: '#1db954', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }
 const btnWhite = { background: '#fff', color: '#000', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }
 
-const CATEGORY_OPTIONS = [
-  'general',
-  'service',
-  'commission',
-  'interest',
-  'rental',
-  'sale-asset',
-  'refund',
-  'donation',
-  'other',
-]
+interface IncomeHead {
+  id: string
+  name: string
+  description?: string | null
+}
 
 export default function IncomeFormPage() {
   const setView = useAppStore((s) => s.setView)
@@ -39,15 +33,23 @@ export default function IncomeFormPage() {
   const [loading, setLoading] = useState(!!selectedIncomeId)
   const [saving, setSaving] = useState(false)
 
+  // Income heads loaded from DB (used as the dropdown options)
+  const [incomeHeads, setIncomeHeads] = useState<IncomeHead[]>([])
+
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState(0)
-  const [category, setCategory] = useState('general')
+  const [incomeHeadId, setIncomeHeadId] = useState('')
   const [incomeDate, setIncomeDate] = useState(new Date().toISOString().split('T')[0])
   const [note, setNote] = useState('')
 
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
+    // Always load income heads (used as dropdown options)
+    api.listIncomeHeads()
+      .then((res) => setIncomeHeads(res.items || []))
+      .catch((err) => toast.error(err.message))
+
     if (!selectedIncomeId) {
       setLoading(false)
       return
@@ -58,7 +60,7 @@ export default function IncomeFormPage() {
         if (inc) {
           setTitle(inc.title)
           setAmount(inc.amount)
-          setCategory(inc.category || 'general')
+          setIncomeHeadId(inc.incomeHeadId || '')
           setIncomeDate(new Date(inc.incomeDate).toISOString().split('T')[0])
           setNote(inc.note || '')
         }
@@ -79,12 +81,18 @@ export default function IncomeFormPage() {
       toast.error('Amount must be greater than zero')
       return
     }
+    // If heads exist in the system, require one to be selected.
+    // (If no heads exist yet, fall back to allow save without a head.)
+    if (incomeHeads.length > 0 && !incomeHeadId) {
+      toast.error('Please select an income head')
+      return
+    }
     setSaving(true)
     try {
       const payload = {
         title: title.trim(),
         amount,
-        category,
+        incomeHeadId: incomeHeadId || null,
         incomeDate,
         note,
       }
@@ -107,7 +115,7 @@ export default function IncomeFormPage() {
     setSaved(false)
     setTitle('')
     setAmount(0)
-    setCategory('general')
+    setIncomeHeadId('')
     setNote('')
     setIncomeDate(new Date().toISOString().split('T')[0])
     useAppStore.setState({ selectedIncomeId: null })
@@ -124,6 +132,7 @@ export default function IncomeFormPage() {
   }
 
   if (saved) {
+    const selectedHead = incomeHeads.find((h) => h.id === incomeHeadId)
     return (
       <div className="space-y-4 max-w-2xl mx-auto pt-8">
         <div
@@ -147,7 +156,7 @@ export default function IncomeFormPage() {
             <span className="font-semibold" style={{ color: '#fff' }}>{title}</span>
           </p>
           <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            Category: <span className="font-semibold" style={{ color: '#fff' }}>{category}</span>
+            Head: <span className="font-semibold" style={{ color: '#fff' }}>{selectedHead?.name || '-'}</span>
           </p>
           <p className="text-lg font-bold mt-3" style={{ color: '#1db954' }}>
             Amount: {formatCurrency(amount)}
@@ -200,6 +209,10 @@ export default function IncomeFormPage() {
     cursor: 'pointer',
   }
 
+  // The dropdown shows income heads. If there are no heads yet, show a helper
+  // message that directs the user to the Heads Create page.
+  const noHeads = incomeHeads.length === 0
+
   return (
     <div className="space-y-5 pb-8">
       {/* Header */}
@@ -239,6 +252,39 @@ export default function IncomeFormPage() {
         </div>
       </div>
 
+      {/* If no heads exist, show a banner prompting user to create one first */}
+      {noHeads && (
+        <div
+          style={{
+            background: 'rgba(212, 223, 58, 0.05)',
+            border: '1px solid rgba(212, 223, 58, 0.2)',
+            borderRadius: 12,
+            padding: '14px 18px',
+            fontSize: 14,
+            color: '#d4df3a',
+            lineHeight: 1.6,
+          }}
+        >
+          💡 No income heads exist yet. Please go to{' '}
+          <button
+            onClick={() => setView('setup-expense-head')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#d4df3a',
+              textDecoration: 'underline',
+              fontSize: 14,
+              cursor: 'pointer',
+              padding: 0,
+              fontWeight: 600,
+            }}
+          >
+            Setup → Heads Create
+          </button>{' '}
+          and create at least one income head first.
+        </div>
+      )}
+
       {/* Form card */}
       <div className="p-7" style={darkCard}>
         <p className="text-base font-medium mb-6 flex items-center gap-2" style={{ color: '#fff' }}>
@@ -259,17 +305,23 @@ export default function IncomeFormPage() {
               />
             </div>
             <div>
-              <label style={darkLabel}>Category</label>
+              <label style={darkLabel}>
+                Income Head {!noHeads && <span style={{ color: '#ff6b6b' }}>*</span>}
+              </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                style={selectStyle}
+                value={incomeHeadId}
+                onChange={(e) => setIncomeHeadId(e.target.value)}
+                disabled={noHeads}
+                style={{ ...selectStyle, opacity: noHeads ? 0.5 : 1, cursor: noHeads ? 'not-allowed' : 'pointer' }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = '#d4df3a')}
                 onBlur={(e) => (e.currentTarget.style.borderColor = '#2a2d33')}
               >
-                {CATEGORY_OPTIONS.map((c) => (
-                  <option key={c} value={c} style={{ background: '#0b0d0f' }}>
-                    {c}
+                <option value="" style={{ background: '#0b0d0f' }}>
+                  {noHeads ? 'No heads available' : 'Select income head'}
+                </option>
+                {incomeHeads.map((h) => (
+                  <option key={h.id} value={h.id} style={{ background: '#0b0d0f' }}>
+                    {h.name}
                   </option>
                 ))}
               </select>

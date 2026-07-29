@@ -575,7 +575,7 @@ const RELATIONS: Record<string, Record<string, { model: string; fk: string; isLi
   },
   moneyReceipt: {},
   expense: { head: { model: 'expenseHead', fk: 'expenseHeadId', isList: false, isOptional: true } },
-  income: {},
+  income: { head: { model: 'incomeHead', fk: 'incomeHeadId', isList: false, isOptional: true } },
   payable: { payments: { model: 'payablePayment', fk: 'payableId', isList: true, isOptional: false } },
   payablePayment: { payable: { model: 'payable', fk: 'payableId', isList: false, isOptional: false } }
 }

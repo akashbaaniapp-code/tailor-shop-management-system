@@ -168,6 +168,7 @@ const statements = [
   // Income
   `ALTER TABLE "Income" ADD COLUMN "entityId" TEXT`,
   `ALTER TABLE "Income" ADD COLUMN "subEntityId" TEXT`,
+  `ALTER TABLE "Income" ADD COLUMN "incomeHeadId" TEXT`,
   // Payable
   `ALTER TABLE "Payable" ADD COLUMN "entityId" TEXT`,
   `ALTER TABLE "Payable" ADD COLUMN "subEntityId" TEXT`,
@@ -267,6 +268,9 @@ const statements = [
     "amount" REAL NOT NULL,
     "incomeDate" DATETIME NOT NULL,
     "note" TEXT,
+    "incomeHeadId" TEXT,
+    "entityId" TEXT,
+    "subEntityId" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
 
