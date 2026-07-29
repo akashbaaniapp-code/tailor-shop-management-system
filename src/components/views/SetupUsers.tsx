@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Trash2, Edit, UserCog, Lock, Save, CheckCircle2 } from 'lucide-react'
+import { Plus, Trash2, Edit, UserCog, Lock, Save, ShieldCheck } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
@@ -15,16 +15,16 @@ interface User {
   createdAt: string
 }
 
-const ROLE_BADGE: Record<string, { label: string; color: string; borderColor: string }> = {
-  admin: { label: 'Admin', color: '#1db954', borderColor: '#1db954' },
-  manager: { label: 'Manager', color: '#3498db', borderColor: '#3498db' },
-  staff: { label: 'Staff', color: '#d4df3a', borderColor: '#d4df3a' },
+const ROLE_BADGE: Record<string, { label: string; color: string; borderColor: string; bg: string }> = {
+  admin: { label: 'Admin', color: '#1db954', borderColor: '#1db954', bg: 'rgba(29, 185, 84, 0.1)' },
+  manager: { label: 'Manager', color: '#3498db', borderColor: '#3498db', bg: 'rgba(52, 152, 219, 0.1)' },
+  staff: { label: 'Staff', color: '#d4df3a', borderColor: '#d4df3a', bg: 'rgba(212, 223, 58, 0.1)' },
 }
 
-const ROLE_ROWS: { key: string; label: string; color: string; borderColor: string; desc: string }[] = [
-  { key: 'admin', label: 'Admin', color: '#1db954', borderColor: '#1db954', desc: 'Full access — can manage users, settings, all data' },
-  { key: 'manager', label: 'Manager', color: '#3498db', borderColor: '#3498db', desc: 'Can create/edit orders, deliveries, expenses; no user management.' },
-  { key: 'staff', label: 'Staff', color: '#d4df3a', borderColor: '#d4df3a', desc: 'Custom access defined by permissions below' },
+const ROLE_ROWS: { key: string; label: string; color: string; borderColor: string; bg: string; desc: string }[] = [
+  { key: 'admin', label: 'Admin', color: '#1db954', borderColor: '#1db954', bg: 'rgba(29, 185, 84, 0.05)', desc: 'Full access — can manage users, settings, all data' },
+  { key: 'manager', label: 'Manager', color: '#3498db', borderColor: '#3498db', bg: 'rgba(52, 152, 219, 0.05)', desc: 'Can create/edit orders, deliveries, expenses; no user management.' },
+  { key: 'staff', label: 'Staff', color: '#d4df3a', borderColor: '#d4df3a', bg: 'rgba(212, 223, 58, 0.05)', desc: 'Custom access defined by permissions below' },
 ]
 
 // All menu items available for permission assignment
@@ -266,6 +266,7 @@ export default function SetupUsers() {
                   alignItems: 'center',
                   gap: 6,
                   color: role.color,
+                  background: role.bg,
                 }}
               >
                 <span
@@ -348,14 +349,14 @@ export default function SetupUsers() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
-                <tr style={{ background: '#1f2227' }}>
+                <tr style={{ background: '#ffffff' }}>
                   <th
                     style={{
                       textAlign: 'left',
-                      padding: '14px 10px 14px 25px',
-                      color: '#888',
-                      fontWeight: 500,
-                      borderBottom: '1px solid #2a2d33',
+                      padding: '16px 10px 16px 25px',
+                      color: '#333',
+                      fontWeight: 600,
+                      borderBottom: '1px solid #e0e0e0',
                     }}
                   >
                     Username
@@ -363,10 +364,10 @@ export default function SetupUsers() {
                   <th
                     style={{
                       textAlign: 'left',
-                      padding: '14px 10px',
-                      color: '#888',
-                      fontWeight: 500,
-                      borderBottom: '1px solid #2a2d33',
+                      padding: '16px 10px',
+                      color: '#333',
+                      fontWeight: 600,
+                      borderBottom: '1px solid #e0e0e0',
                     }}
                   >
                     Name
@@ -374,10 +375,10 @@ export default function SetupUsers() {
                   <th
                     style={{
                       textAlign: 'left',
-                      padding: '14px 10px',
-                      color: '#888',
-                      fontWeight: 500,
-                      borderBottom: '1px solid #2a2d33',
+                      padding: '16px 10px',
+                      color: '#333',
+                      fontWeight: 600,
+                      borderBottom: '1px solid #e0e0e0',
                     }}
                   >
                     Role
@@ -385,10 +386,10 @@ export default function SetupUsers() {
                   <th
                     style={{
                       textAlign: 'left',
-                      padding: '14px 10px',
-                      color: '#888',
-                      fontWeight: 500,
-                      borderBottom: '1px solid #2a2d33',
+                      padding: '16px 10px',
+                      color: '#333',
+                      fontWeight: 600,
+                      borderBottom: '1px solid #e0e0e0',
                     }}
                   >
                     Created
@@ -396,10 +397,10 @@ export default function SetupUsers() {
                   <th
                     style={{
                       textAlign: 'right',
-                      padding: '14px 25px 14px 10px',
-                      color: '#888',
-                      fontWeight: 500,
-                      borderBottom: '1px solid #2a2d33',
+                      padding: '16px 25px 16px 10px',
+                      color: '#333',
+                      fontWeight: 600,
+                      borderBottom: '1px solid #e0e0e0',
                     }}
                   >
                     Actions
@@ -412,23 +413,31 @@ export default function SetupUsers() {
                   return (
                     <tr
                       key={it.id}
-                      style={{ borderBottom: '1px solid #1f2227' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      style={{ borderBottom: '1px solid #2a2d33' }}
+                      onMouseEnter={(e) => {
+                        Array.from(e.currentTarget.children).forEach((td) => {
+                          ;(td as HTMLElement).style.background = 'rgba(255,255,255,0.02)'
+                        })
+                      }}
+                      onMouseLeave={(e) => {
+                        Array.from(e.currentTarget.children).forEach((td) => {
+                          ;(td as HTMLElement).style.background = 'transparent'
+                        })
+                      }}
                     >
                       <td
                         style={{
-                          padding: '14px 10px 14px 25px',
+                          padding: '16px 10px 16px 25px',
                           color: '#3498db',
                           fontWeight: 500,
                         }}
                       >
                         {it.username}
                       </td>
-                      <td style={{ padding: '14px 10px', color: '#fff', fontWeight: 500 }}>
+                      <td style={{ padding: '16px 10px', color: '#fff', fontWeight: 500 }}>
                         {it.name || '-'}
                       </td>
-                      <td style={{ padding: '14px 10px' }}>
+                      <td style={{ padding: '16px 10px' }}>
                         <span
                           style={{
                             display: 'inline-block',
@@ -438,19 +447,20 @@ export default function SetupUsers() {
                             borderRadius: 50,
                             border: `1px solid ${role.borderColor}`,
                             color: role.color,
+                            background: role.bg,
                           }}
                         >
                           {role.label}
                         </span>
                       </td>
-                      <td style={{ padding: '14px 10px', color: '#888' }}>
+                      <td style={{ padding: '16px 10px', color: '#888' }}>
                         {new Date(it.createdAt).toLocaleDateString('en-GB', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
                         })}
                       </td>
-                      <td style={{ padding: '14px 25px 14px 10px', textAlign: 'right' }}>
+                      <td style={{ padding: '16px 25px 16px 10px', textAlign: 'right' }}>
                         <div
                           style={{
                             display: 'flex',
@@ -465,9 +475,9 @@ export default function SetupUsers() {
                               onClick={() => openPermissions(it)}
                               title="Set Permissions"
                               style={{
-                                background: '#0b0d0f',
-                                border: '1px solid #2a2d33',
-                                color: '#e8eae9',
+                                background: '#ffffff',
+                                border: '1px solid #e0e0e0',
+                                color: '#333',
                                 padding: '4px 12px',
                                 borderRadius: 20,
                                 fontSize: 12,
@@ -480,14 +490,14 @@ export default function SetupUsers() {
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.borderColor = '#d4df3a'
-                                e.currentTarget.style.color = '#d4df3a'
+                                e.currentTarget.style.color = '#000'
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = '#2a2d33'
-                                e.currentTarget.style.color = '#e8eae9'
+                                e.currentTarget.style.borderColor = '#e0e0e0'
+                                e.currentTarget.style.color = '#333'
                               }}
                             >
-                              <CheckCircle2 size={12} /> Permissions
+                              <ShieldCheck size={12} color="#3498db" /> Permissions
                             </button>
                           )}
                           <button

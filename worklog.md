@@ -55,3 +55,37 @@ Stage Summary:
   * /home/z/my-project/src/app/api/auth/me/route.ts
   * /home/z/my-project/src/components/EntitySelection.tsx
   * /home/z/my-project/src/components/AppShell.tsx
+
+---
+Task ID: setup-users-v2-mockup
+Agent: main
+Task: Update SetupUsers.tsx to match the user's revised HTML mockup featuring a WHITE table header (#fff bg, #333 text, #e0e0e0 border), role badges with subtle background tints, white Permissions button with blue shield icon, and 16px table cell padding.
+
+Work Log:
+- Read the user's new HTML mockup — identified the key visual differences from previous version:
+  1. Table header is now WHITE (background: #ffffff, color: #333, border: #e0e0e0) — striking contrast against dark body
+  2. Role badges in control card now have a 5% tinted background (e.g. rgba(29,185,84,0.05) for admin)
+  3. Role pill badges in table cells now have a 10% tinted background (e.g. rgba(29,185,84,0.1) for admin)
+  4. Permissions button is now WHITE (background: #fff, color: #333, border: #e0e0e0) with a BLUE ShieldCheck icon
+  5. Permissions button hover changes border to #d4df3a (lime), text to #000
+  6. Table cell padding increased from 14px to 16px
+  7. Row hover now tints td elements with rgba(255,255,255,0.02) — needed because the white header shouldn't be affected, and setting bg on tr alone doesn't override td bg in some browsers
+  8. Role badge icon changed from CheckCircle2 to ShieldCheck
+- Replaced ROLE_BADGE and ROLE_ROWS constants to include `bg` field for tinted backgrounds.
+- Updated control card role badges — added background tint matching mockup (5% alpha).
+- Updated table role pill badges — added background tint matching mockup (10% alpha).
+- Replaced entire table thead — background #ffffff, color #333, font-weight 600, border #e0e0e0.
+- Updated all td padding from 14px to 16px throughout the tbody.
+- Replaced row hover handler — now iterates td children and applies rgba(255,255,255,0.02) on enter, transparent on leave. This prevents the hover from affecting the white header.
+- Replaced Permissions button — white background, blue (#3498db) ShieldCheck icon, lime border on hover, dark text on hover.
+- Updated imports — replaced CheckCircle2 with ShieldCheck.
+- Ran `npx tsc --noEmit` — no type errors from SetupUsers.tsx.
+- Verified padding consistency: all td/th now use 16px vertical padding.
+
+Stage Summary:
+- Users & Access Rights page now matches the user's revised HTML mockup exactly.
+- Striking white-on-dark table header for visual contrast.
+- Role badges (both in control card and table pills) now have tinted backgrounds for better visual hierarchy.
+- Permissions button is now a prominent white pill with a blue shield icon — draws attention as the key action for staff/manager users.
+- File updated:
+  * /home/z/my-project/src/components/views/SetupUsers.tsx
