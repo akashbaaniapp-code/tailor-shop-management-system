@@ -201,42 +201,47 @@ export async function POST(request: NextRequest) {
     }
   })
 
-  // Compose a single batch: order insert + all item inserts (count was already done above)
-  const batchStmts: { sql: string; args: any[] }[] = [
-    {
-      sql: `INSERT INTO "SalesOrder" (id, orderId, orderDate, deliveryDate, tailorId, customerId, salesNote, deliveryInfo, deliveryName, deliveryContact, deliveryAddress, subTotal, discount, grandTotal, dueAmount, status, paymentStatus, entityId, subEntityId, createdAt, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [
-        crypto.randomUUID(),
-        orderId_short,
-        orderDateIso,
-        deliveryDateIso,
-        tailorId || null,
-        customerId,
-        salesNote || null,
-        deliveryInfo || null,
-        deliveryName || null,
-        deliveryContact || null,
-        deliveryAddress || null,
-        subTotal,
-        discountAmount,
-        grandTotal,
-        grandTotal,
-        'full_pending',
-        'unpaid',
-        ctx.entityId,
-        ctx.subEntityId,
-        nowIso,
-        nowIso // updatedAt
-      ]
-    },
-    ...itemRows.map((r) => ({
+  // Two-step insert: order first (committed), then items in a batch.
+  // Splitting avoids FK constraint failures when items reference the order
+  // that hasn't been committed yet in the same batch.
+  await client.execute({
+    sql: `INSERT INTO "SalesOrder" (id, orderId, orderDate, deliveryDate, tailorId, customerId, salesNote, deliveryInfo, deliveryName, deliveryContact, deliveryAddress, subTotal, discount, grandTotal, dueAmount, status, paymentStatus, entityId, subEntityId, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      crypto.randomUUID(),
+      orderId_short,
+      orderDateIso,
+      deliveryDateIso,
+      tailorId || null,
+      customerId,
+      salesNote || null,
+      deliveryInfo || null,
+      deliveryName || null,
+      deliveryContact || null,
+      deliveryAddress || null,
+      subTotal,
+      discountAmount,
+      grandTotal,
+      grandTotal,
+      'full_pending',
+      'unpaid',
+      ctx.entityId,
+      ctx.subEntityId,
+      nowIso,
+      nowIso // updatedAt
+    ]
+  })
+
+  // Batch-insert all line items in a single round-trip (much faster than sequential create)
+  let savedItems: any[] = []
+  if (items.length > 0) {
+    const itemStmts = itemRows.map((r) => ({
       sql: `INSERT INTO "SalesOrderItem" (id, orderId, itemId, qty, qtyFeet, qtyPiece, uom, unitPrice, total, deliveredQty, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
       args: [r.id, orderId_short, r.itemId, r.qty, r.qtyFeet, r.qtyPiece, r.uom, r.unitPrice, r.total, nowIso]
     }))
-  ]
-
-  await client.batch(batchStmts)
+    await client.batch(itemStmts)
+    savedItems = itemRows
+  }
 
   // Build response order object WITHOUT any extra DB round-trip.
   // Client-side enrichment adds customer/tailor/item names from its existing state.
@@ -261,7 +266,7 @@ export async function POST(request: NextRequest) {
     entityId: ctx.entityId,
     subEntityId: ctx.subEntityId,
     createdAt: nowIso,
-    items: itemRows.map((r) => ({
+    items: savedItems.map((r) => ({
       ...r,
       orderId: orderId_short,
       deliveredQty: 0,
