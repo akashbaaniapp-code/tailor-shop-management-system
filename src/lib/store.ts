@@ -12,6 +12,9 @@ export type ViewKey =
   | 'expense-entry'
   | 'expense-create'
   | 'expense-edit'
+  | 'income-entry'
+  | 'income-create'
+  | 'income-edit'
   | 'setup-uom'
   | 'setup-item'
   | 'setup-tailor'
@@ -42,6 +45,9 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'expense-entry': 'expenses',
   'expense-create': 'expenses-new',
   'expense-edit': 'expenses-edit',
+  'income-entry': 'incomes',
+  'income-create': 'incomes-new',
+  'income-edit': 'incomes-edit',
   'setup-uom': 'setup-uom',
   'setup-item': 'setup-items',
   'setup-tailor': 'setup-tailors',
@@ -92,6 +98,8 @@ interface AppState {
   setSelectedOrderId: (id: string | null) => void
   selectedExpenseId: string | null
   setSelectedExpenseId: (id: string | null) => void
+  selectedIncomeId: string | null
+  setSelectedIncomeId: (id: string | null) => void
   selectedUserId: string | null
   setSelectedUserId: (id: string | null) => void
   // List of menu keys the current user can access.
@@ -159,6 +167,8 @@ export const useAppStore = create<AppState>((set) => ({
   setSelectedOrderId: (id) => set({ selectedOrderId: id }),
   selectedExpenseId: null,
   setSelectedExpenseId: (id) => set({ selectedExpenseId: id }),
+  selectedIncomeId: null,
+  setSelectedIncomeId: (id) => set({ selectedIncomeId: id }),
   selectedUserId: null,
   setSelectedUserId: (id) => set({ selectedUserId: id }),
   accessibleMenus: ['*'], // default to all; will be overridden after /api/auth/me

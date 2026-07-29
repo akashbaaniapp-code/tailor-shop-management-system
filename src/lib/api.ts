@@ -297,6 +297,7 @@ export const api = {
   // Incomes
   listIncomes: () => apiFetch('/api/incomes'),
   createIncome: (data: any) => apiFetch('/api/incomes', { method: 'POST', body: JSON.stringify(data) }),
+  updateIncome: (data: any) => apiFetch('/api/incomes', { method: 'PUT', body: JSON.stringify(data) }),
   deleteIncome: (id: string) => apiFetch(`/api/incomes?id=${id}`, { method: 'DELETE' }),
 
   // Payables

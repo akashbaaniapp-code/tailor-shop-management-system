@@ -34,6 +34,7 @@ const MENU_ITEMS = [
   { key: 'delivery', label: 'Delivery' },
   { key: 'bill-collection', label: 'Bill Collection' },
   { key: 'expense-entry', label: 'Expense Entry' },
+  { key: 'income-entry', label: 'Income Entry' },
   { key: 'setup-uom', label: 'Setup - UoM' },
   { key: 'setup-item', label: 'Setup - Items' },
   { key: 'setup-tailor', label: 'Setup - Tailors' },

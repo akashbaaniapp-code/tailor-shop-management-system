@@ -29,7 +29,8 @@ import {
   Building2,
   ChevronRight,
   Menu,
-  X
+  X,
+  CircleDollarSign
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -48,6 +49,8 @@ const DeliveryFormPage = dynamic(() => import('@/components/views/DeliveryFormPa
 const BillCollection = dynamic(() => import('@/components/views/BillCollection'))
 const ExpenseEntry = dynamic(() => import('@/components/views/ExpenseEntry'))
 const ExpenseFormPage = dynamic(() => import('@/components/views/ExpenseFormPage'))
+const IncomeEntry = dynamic(() => import('@/components/views/IncomeEntry'))
+const IncomeFormPage = dynamic(() => import('@/components/views/IncomeFormPage'))
 const SetupUom = dynamic(() => import('@/components/views/SetupUom'))
 const SetupItem = dynamic(() => import('@/components/views/SetupItem'))
 const SetupTailor = dynamic(() => import('@/components/views/SetupTailor'))
@@ -78,7 +81,8 @@ const navGroups: NavGroup[] = [
       { key: 'sales-orders', label: 'Sales Orders', icon: ShoppingCart },
       { key: 'delivery', label: 'Delivery', icon: Truck },
       { key: 'bill-collection', label: 'Bill Collection', icon: Wallet },
-      { key: 'expense-entry', label: 'Expense Entry', icon: Receipt }
+      { key: 'expense-entry', label: 'Expense Entry', icon: Receipt },
+      { key: 'income-entry', label: 'Income Entry', icon: CircleDollarSign }
     ]
   },
   {
@@ -120,6 +124,9 @@ const viewTitles: Record<ViewKey, string> = {
   'expense-entry': 'Expense Entry',
   'expense-create': 'Add Expense',
   'expense-edit': 'Edit Expense',
+  'income-entry': 'Income Entry',
+  'income-create': 'Add Income',
+  'income-edit': 'Edit Income',
   'setup-uom': 'Setup - Unit of Measure',
   'setup-item': 'Setup - Items',
   'setup-tailor': 'Setup - Tailors',
@@ -186,6 +193,9 @@ export default function AppShell() {
       case 'expense-entry': return <ExpenseEntry />
       case 'expense-create': return <ExpenseFormPage />
       case 'expense-edit': return <ExpenseFormPage />
+      case 'income-entry': return <IncomeEntry />
+      case 'income-create': return <IncomeFormPage />
+      case 'income-edit': return <IncomeFormPage />
       case 'setup-uom': return <SetupUom />
       case 'setup-item': return <SetupItem />
       case 'setup-tailor': return <SetupTailor />
