@@ -175,87 +175,113 @@ export async function POST(request: NextRequest) {
   const discountAmount = Number(discount) || 0
   const grandTotal = subTotal - discountAmount
 
-  // Create sales order first (items will be inserted in a single batch for speed)
-  const order = await db.salesOrder.create({
-    data: {
-      orderId,
-      orderDate: new Date(orderDate),
-      deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
-      tailorId: tailorId || null,
-      customerId,
-      salesNote: salesNote || null,
-      deliveryInfo: deliveryInfo || null,
-      deliveryName: deliveryName || null,
-      deliveryContact: deliveryContact || null,
-      deliveryAddress: deliveryAddress || null,
-      subTotal,
-      discount: discountAmount,
-      grandTotal,
-      dueAmount: grandTotal,
-      status: 'full_pending',
-      paymentStatus: 'unpaid',
-      entityId: ctx.entityId,
-      subEntityId: ctx.subEntityId
+  // Single batch transaction: COUNT + INSERT order + INSERT all items in ONE round-trip.
+  // This is critical for cross-region latency (Vercel US <-> Turso Mumbai ~1.4s/round-trip).
+  const orderId_full = orderId
+  const orderId_short = orderId_full // alias for clarity
+  const nowIso = new Date().toISOString()
+  const orderDateIso = new Date(orderDate).toISOString()
+  const deliveryDateIso = deliveryDate ? new Date(deliveryDate).toISOString() : null
+
+  // Build all INSERT statements for items
+  const itemRows = items.map((it: any) => {
+    const id = crypto.randomUUID()
+    const qtyFeet = it.qtyFeet !== undefined && it.qtyFeet !== null && it.qtyFeet !== '' ? Number(it.qtyFeet) : null
+    const qtyPiece = it.qtyPiece !== undefined && it.qtyPiece !== null && it.qtyPiece !== '' ? Number(it.qtyPiece) : null
+    return {
+      id,
+      itemId: it.itemId,
+      qty: Number(it.qty) || 0,
+      qtyFeet,
+      qtyPiece,
+      uom: it.uom,
+      unitPrice: Number(it.unitPrice) || 0,
+      total: Number(it.total) || 0
     }
   })
 
-  // Batch-insert all line items in a single round-trip (much faster than sequential create)
-  let savedItems: any[] = []
-  if (items.length > 0) {
-    const now = new Date().toISOString()
-    const rowsToInsert = items.map((it: any) => {
-      const id = crypto.randomUUID()
-      const qtyFeet = it.qtyFeet !== undefined && it.qtyFeet !== null && it.qtyFeet !== '' ? Number(it.qtyFeet) : null
-      const qtyPiece = it.qtyPiece !== undefined && it.qtyPiece !== null && it.qtyPiece !== '' ? Number(it.qtyPiece) : null
-      return {
-        id,
-        itemId: it.itemId,
-        qty: Number(it.qty) || 0,
-        qtyFeet,
-        qtyPiece,
-        uom: it.uom,
-        unitPrice: Number(it.unitPrice) || 0,
-        total: Number(it.total) || 0,
-        deliveredQty: 0
-      }
-    })
-    const stmts = rowsToInsert.map((r) => ({
+  // Compose a single batch: order insert + all item inserts (count was already done above)
+  const batchStmts: { sql: string; args: any[] }[] = [
+    {
+      sql: `INSERT INTO "SalesOrder" (id, orderId, orderDate, deliveryDate, tailorId, customerId, salesNote, deliveryInfo, deliveryName, deliveryContact, deliveryAddress, subTotal, discount, grandTotal, dueAmount, status, paymentStatus, entityId, subEntityId, createdAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        crypto.randomUUID(),
+        orderId_short,
+        orderDateIso,
+        deliveryDateIso,
+        tailorId || null,
+        customerId,
+        salesNote || null,
+        deliveryInfo || null,
+        deliveryName || null,
+        deliveryContact || null,
+        deliveryAddress || null,
+        subTotal,
+        discountAmount,
+        grandTotal,
+        grandTotal,
+        'full_pending',
+        'unpaid',
+        ctx.entityId,
+        ctx.subEntityId,
+        nowIso
+      ]
+    },
+    ...itemRows.map((r) => ({
       sql: `INSERT INTO "SalesOrderItem" (id, orderId, itemId, qty, qtyFeet, qtyPiece, uom, unitPrice, total, deliveredQty, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
-      args: [r.id, order.id, r.itemId, r.qty, r.qtyFeet, r.qtyPiece, r.uom, r.unitPrice, r.total, now]
+      args: [r.id, orderId_short, r.itemId, r.qty, r.qtyFeet, r.qtyPiece, r.uom, r.unitPrice, r.total, nowIso]
     }))
-    await client.batch(stmts)
-    savedItems = rowsToInsert
-  }
+  ]
 
-  // Build response order without an extra DB round-trip.
-  // We already have the order object from create() and the items we just inserted;
-  // we just need to attach customer/tailor/item names for printing.
+  await client.batch(batchStmts)
+
+  // Build response order object (without an extra DB round-trip).
+  // We already have everything we need — just attach customer/tailor/items.
   const [customer, tailor, dbItemsLookup] = await Promise.all([
     db.customer.findUnique({ where: { id: customerId } }),
     tailorId ? db.tailor.findUnique({ where: { id: tailorId } }) : Promise.resolve(null),
-    // Fetch all items in a single query (instead of one-per-item)
-    db.item.findMany({ where: { id: { in: savedItems.map((r: any) => r.itemId) } }, include: { uom: true } })
+    db.item.findMany({ where: { id: { in: itemRows.map((r) => r.itemId) } }, include: { uom: true } })
   ])
 
-  // Build items array in the same shape the client expects for invoice printing
-  const itemsForResponse = savedItems.map((r: any) => {
-    const dbItem = dbItemsLookup.find((i: any) => i.id === r.itemId)
-    return {
-      ...r,
-      item: dbItem ? { name: dbItem.name, uom: dbItem.uom } : { name: '', uom: { name: r.uom } }
-    }
-  })
-
-  const orderWithItems = {
-    ...order,
+  const order = {
+    id: orderId_short,
+    orderId: orderId_short,
+    orderDate: orderDateIso,
+    deliveryDate: deliveryDateIso,
+    tailorId: tailorId || null,
+    customerId,
+    salesNote: salesNote || null,
+    deliveryInfo: deliveryInfo || null,
+    deliveryName: deliveryName || null,
+    deliveryContact: deliveryContact || null,
+    deliveryAddress: deliveryAddress || null,
+    subTotal,
+    discount: discountAmount,
+    grandTotal,
+    dueAmount: grandTotal,
+    status: 'full_pending',
+    paymentStatus: 'unpaid',
+    entityId: ctx.entityId,
+    subEntityId: ctx.subEntityId,
+    createdAt: nowIso,
     customer,
     tailor,
-    items: itemsForResponse,
+    items: itemRows.map((r) => {
+      const dbItem = dbItemsLookup.find((i: any) => i.id === r.itemId)
+      return {
+        ...r,
+        orderId: orderId_short,
+        deliveredQty: 0,
+        createdAt: nowIso,
+        item: dbItem ? { name: dbItem.name, uom: dbItem.uom } : { name: '', uom: { name: r.uom } }
+      }
+    }),
     deliveries: [],
     bills: []
   }
 
   const inWords = numberToWords(grandTotal)
 
-  return NextResponse.json({ order: orderWithItems, inWords })
+  return NextResponse.json({ order, inWords })
 }
