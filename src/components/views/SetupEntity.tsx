@@ -56,6 +56,10 @@ export default function SetupEntity() {
       const [entRes, subRes] = await Promise.all([api.listEntities(), api.listSubEntities()])
       setEntities(entRes.items)
       setAllSubEntities(subRes.items)
+      // Auto-expand first entity on initial load so sub-entities are visible
+      if (entRes.items.length > 0 && expandedIds.size === 0) {
+        setExpandedIds(new Set([entRes.items[0].id]))
+      }
     } catch (err: any) {
       toast.error(err.message)
     } finally {
@@ -157,7 +161,7 @@ export default function SetupEntity() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
-      {/* Control Card */}
+      {/* Control / Instruction Card */}
       <div
         style={{
           background: '#14161a',
@@ -166,39 +170,39 @@ export default function SetupEntity() {
           padding: 25,
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'stretch',
+          alignItems: 'flex-start',
           gap: 20,
+          flexWrap: 'wrap',
         }}
       >
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 14, color: '#e8eae9', lineHeight: 1.6, margin: 0 }}>
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <h4 style={{ fontSize: 15, fontWeight: 500, color: '#e8eae9', margin: '0 0 4px 0' }}>
             Create entities (top-level) and sub-entities (sub-categories)
-          </p>
-          <p style={{ fontSize: 12, color: '#555', marginTop: 4, lineHeight: 1.6 }}>
-            Examples: Entity = "Brand", Sub-Entity = "Aarong", "Yellow", "Levis".
-            Or Entity = "Garment Type", Sub-Entity = "Shirt", "Pant", "Suit".
-          </p>
+          </h4>
+          <span style={{ fontSize: 13, color: '#555', display: 'block', lineHeight: 1.6 }}>
+            Examples: Entity = "Brand", Sub-Entity = "Aarong", "Yellow", "Levis". Or Entity = "Garment Type", Sub-Entity = "Shirt", "Pant", "Suit".
+          </span>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button
             onClick={() => openCreateSub()}
             style={{
               background: 'transparent',
               border: '1px solid #2a2d33',
-              color: '#e8eae9',
-              padding: '10px 18px',
+              color: '#aaa',
+              padding: '10px 20px',
               borderRadius: 10,
               fontSize: 14,
               fontWeight: 500,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 8,
               transition: '0.3s',
               whiteSpace: 'nowrap',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#d4df3a'; e.currentTarget.style.color = '#d4df3a' }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2a2d33'; e.currentTarget.style.color = '#e8eae9' }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#555'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = '#1f2227' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2a2d33'; e.currentTarget.style.color = '#aaa'; e.currentTarget.style.background = 'transparent' }}
           >
             <Plus size={14} /> Add Sub-Entity
           </button>
@@ -208,14 +212,14 @@ export default function SetupEntity() {
               background: '#1db954',
               color: '#fff',
               border: 'none',
-              padding: '10px 18px',
+              padding: '10px 24px',
               borderRadius: 10,
               fontSize: 14,
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 8,
               transition: '0.3s',
               whiteSpace: 'nowrap',
             }}
@@ -227,240 +231,283 @@ export default function SetupEntity() {
         </div>
       </div>
 
-      {/* List Card */}
-      <div style={{ background: '#14161a', border: '1px solid #2a2d33', borderRadius: 16, overflow: 'hidden' }}>
-        {loading ? (
-          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[...Array(4)].map((_, i) => (
-              <div key={i} style={{ height: 60, background: '#1f2227', borderRadius: 8 }} />
-            ))}
-          </div>
-        ) : entities.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+      {/* Loading skeleton */}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
+          {[...Array(2)].map((_, i) => (
             <div
+              key={i}
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 56,
-                height: 56,
-                border: '2px solid #2a2d33',
-                borderRadius: 12,
-                marginBottom: 8,
+                background: '#14161a',
+                border: '1px solid #2a2d33',
+                borderRadius: 16,
+                padding: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
               }}
             >
-              <Layers size={24} color="#666" />
+              <div style={{ height: 50, background: '#1f2227', borderRadius: 8 }} />
+              <div style={{ height: 60, background: '#1f2227', borderRadius: 10 }} />
             </div>
-            <p style={{ color: '#888' }}>No entities yet</p>
-            <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Click "Add Entity" to create your first one</p>
+          ))}
+        </div>
+      ) : entities.length === 0 ? (
+        // Empty state
+        <div
+          style={{
+            background: '#14161a',
+            border: '1px solid #2a2d33',
+            borderRadius: 16,
+            textAlign: 'center',
+            padding: '48px 0',
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 56,
+              height: 56,
+              border: '2px solid #2a2d33',
+              borderRadius: 12,
+              marginBottom: 8,
+            }}
+          >
+            <Layers size={24} color="#666" />
           </div>
-        ) : (
-          <div>
-            {entities.map((ent, idx) => {
-              const subEntities = allSubEntities.filter((s) => s.entityId === ent.id)
-              const isExpanded = expandedIds.has(ent.id)
-              return (
-                <div
-                  key={ent.id}
-                  style={{
-                    borderBottom: idx === entities.length - 1 ? 'none' : '1px solid #2a2d33',
-                  }}
-                >
-                  <div
+          <p style={{ color: '#888' }}>No entities yet</p>
+          <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Click "Add Entity" to create your first one</p>
+        </div>
+      ) : (
+        // Nested Parent & Sub-Entities Cards
+        entities.map((ent) => {
+          const subEntities = allSubEntities.filter((s) => s.entityId === ent.id)
+          const isExpanded = expandedIds.has(ent.id)
+          return (
+            <div
+              key={ent.id}
+              style={{
+                background: '#14161a',
+                border: '1px solid #2a2d33',
+                borderRadius: 16,
+                padding: 20,
+              }}
+            >
+              {/* Parent Header */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '10px 15px',
+                  cursor: 'pointer',
+                  gap: 15,
+                  flexWrap: 'wrap',
+                }}
+                onClick={() => toggleExpand(ent.id)}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1, minWidth: 240 }}>
+                  <div style={{ color: '#888', fontSize: 14, marginTop: 4, display: 'inline-flex' }}>
+                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 18, fontWeight: 600, color: '#fff' }}>{ent.name}</div>
+                    {ent.description && (
+                      <div style={{ fontSize: 14, color: '#888', marginBottom: 6 }}>{ent.description}</div>
+                    )}
+                    <div style={{ display: 'flex', gap: 15, fontSize: 13, color: '#666', flexWrap: 'wrap' }}>
+                      {ent.address && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <MapPin size={12} /> {ent.address}
+                        </span>
+                      )}
+                      {ent.contactNumber && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <Phone size={12} /> {ent.contactNumber}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
+                  <span
                     style={{
-                      padding: '18px 25px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
+                      background: '#1f2227',
+                      border: '1px solid #2a2d33',
+                      color: '#aaa',
+                      padding: '4px 12px',
+                      borderRadius: 50,
+                      fontSize: 12,
+                      whiteSpace: 'nowrap',
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
+                    {subEntities.length} sub-entit{subEntities.length === 1 ? 'y' : 'ies'}
+                  </span>
+                  <div style={{ display: 'flex', gap: 12, color: '#666' }}>
                     <button
-                      onClick={() => toggleExpand(ent.id)}
-                      title={isExpanded ? 'Collapse' : 'Expand'}
+                      onClick={(e) => { e.stopPropagation(); openCreateSub(ent.id) }}
+                      title="Add sub-entity"
                       style={{
                         background: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#888',
-                        padding: 4,
+                        color: '#666',
+                        padding: 0,
                         display: 'inline-flex',
                         transition: '0.3s',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = '#d4df3a')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#888')}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = '#1db954')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
                     >
-                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      <Plus size={16} />
                     </button>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>{ent.name}</p>
-                      {ent.description && <p style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{ent.description}</p>}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 6, fontSize: 12 }}>
-                        {ent.address && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#666' }}>
-                            <MapPin size={12} /> {ent.address}
-                          </span>
-                        )}
-                        {ent.contactNumber && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#666' }}>
-                            <Phone size={12} /> {ent.contactNumber}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openEditEntity(ent) }}
+                      title="Edit"
                       style={{
-                        display: 'inline-block',
-                        fontSize: 12,
-                        fontWeight: 500,
-                        padding: '4px 12px',
-                        borderRadius: 50,
-                        border: '1px solid #2a2d33',
-                        color: '#aaa',
-                        background: 'rgba(255,255,255,0.02)',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#666',
+                        padding: 0,
+                        display: 'inline-flex',
+                        transition: '0.3s',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = '#3498db')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteEntity(ent.id) }}
+                      title="Delete"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#666',
+                        padding: 0,
+                        display: 'inline-flex',
+                        transition: '0.3s',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nested Sub-Entities (only when expanded) */}
+              {isExpanded && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    padding: '0 15px 10px 15px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                  }}
+                >
+                  {subEntities.length === 0 ? (
+                    <div
+                      style={{
+                        background: '#0b0d0f',
+                        border: '1px dashed #2a2d33',
+                        borderRadius: 12,
+                        padding: '15px 20px',
+                        textAlign: 'center',
+                        color: '#555',
+                        fontSize: 13,
+                        fontStyle: 'italic',
                       }}
                     >
-                      {subEntities.length} sub-entit{subEntities.length === 1 ? 'y' : 'ies'}
-                    </span>
-                    <div style={{ display: 'flex', gap: 12, color: '#666', alignItems: 'center' }}>
-                      <button
-                        onClick={() => openCreateSub(ent.id)}
-                        title="Add sub-entity"
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: '#666',
-                          padding: 0,
-                          display: 'inline-flex',
-                          transition: '0.3s',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#1db954')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
-                      >
-                        <Plus size={16} />
-                      </button>
-                      <button
-                        onClick={() => openEditEntity(ent)}
-                        title="Edit"
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: '#666',
-                          padding: 0,
-                          display: 'inline-flex',
-                          transition: '0.3s',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#3498db')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEntity(ent.id)}
-                        title="Delete"
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: '#666',
-                          padding: 0,
-                          display: 'inline-flex',
-                          transition: '0.3s',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      No sub-entities. Click + to add one.
                     </div>
-                  </div>
-
-                  {isExpanded && (
-                    <div style={{ padding: '0 25px 18px 50px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {subEntities.length === 0 ? (
-                        <p style={{ fontSize: 12, color: '#555', fontStyle: 'italic' }}>No sub-entities. Click + to add one.</p>
-                      ) : (
-                        subEntities.map((s) => (
-                          <div
-                            key={s.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              gap: 10,
-                              padding: '12px 14px',
-                              background: '#0b0d0f',
-                              border: '1px solid #2a2d33',
-                              borderRadius: 10,
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3a3d43')}
-                            onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#2a2d33')}
-                          >
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ color: '#fff', fontWeight: 500, fontSize: 14 }}>{s.name}</p>
-                              {s.description && <p style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{s.description}</p>}
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 6, fontSize: 12 }}>
-                                {s.address && (
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#666' }}>
-                                    <MapPin size={12} /> {s.address}
-                                  </span>
-                                )}
-                                {s.contactNumber && (
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#666' }}>
-                                    <Phone size={12} /> {s.contactNumber}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: 10, color: '#666', alignItems: 'center' }}>
-                              <button
-                                onClick={() => openEditSub(s)}
-                                title="Edit"
-                                style={{
-                                  background: 'transparent',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  color: '#666',
-                                  padding: 0,
-                                  display: 'inline-flex',
-                                  transition: '0.3s',
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.color = '#3498db')}
-                                onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
-                              >
-                                <Edit size={14} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteSub(s.id)}
-                                title="Delete"
-                                style={{
-                                  background: 'transparent',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  color: '#666',
-                                  padding: 0,
-                                  display: 'inline-flex',
-                                  transition: '0.3s',
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
-                                onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
+                  ) : (
+                    subEntities.map((s) => (
+                      <div
+                        key={s.id}
+                        style={{
+                          background: '#0b0d0f',
+                          border: '1px solid #2a2d33',
+                          borderRadius: 12,
+                          padding: '15px 20px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 15,
+                          flexWrap: 'wrap',
+                          transition: '0.3s',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3a3d43')}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#2a2d33')}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 220 }}>
+                          <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{s.name}</div>
+                          {s.description && <div style={{ fontSize: 13, color: '#888' }}>{s.description}</div>}
+                          <div style={{ display: 'flex', gap: 15, fontSize: 12, color: '#666', marginTop: 2, flexWrap: 'wrap' }}>
+                            {s.address && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <MapPin size={12} /> {s.address}
+                              </span>
+                            )}
+                            {s.contactNumber && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <Phone size={12} /> {s.contactNumber}
+                              </span>
+                            )}
                           </div>
-                        ))
-                      )}
-                    </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 12, color: '#666' }}>
+                          <button
+                            onClick={() => openEditSub(s)}
+                            title="Edit"
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: '#666',
+                              padding: 0,
+                              display: 'inline-flex',
+                              transition: '0.3s',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#3498db')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSub(s.id)}
+                            title="Delete"
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: '#666',
+                              padding: 0,
+                              display: 'inline-flex',
+                              transition: '0.3s',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
+              )}
+            </div>
+          )
+        })
+      )}
 
       {/* Entity form dialog */}
       {showEntityForm && (
