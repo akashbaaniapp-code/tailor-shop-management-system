@@ -204,11 +204,12 @@ export async function POST(request: NextRequest) {
   // Two-step insert: order first (committed), then items in a batch.
   // Splitting avoids FK constraint failures when items reference the order
   // that hasn't been committed yet in the same batch.
+  const orderUuid = crypto.randomUUID()
   await client.execute({
     sql: `INSERT INTO "SalesOrder" (id, orderId, orderDate, deliveryDate, tailorId, customerId, salesNote, deliveryInfo, deliveryName, deliveryContact, deliveryAddress, subTotal, discount, grandTotal, dueAmount, status, paymentStatus, entityId, subEntityId, createdAt, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
-      crypto.randomUUID(),
+      orderUuid,
       orderId_short,
       orderDateIso,
       deliveryDateIso,
@@ -233,11 +234,12 @@ export async function POST(request: NextRequest) {
   })
 
   // Batch-insert all line items in a single round-trip (much faster than sequential create)
+  // NOTE: SalesOrderItem.orderId is FK to SalesOrder.id (the UUID), NOT to SalesOrder.orderId (the human-readable ID)
   let savedItems: any[] = []
   if (items.length > 0) {
     const itemStmts = itemRows.map((r) => ({
       sql: `INSERT INTO "SalesOrderItem" (id, orderId, itemId, qty, qtyFeet, qtyPiece, uom, unitPrice, total, deliveredQty, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
-      args: [r.id, orderId_short, r.itemId, r.qty, r.qtyFeet, r.qtyPiece, r.uom, r.unitPrice, r.total, nowIso]
+      args: [r.id, orderUuid, r.itemId, r.qty, r.qtyFeet, r.qtyPiece, r.uom, r.unitPrice, r.total, nowIso]
     }))
     await client.batch(itemStmts)
     savedItems = itemRows
@@ -246,7 +248,7 @@ export async function POST(request: NextRequest) {
   // Build response order object WITHOUT any extra DB round-trip.
   // Client-side enrichment adds customer/tailor/item names from its existing state.
   const order = {
-    id: orderId_short,
+    id: orderUuid,
     orderId: orderId_short,
     orderDate: orderDateIso,
     deliveryDate: deliveryDateIso,
@@ -268,7 +270,7 @@ export async function POST(request: NextRequest) {
     createdAt: nowIso,
     items: savedItems.map((r) => ({
       ...r,
-      orderId: orderId_short,
+      orderId: orderUuid,
       deliveredQty: 0,
       createdAt: nowIso,
       itemName: '' // client will fill this in via dbItems lookup
