@@ -47,7 +47,7 @@ function isSetupData(path: string): boolean {
 // VERSION: bumped whenever the cache schema changes or when we need to force
 // all users to re-fetch setup data (e.g. after fixing a cache bug that left
 // stale data in old localStorage keys). Old keys are auto-cleaned on load.
-const LS_CACHE_VERSION = 'v3'
+const LS_CACHE_VERSION = 'v4'
 const LS_CACHE_KEY = `tsms_setup_cache_${LS_CACHE_VERSION}`
 
 // On module load, remove any old-version cache keys (one-time migration).

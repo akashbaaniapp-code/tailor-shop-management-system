@@ -220,6 +220,21 @@ const statements = [
   // Payable
   `ALTER TABLE "Payable" ADD COLUMN "entityId" TEXT`,
   `ALTER TABLE "Payable" ADD COLUMN "subEntityId" TEXT`,
+  // Entity isolation for setup/master data tables
+  `ALTER TABLE "ExpenseHead" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "ExpenseHead" ADD COLUMN "subEntityId" TEXT`,
+  `ALTER TABLE "IncomeHead" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "IncomeHead" ADD COLUMN "subEntityId" TEXT`,
+  `ALTER TABLE "DepositHead" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "DepositHead" ADD COLUMN "subEntityId" TEXT`,
+  `ALTER TABLE "Item" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "Item" ADD COLUMN "subEntityId" TEXT`,
+  `ALTER TABLE "Tailor" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "Tailor" ADD COLUMN "subEntityId" TEXT`,
+  `ALTER TABLE "Customer" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "Customer" ADD COLUMN "subEntityId" TEXT`,
+  `ALTER TABLE "DeliveryInfo" ADD COLUMN "entityId" TEXT`,
+  `ALTER TABLE "DeliveryInfo" ADD COLUMN "subEntityId" TEXT`,
   // SalesOrderItem — qtyFeet/qtyPiece for items whose UoM is Feet (e.g. fabric rolls)
   // Both nullable; at least one must be filled when UoM=Feet. The "qty" column holds
   // the combined total (qtyFeet + qtyPiece) used for price calculation.

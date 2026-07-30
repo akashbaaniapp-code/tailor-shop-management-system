@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
-import { requireAdmin } from '@/lib/entity-context'
+import { requireAdmin, getEntityContext, buildEntityWhere } from '@/lib/entity-context'
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
-  const items = await db.depositHead.findMany({ orderBy: { name: 'asc' } })
+  const ctx = await getEntityContext(request)
+  const entityWhere = buildEntityWhere(ctx)
+  const items = await db.depositHead.findMany({
+    where: entityWhere, orderBy: { name: 'asc' } })
   return NextResponse.json({ items })
 }
 
@@ -17,7 +20,8 @@ export async function POST(request: NextRequest) {
   const { name, description } = body
   if (!name) return NextResponse.json({ error: 'Name required' }, { status: 400 })
   try {
-    const item = await db.depositHead.create({ data: { name, description } })
+    const ctx = await getEntityContext(request)
+    const item = await db.depositHead.create({ data: { name, description, entityId: ctx.entityId, subEntityId: ctx.subEntityId } })
     return NextResponse.json({ item })
   } catch (err: any) {
     if (err?.message?.includes('UNIQUE') || err?.message?.includes('unique')) {

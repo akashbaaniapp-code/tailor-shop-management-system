@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
-import { requireAdmin } from '@/lib/entity-context'
+import { requireAdmin, getEntityContext, buildEntityWhere } from '@/lib/entity-context'
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
-  const items = await db.deliveryInfo.findMany({ orderBy: { label: 'asc' } })
+  const ctx = await getEntityContext(request)
+  const entityWhere = buildEntityWhere(ctx)
+  const items = await db.deliveryInfo.findMany({
+    where: entityWhere, orderBy: { label: 'asc' } })
   return NextResponse.json({ items })
 }
 
@@ -16,7 +19,8 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const { label, note } = body
   if (!label || !note) return NextResponse.json({ error: 'Label and note required' }, { status: 400 })
-  const item = await db.deliveryInfo.create({ data: { label, note } })
+  const ctx = await getEntityContext(request)
+    const item = await db.deliveryInfo.create({ data: { label, note, entityId: ctx.entityId, subEntityId: ctx.subEntityId } })
   return NextResponse.json({ item })
 }
 

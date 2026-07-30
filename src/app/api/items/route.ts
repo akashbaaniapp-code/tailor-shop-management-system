@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
-import { requireAdmin } from '@/lib/entity-context'
+import { requireAdmin, getEntityContext, buildEntityWhere } from '@/lib/entity-context'
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
+  const ctx = await getEntityContext(request)
+  const entityWhere = buildEntityWhere(ctx)
   const items = await db.item.findMany({
+    where: entityWhere,
     include: { uom: true },
     orderBy: { name: 'asc' }
   })
@@ -21,9 +24,12 @@ export async function POST(request: NextRequest) {
   if (!name || !uomId) {
     return NextResponse.json({ error: 'Name and UoM required' }, { status: 400 })
   }
-  const item = await db.item.create({
+  const ctx = await getEntityContext(request)
+    const item = await db.item.create({
     data: {
       name,
+      entityId: ctx.entityId,
+      subEntityId: ctx.subEntityId,
       uomId,
       unitPrice: parseFloat(unitPrice) || 0
     },

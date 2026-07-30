@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
-import { requireAdmin } from '@/lib/entity-context'
+import { requireAdmin, getEntityContext, buildEntityWhere } from '@/lib/entity-context'
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth.response) return auth.response
-  const items = await db.tailor.findMany({ orderBy: { name: 'asc' } })
+  const ctx = await getEntityContext(request)
+  const entityWhere = buildEntityWhere(ctx)
+  const items = await db.tailor.findMany({
+    where: entityWhere, orderBy: { name: 'asc' } })
   return NextResponse.json({ items })
 }
 
@@ -16,7 +19,8 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const { name, phone, address } = body
   if (!name) return NextResponse.json({ error: 'Name required' }, { status: 400 })
-  const item = await db.tailor.create({ data: { name, phone, address } })
+  const ctx = await getEntityContext(request)
+    const item = await db.tailor.create({ data: { name, phone, address, entityId: ctx.entityId, subEntityId: ctx.subEntityId } })
   return NextResponse.json({ item })
 }
 
