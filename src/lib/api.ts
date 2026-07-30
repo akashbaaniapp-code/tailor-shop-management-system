@@ -47,7 +47,7 @@ function isSetupData(path: string): boolean {
 // VERSION: bumped whenever the cache schema changes or when we need to force
 // all users to re-fetch setup data (e.g. after fixing a cache bug that left
 // stale data in old localStorage keys). Old keys are auto-cleaned on load.
-const LS_CACHE_VERSION = 'v2'
+const LS_CACHE_VERSION = 'v3'
 const LS_CACHE_KEY = `tsms_setup_cache_${LS_CACHE_VERSION}`
 
 // On module load, remove any old-version cache keys (one-time migration).
@@ -247,9 +247,18 @@ async function doFetch<T>(path: string, headers: Record<string, string>, options
     }
     throw new Error('Unauthorized')
   }
-  const data = await res.json()
+  // Read the response body as text first, then parse as JSON.
+  // This avoids "JSON.parse: unexpected end of data" errors when the
+  // server returns an empty body (e.g. on 500 errors).
+  const text = await res.text()
+  let data: any
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    throw new Error(`Server returned invalid JSON (status ${res.status})`)
+  }
   if (!res.ok) {
-    throw new Error(data.error || 'Request failed')
+    throw new Error(data.error || `Request failed (status ${res.status})`)
   }
   return data as T
 }
