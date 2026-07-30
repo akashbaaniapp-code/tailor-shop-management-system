@@ -17,6 +17,7 @@ function getCacheTTL(path: string): number {
   if (path.includes('/api/uom') || path.includes('/api/items') ||
       path.includes('/api/tailors') || path.includes('/api/customers') ||
       path.includes('/api/expense-heads') || path.includes('/api/income-heads') ||
+      path.includes('/api/deposit-heads') || path.includes('/api/banks') ||
       path.includes('/api/delivery-info') ||
       path.includes('/api/entities') || path.includes('/api/sub-entities')) {
     return 5 * 60 * 1000 // 5 minutes
@@ -34,6 +35,7 @@ function isSetupData(path: string): boolean {
   return path.includes('/api/uom') || path.includes('/api/items') ||
     path.includes('/api/tailors') || path.includes('/api/customers') ||
     path.includes('/api/expense-heads') || path.includes('/api/income-heads') ||
+    path.includes('/api/deposit-heads') || path.includes('/api/banks') ||
     path.includes('/api/delivery-info') ||
     path.includes('/api/entities') || path.includes('/api/sub-entities')
 }
@@ -365,6 +367,24 @@ export const api = {
   createIncomeHead: (data: any) => apiFetch('/api/income-heads', { method: 'POST', body: JSON.stringify(data) }),
   updateIncomeHead: (data: any) => apiFetch('/api/income-heads', { method: 'PUT', body: JSON.stringify(data) }),
   deleteIncomeHead: (id: string) => apiFetch(`/api/income-heads?id=${id}`, { method: 'DELETE' }),
+
+  // Deposit Heads
+  listDepositHeads: () => apiFetch('/api/deposit-heads'),
+  createDepositHead: (data: any) => apiFetch('/api/deposit-heads', { method: 'POST', body: JSON.stringify(data) }),
+  updateDepositHead: (data: any) => apiFetch('/api/deposit-heads', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteDepositHead: (id: string) => apiFetch(`/api/deposit-heads?id=${id}`, { method: 'DELETE' }),
+
+  // Banks
+  listBanks: () => apiFetch('/api/banks'),
+  createBank: (data: any) => apiFetch('/api/banks', { method: 'POST', body: JSON.stringify(data) }),
+  updateBank: (data: any) => apiFetch('/api/banks', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteBank: (id: string) => apiFetch(`/api/banks?id=${id}`, { method: 'DELETE' }),
+
+  // Deposits
+  listDeposits: () => apiFetch('/api/deposits'),
+  createDeposit: (data: any) => apiFetch('/api/deposits', { method: 'POST', body: JSON.stringify(data) }),
+  updateDeposit: (data: any) => apiFetch('/api/deposits', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteDeposit: (id: string) => apiFetch(`/api/deposits?id=${id}`, { method: 'DELETE' }),
 
   // Sales Order Close
   closeSalesOrder: (id: string) => apiFetch(`/api/sales-orders/${id}/close`, { method: 'POST' }),

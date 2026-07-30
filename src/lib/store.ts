@@ -12,6 +12,8 @@ export type ViewKey =
   | 'expense-entry'
   | 'expense-create'
   | 'expense-edit'
+  | 'deposit-create'
+  | 'deposit-edit'
   | 'income-entry'
   | 'income-create'
   | 'income-edit'
@@ -21,6 +23,7 @@ export type ViewKey =
   | 'setup-customer'
   | 'setup-delivery-info'
   | 'setup-expense-head'
+  | 'setup-bank'
   | 'setup-users'
   | 'setup-user-create'
   | 'setup-user-edit'
@@ -46,6 +49,8 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'expense-entry': 'expenses',
   'expense-create': 'expenses-new',
   'expense-edit': 'expenses-edit',
+  'deposit-create': 'deposits-new',
+  'deposit-edit': 'deposits-edit',
   'income-entry': 'incomes',
   'income-create': 'incomes-new',
   'income-edit': 'incomes-edit',
@@ -55,6 +60,7 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'setup-customer': 'setup-customers',
   'setup-delivery-info': 'setup-delivery-info',
   'setup-expense-head': 'setup-expense-heads',
+  'setup-bank': 'setup-banks',
   'setup-users': 'setup-users',
   'setup-user-create': 'setup-users-new',
   'setup-user-edit': 'setup-users-edit',
@@ -100,6 +106,8 @@ interface AppState {
   setSelectedOrderId: (id: string | null) => void
   selectedExpenseId: string | null
   setSelectedExpenseId: (id: string | null) => void
+  selectedDepositId: string | null
+  setSelectedDepositId: (id: string | null) => void
   selectedIncomeId: string | null
   setSelectedIncomeId: (id: string | null) => void
   selectedUserId: string | null
@@ -171,6 +179,8 @@ export const useAppStore = create<AppState>((set) => ({
   setSelectedOrderId: (id) => set({ selectedOrderId: id }),
   selectedExpenseId: null,
   setSelectedExpenseId: (id) => set({ selectedExpenseId: id }),
+  selectedDepositId: null,
+  setSelectedDepositId: (id) => set({ selectedDepositId: id }),
   selectedIncomeId: null,
   setSelectedIncomeId: (id) => set({ selectedIncomeId: id }),
   selectedUserId: null,

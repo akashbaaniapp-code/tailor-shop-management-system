@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Trash2, Edit, Tag, TrendingDown, TrendingUp } from 'lucide-react'
+import { Plus, Trash2, Edit, TrendingDown, TrendingUp, Landmark } from 'lucide-react'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
 
@@ -12,7 +12,7 @@ interface Head {
   description?: string | null
 }
 
-type TabKey = 'expense' | 'income'
+type TabKey = 'expense' | 'income' | 'deposit'
 
 export default function SetupExpenseHead() {
   const [activeTab, setActiveTab] = useState<TabKey>('expense')
@@ -25,7 +25,11 @@ export default function SetupExpenseHead() {
   const [incomeItems, setIncomeItems] = useState<Head[]>([])
   const [incomeLoading, setIncomeLoading] = useState(true)
 
-  // Form state (shared between both tabs, re-used for whichever tab is active)
+  // Deposit heads state
+  const [depositItems, setDepositItems] = useState<Head[]>([])
+  const [depositLoading, setDepositLoading] = useState(true)
+
+  // Form state (shared between all tabs, re-used for whichever tab is active)
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<Head | null>(null)
   const [name, setName] = useState('')
@@ -34,6 +38,7 @@ export default function SetupExpenseHead() {
   useEffect(() => {
     loadExpense()
     loadIncome()
+    loadDeposit()
   }, [])
 
   async function loadExpense() {
@@ -57,6 +62,18 @@ export default function SetupExpenseHead() {
       toast.error(err.message)
     } finally {
       setIncomeLoading(false)
+    }
+  }
+
+  async function loadDeposit() {
+    setDepositLoading(true)
+    try {
+      const res = await api.listDepositHeads()
+      setDepositItems(res.items)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setDepositLoading(false)
     }
   }
 
@@ -89,7 +106,7 @@ export default function SetupExpenseHead() {
           toast.success('Expense head created')
         }
         loadExpense()
-      } else {
+      } else if (activeTab === 'income') {
         if (editItem) {
           await api.updateIncomeHead({ id: editItem.id, name: name.trim(), description })
           toast.success('Income head updated')
@@ -98,6 +115,16 @@ export default function SetupExpenseHead() {
           toast.success('Income head created')
         }
         loadIncome()
+      } else {
+        // deposit
+        if (editItem) {
+          await api.updateDepositHead({ id: editItem.id, name: name.trim(), description })
+          toast.success('Deposit head updated')
+        } else {
+          await api.createDepositHead({ name: name.trim(), description })
+          toast.success('Deposit head created')
+        }
+        loadDeposit()
       }
       setShowForm(false)
     } catch (err: any) {
@@ -106,21 +133,22 @@ export default function SetupExpenseHead() {
   }
 
   async function handleDelete(id: string) {
-    const kind = activeTab === 'expense' ? 'expense' : 'income'
+    const kind = activeTab
     const msg =
       activeTab === 'expense'
         ? 'Delete this expense head? Existing expenses linked to it will keep their records but show "no head".'
-        : 'Delete this income head? Existing incomes linked to it will keep their records but show "no head".'
+        : activeTab === 'income'
+        ? 'Delete this income head? Existing incomes linked to it will keep their records but show "no head".'
+        : 'Delete this deposit head? Existing deposits linked to it will keep their records but show "no head".'
     if (!confirm(msg)) return
     try {
-      if (activeTab === 'expense') {
-        await api.deleteExpenseHead(id)
-      } else {
-        await api.deleteIncomeHead(id)
-      }
+      if (activeTab === 'expense') await api.deleteExpenseHead(id)
+      else if (activeTab === 'income') await api.deleteIncomeHead(id)
+      else await api.deleteDepositHead(id)
       toast.success(`${kind.charAt(0).toUpperCase() + kind.slice(1)} head deleted`)
       if (activeTab === 'expense') loadExpense()
-      else loadIncome()
+      else if (activeTab === 'income') loadIncome()
+      else loadDeposit()
     } catch (err: any) {
       toast.error(err.message)
     }
@@ -138,13 +166,24 @@ export default function SetupExpenseHead() {
   }
 
   // Active tab data
-  const activeItems = activeTab === 'expense' ? expenseItems : incomeItems
-  const activeLoading = activeTab === 'expense' ? expenseLoading : incomeLoading
-  const activeColor = activeTab === 'expense' ? '#ff6b6b' : '#1db954'
-  const activeIcon = activeTab === 'expense' ? <TrendingDown size={16} /> : <TrendingUp size={16} />
+  const activeItems = activeTab === 'expense' ? expenseItems : activeTab === 'income' ? incomeItems : depositItems
+  const activeLoading = activeTab === 'expense' ? expenseLoading : activeTab === 'income' ? incomeLoading : depositLoading
+  const activeColor = activeTab === 'expense' ? '#ff6b6b' : activeTab === 'income' ? '#1db954' : '#d4df3a'
+  const activeIcon =
+    activeTab === 'expense' ? <TrendingDown size={16} /> : activeTab === 'income' ? <TrendingUp size={16} /> : <Landmark size={16} />
+
+  const tabLabel = activeTab === 'expense' ? 'Expense' : activeTab === 'income' ? 'Income' : 'Deposit'
 
   const expenseExamples = 'Examples: Rent, Salary, Utility Bill, Fabric Purchase, Electricity, Transport'
   const incomeExamples = 'Examples: Service Charge, Commission, Interest, Rental Income, Sale of Asset, Refund'
+  const depositExamples = 'Examples: Cash Deposit, Cheque Deposit, Online Transfer, Mobile Banking Deposit'
+
+  const tabDesc =
+    activeTab === 'expense'
+      ? 'Create expense heads (categories) for organizing your expenses'
+      : activeTab === 'income'
+      ? 'Create income heads (categories) for organizing your other incomes'
+      : 'Create deposit heads (categories) for organizing your bank deposits'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
@@ -157,22 +196,12 @@ export default function SetupExpenseHead() {
           borderRadius: 12,
           padding: 4,
           alignSelf: 'flex-start',
+          flexWrap: 'wrap',
         }}
       >
-        <TabButton
-          label="Expense Heads"
-          icon={<TrendingDown size={14} />}
-          isActive={activeTab === 'expense'}
-          activeColor="#ff6b6b"
-          onClick={() => setActiveTab('expense')}
-        />
-        <TabButton
-          label="Income Heads"
-          icon={<TrendingUp size={14} />}
-          isActive={activeTab === 'income'}
-          activeColor="#1db954"
-          onClick={() => setActiveTab('income')}
-        />
+        <TabButton label="Expense Heads" icon={<TrendingDown size={14} />} isActive={activeTab === 'expense'} activeColor="#ff6b6b" onClick={() => setActiveTab('expense')} />
+        <TabButton label="Income Heads" icon={<TrendingUp size={14} />} isActive={activeTab === 'income'} activeColor="#1db954" onClick={() => setActiveTab('income')} />
+        <TabButton label="Deposit" icon={<Landmark size={14} />} isActive={activeTab === 'deposit'} activeColor="#d4df3a" onClick={() => setActiveTab('deposit')} />
       </div>
 
       {/* Control Card */}
@@ -192,12 +221,10 @@ export default function SetupExpenseHead() {
         <div>
           <p style={{ fontSize: 14, color: '#e8eae9', lineHeight: 1.6, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
             {activeIcon}
-            {activeTab === 'expense'
-              ? 'Create expense heads (categories) for organizing your expenses'
-              : 'Create income heads (categories) for organizing your other incomes'}
+            {tabDesc}
           </p>
           <span style={{ display: 'block', marginTop: 6, color: '#555', fontSize: 12 }}>
-            {activeTab === 'expense' ? expenseExamples : incomeExamples}
+            {activeTab === 'expense' ? expenseExamples : activeTab === 'income' ? incomeExamples : depositExamples}
           </span>
         </div>
         <button
@@ -220,7 +247,7 @@ export default function SetupExpenseHead() {
           onMouseEnter={(e) => (e.currentTarget.style.background = '#1aa34a')}
           onMouseLeave={(e) => (e.currentTarget.style.background = '#1db954')}
         >
-          <Plus size={16} /> Add {activeTab === 'expense' ? 'Expense' : 'Income'} Head
+          <Plus size={16} /> Add {tabLabel} Head
         </button>
       </div>
 
@@ -248,15 +275,15 @@ export default function SetupExpenseHead() {
             >
               {activeTab === 'expense' ? (
                 <TrendingDown size={24} color="#666" />
-              ) : (
+              ) : activeTab === 'income' ? (
                 <TrendingUp size={24} color="#666" />
+              ) : (
+                <Landmark size={24} color="#666" />
               )}
             </div>
-            <p style={{ color: '#888' }}>
-              No {activeTab === 'expense' ? 'expense' : 'income'} heads yet
-            </p>
+            <p style={{ color: '#888' }}>No {tabLabel.toLowerCase()} heads yet</p>
             <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
-              Create one to start categorizing your {activeTab === 'expense' ? 'expenses' : 'incomes'}
+              Create one to start categorizing your {activeTab === 'expense' ? 'expenses' : activeTab === 'income' ? 'incomes' : 'deposits'}
             </p>
           </div>
         ) : (
@@ -264,37 +291,13 @@ export default function SetupExpenseHead() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
                 <tr style={{ background: '#ffffff' }}>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      padding: '16px 10px 16px 25px',
-                      color: '#333',
-                      fontWeight: 600,
-                      borderBottom: '1px solid #e0e0e0',
-                    }}
-                  >
+                  <th style={{ textAlign: 'left', padding: '16px 10px 16px 25px', color: '#333', fontWeight: 600, borderBottom: '1px solid #e0e0e0' }}>
                     Name
                   </th>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      padding: '16px 10px',
-                      color: '#333',
-                      fontWeight: 600,
-                      borderBottom: '1px solid #e0e0e0',
-                    }}
-                  >
+                  <th style={{ textAlign: 'left', padding: '16px 10px', color: '#333', fontWeight: 600, borderBottom: '1px solid #e0e0e0' }}>
                     Description
                   </th>
-                  <th
-                    style={{
-                      textAlign: 'right',
-                      padding: '16px 25px 16px 10px',
-                      color: '#333',
-                      fontWeight: 600,
-                      borderBottom: '1px solid #e0e0e0',
-                    }}
-                  >
+                  <th style={{ textAlign: 'right', padding: '16px 25px 16px 10px', color: '#333', fontWeight: 600, borderBottom: '1px solid #e0e0e0' }}>
                     Action
                   </th>
                 </tr>
@@ -315,32 +318,14 @@ export default function SetupExpenseHead() {
                       })
                     }}
                   >
-                    <td style={{ padding: '16px 10px 16px 25px', color: '#fff', fontWeight: 500 }}>
-                      {it.name}
-                    </td>
+                    <td style={{ padding: '16px 10px 16px 25px', color: '#fff', fontWeight: 500 }}>{it.name}</td>
                     <td style={{ padding: '16px 10px', color: '#888' }}>{it.description || '-'}</td>
                     <td style={{ padding: '16px 25px 16px 10px', textAlign: 'right' }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: 15,
-                          color: '#666',
-                          justifyContent: 'flex-end',
-                          alignItems: 'center',
-                        }}
-                      >
+                      <div style={{ display: 'flex', gap: 15, color: '#666', justifyContent: 'flex-end', alignItems: 'center' }}>
                         <button
                           onClick={() => openEdit(it)}
                           title="Edit"
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#666',
-                            padding: 0,
-                            display: 'inline-flex',
-                            transition: '0.3s',
-                          }}
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 0, display: 'inline-flex', transition: '0.3s' }}
                           onMouseEnter={(e) => (e.currentTarget.style.color = '#3498db')}
                           onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
                         >
@@ -349,15 +334,7 @@ export default function SetupExpenseHead() {
                         <button
                           onClick={() => handleDelete(it.id)}
                           title="Delete"
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#666',
-                            padding: 0,
-                            display: 'inline-flex',
-                            transition: '0.3s',
-                          }}
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: 0, display: 'inline-flex', transition: '0.3s' }}
                           onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
                           onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
                         >
@@ -379,7 +356,7 @@ export default function SetupExpenseHead() {
           <DialogContent style={{ background: '#1a1c1e', border: '1px solid #2a2d33', maxWidth: 400 }}>
             <DialogHeader>
               <DialogTitle style={{ color: '#fff' }}>
-                {editItem ? `Edit ${activeTab === 'expense' ? 'Expense' : 'Income'} Head` : `Add ${activeTab === 'expense' ? 'Expense' : 'Income'} Head`}
+                {editItem ? `Edit ${tabLabel} Head` : `Add ${tabLabel} Head`}
               </DialogTitle>
             </DialogHeader>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -390,7 +367,7 @@ export default function SetupExpenseHead() {
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder={activeTab === 'expense' ? 'e.g. Rent' : 'e.g. Service Charge'}
+                  placeholder={activeTab === 'expense' ? 'e.g. Rent' : activeTab === 'income' ? 'e.g. Service Charge' : 'e.g. Cash Deposit'}
                   autoFocus
                   style={inputStyle}
                   onFocus={(e) => (e.currentTarget.style.borderColor = '#d4df3a')}
@@ -398,9 +375,7 @@ export default function SetupExpenseHead() {
                 />
               </div>
               <div>
-                <label style={{ color: '#888', fontSize: 13, display: 'block', marginBottom: 6 }}>
-                  Description (optional)
-                </label>
+                <label style={{ color: '#888', fontSize: 13, display: 'block', marginBottom: 6 }}>Description (optional)</label>
                 <textarea
                   rows={2}
                   value={description}
@@ -415,30 +390,13 @@ export default function SetupExpenseHead() {
             <DialogFooter>
               <button
                 onClick={() => setShowForm(false)}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #2a2d33',
-                  color: '#fff',
-                  borderRadius: 10,
-                  padding: '8px 14px',
-                  fontSize: 14,
-                  cursor: 'pointer',
-                }}
+                style={{ background: 'transparent', border: '1px solid #2a2d33', color: '#fff', borderRadius: 10, padding: '8px 14px', fontSize: 14, cursor: 'pointer' }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                style={{
-                  background: '#1db954',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 10,
-                  padding: '8px 14px',
-                  fontSize: 14,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                }}
+                style={{ background: '#1db954', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
               >
                 {editItem ? 'Update' : 'Create'}
               </button>

@@ -18,6 +18,8 @@ const SETUP_ENDPOINTS = [
   '/api/customers',
   '/api/expense-heads',
   '/api/income-heads',
+  '/api/deposit-heads',
+  '/api/banks',
   '/api/delivery-info',
   '/api/entities',
   '/api/sub-entities',

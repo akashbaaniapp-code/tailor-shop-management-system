@@ -23,11 +23,13 @@ interface ExpenseHead { id: string; name: string }
 const darkCard = { background: '#14161a', border: '1px solid #2a2d33', borderRadius: '16px' }
 const darkInput = { background: '#0b0d0f', border: '1px solid #2a2d33', color: '#aaa', borderRadius: '10px' }
 const btnGreen = { background: '#1db954', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }
+const btnOutline = { background: 'transparent', color: '#d4df3a', border: '1px solid rgba(212,223,58,0.3)', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }
 const darkTextMuted = { color: '#888' }
 
 export default function ExpenseEntry() {
   const setView = useAppStore(s => s.setView)
   const setSelectedExpenseId = useAppStore(s => s.setSelectedExpenseId)
+  const setSelectedDepositId = useAppStore(s => s.setSelectedDepositId)
   const [items, setItems] = useState<Expense[]>([])
   const [heads, setHeads] = useState<ExpenseHead[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,6 +50,10 @@ export default function ExpenseEntry() {
   function handleAddNew() {
     if (heads.length === 0) { toast.error('Please create at least one expense head first'); setView('setup-expense-head'); return }
     setSelectedExpenseId(null); setView('expense-create')
+  }
+
+  function handleAddDeposit() {
+    setSelectedDepositId(null); setView('deposit-create')
   }
 
   function handleEdit(exp: Expense) { setSelectedExpenseId(exp.id); setView('expense-edit') }
@@ -102,11 +108,14 @@ export default function ExpenseEntry() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-xs" style={{ color: '#666' }}>Filtered Total</p>
               <p className="text-lg font-bold" style={{ color: '#ff6b6b' }}>{formatCurrency(totalAmount)}</p>
             </div>
+            <button onClick={handleAddDeposit} className="px-5 py-3 flex items-center gap-2 transition-all duration-300 hover:opacity-90" style={btnOutline}>
+              <Plus className="w-4 h-4" /> Add Deposit
+            </button>
             <button onClick={handleAddNew} className="px-6 py-3 flex items-center gap-2 transition-all duration-300 hover:opacity-90" style={btnGreen}>
               <Plus className="w-4 h-4" /> Add Expense
             </button>

@@ -249,6 +249,9 @@ const MODEL_CONFIG: Record<string, ModelConfig> = {
   deliveryInfo: { name: 'DeliveryInfo', dateFields: ['createdAt', 'updatedAt'] },
   expenseHead: { name: 'ExpenseHead', dateFields: ['createdAt', 'updatedAt'] },
   incomeHead: { name: 'IncomeHead', dateFields: ['createdAt', 'updatedAt'] },
+  depositHead: { name: 'DepositHead', dateFields: ['createdAt', 'updatedAt'] },
+  bank: { name: 'Bank', dateFields: ['createdAt', 'updatedAt'] },
+  deposit: { name: 'Deposit', dateFields: ['depositDate', 'createdAt'] },
   entity: { name: 'Entity', dateFields: ['createdAt', 'updatedAt'] },
   subEntity: { name: 'SubEntity', dateFields: ['createdAt', 'updatedAt'] },
   salesOrder: { name: 'SalesOrder', dateFields: ['orderDate', 'deliveryDate', 'createdAt', 'updatedAt'] },
@@ -548,6 +551,12 @@ const RELATIONS: Record<string, Record<string, { model: string; fk: string; isLi
   deliveryInfo: {},
   expenseHead: {},
   incomeHead: {},
+  depositHead: {},
+  bank: {},
+  deposit: {
+    bank: { model: 'bank', fk: 'bankId', isList: false, isOptional: true },
+    head: { model: 'depositHead', fk: 'depositHeadId', isList: false, isOptional: true }
+  },
   entity: { subEntities: { model: 'subEntity', fk: 'entityId', isList: true, isOptional: false } },
   subEntity: { entity: { model: 'entity', fk: 'entityId', isList: false, isOptional: false } },
   salesOrder: {
@@ -730,6 +739,9 @@ export const db: any = {
   deliveryInfo: makeModel('deliveryInfo'),
   expenseHead: makeModel('expenseHead'),
   incomeHead: makeModel('incomeHead'),
+  depositHead: makeModel('depositHead'),
+  bank: makeModel('bank'),
+  deposit: makeModel('deposit'),
   entity: makeModel('entity'),
   subEntity: makeModel('subEntity'),
   salesOrder: makeModel('salesOrder'),

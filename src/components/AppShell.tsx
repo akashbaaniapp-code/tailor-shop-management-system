@@ -51,6 +51,8 @@ const ExpenseEntry = dynamic(() => import('@/components/views/ExpenseEntry'))
 const ExpenseFormPage = dynamic(() => import('@/components/views/ExpenseFormPage'))
 const IncomeEntry = dynamic(() => import('@/components/views/IncomeEntry'))
 const IncomeFormPage = dynamic(() => import('@/components/views/IncomeFormPage'))
+const DepositFormPage = dynamic(() => import('@/components/views/DepositFormPage'))
+const SetupBank = dynamic(() => import('@/components/views/SetupBank'))
 const SetupUom = dynamic(() => import('@/components/views/SetupUom'))
 const SetupItem = dynamic(() => import('@/components/views/SetupItem'))
 const SetupTailor = dynamic(() => import('@/components/views/SetupTailor'))
@@ -95,6 +97,7 @@ const navGroups: NavGroup[] = [
       { key: 'setup-customer', label: 'Customers', icon: Users },
       { key: 'setup-delivery-info', label: 'Delivery Info', icon: FileText },
       { key: 'setup-expense-head', label: 'Heads Create', icon: Tag },
+      { key: 'setup-bank', label: 'Bank', icon: Building2 },
       { key: 'setup-entity', label: 'Entities', icon: Layers },
       { key: 'setup-users', label: 'Users & Rights', icon: UserCog }
     ]
@@ -126,6 +129,8 @@ const viewTitles: Record<ViewKey, string> = {
   'expense-entry': 'Expense Entry',
   'expense-create': 'Add Expense',
   'expense-edit': 'Edit Expense',
+  'deposit-create': 'Add Deposit',
+  'deposit-edit': 'Edit Deposit',
   'income-entry': 'Income Entry',
   'income-create': 'Add Income',
   'income-edit': 'Edit Income',
@@ -135,6 +140,7 @@ const viewTitles: Record<ViewKey, string> = {
   'setup-customer': 'Setup - Customers',
   'setup-delivery-info': 'Setup - Delivery Information',
   'setup-expense-head': 'Setup - Heads Create',
+  'setup-bank': 'Setup - Bank',
   'setup-users': 'Setup - Users & Access Rights',
   'setup-user-create': 'Add User',
   'setup-user-edit': 'Edit User',
@@ -213,6 +219,8 @@ export default function AppShell() {
       case 'expense-entry': return <ExpenseEntry />
       case 'expense-create': return <ExpenseFormPage />
       case 'expense-edit': return <ExpenseFormPage />
+      case 'deposit-create': return <DepositFormPage />
+      case 'deposit-edit': return <DepositFormPage />
       case 'income-entry': return <IncomeEntry />
       case 'income-create': return <IncomeFormPage />
       case 'income-edit': return <IncomeFormPage />
@@ -222,6 +230,7 @@ export default function AppShell() {
       case 'setup-customer': return <SetupCustomer />
       case 'setup-delivery-info': return <SetupDeliveryInfo />
       case 'setup-expense-head': return <SetupExpenseHead />
+      case 'setup-bank': return <SetupBank />
       case 'setup-users': return <SetupUsers />
       case 'setup-user-create': return <UserFormPage />
       case 'setup-user-edit': return <UserFormPage />

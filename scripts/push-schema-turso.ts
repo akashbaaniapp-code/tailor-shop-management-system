@@ -84,6 +84,42 @@ const statements = [
     "updatedAt" DATETIME NOT NULL
   )`,
 
+  `CREATE TABLE IF NOT EXISTS "DepositHead" (
+    "id" TEXT PRIMARY KEY NOT NULL,
+    "name" TEXT NOT NULL UNIQUE,
+    "description" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS "Bank" (
+    "id" TEXT PRIMARY KEY NOT NULL,
+    "bankName" TEXT NOT NULL,
+    "bankTitle" TEXT,
+    "accountNumber" TEXT,
+    "branch" TEXT,
+    "description" TEXT,
+    "entityId" TEXT,
+    "subEntityId" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS "Deposit" (
+    "id" TEXT PRIMARY KEY NOT NULL,
+    "title" TEXT NOT NULL,
+    "amount" REAL NOT NULL,
+    "depositDate" DATETIME NOT NULL,
+    "bankId" TEXT,
+    "depositHeadId" TEXT,
+    "note" TEXT,
+    "entityId" TEXT,
+    "subEntityId" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("bankId") REFERENCES "Bank"("id") ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY ("depositHeadId") REFERENCES "DepositHead"("id") ON UPDATE CASCADE ON DELETE SET NULL
+  )`,
+
   `CREATE TABLE IF NOT EXISTS "Entity" (
     "id" TEXT PRIMARY KEY NOT NULL,
     "name" TEXT NOT NULL UNIQUE,
