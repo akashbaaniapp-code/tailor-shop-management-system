@@ -121,9 +121,9 @@ export async function GET(request: NextRequest) {
   })
 
   // 4. Payable Payments (Payments)
-  const payableWhere = buildWhere('"paymentDate"', 'pp')
+  const payableWhere = buildWhere('pp."payDate"', 'pp')
   const payableRes = await client.execute({
-    sql: `SELECT strftime('${bucketFormat}', pp."paymentDate") as bucket, COALESCE(SUM(pp."amount"), 0) as total
+    sql: `SELECT strftime('${bucketFormat}', pp."payDate") as bucket, COALESCE(SUM(pp."amount"), 0) as total
           FROM "PayablePayment" pp
           WHERE ${payableWhere.sql}
           GROUP BY bucket`,
