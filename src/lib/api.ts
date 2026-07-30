@@ -4,7 +4,8 @@ const TOKEN_KEY = 'tsms_token'
 const USER_KEY = 'tsms_user'
 
 // Multi-tier cache:
-// - Setup data (UoM, items, tailors, etc.): 30 minutes — changes rarely, persisted to localStorage
+// - Setup data (UoM, items, tailors, etc.): 5 minutes — changes occasionally, persisted to localStorage
+//   (cache is auto-invalidated on POST/PUT/DELETE via clearLSCachePrefix)
 // - Transaction data (orders, deliveries, bills): 30 seconds — changes often
 // - Report data (dashboard, P&L): 60 seconds — heavy queries
 // - All cached responses serve stale data immediately while refreshing in background
@@ -12,13 +13,13 @@ const cache = new Map<string, { data: any; expires: number; refreshing?: boolean
 
 // Path-based TTL configuration
 function getCacheTTL(path: string): number {
-  // Setup data — long cache (30 min) — these tables change very rarely
+  // Setup data — 5 min cache (auto-invalidated on writes, so safe to cache longer)
   if (path.includes('/api/uom') || path.includes('/api/items') ||
       path.includes('/api/tailors') || path.includes('/api/customers') ||
       path.includes('/api/expense-heads') || path.includes('/api/income-heads') ||
       path.includes('/api/delivery-info') ||
       path.includes('/api/entities') || path.includes('/api/sub-entities')) {
-    return 30 * 60 * 1000 // 30 minutes
+    return 5 * 60 * 1000 // 5 minutes
   }
   // Reports — medium cache (60s)
   if (path.includes('/api/reports/')) {
@@ -63,6 +64,23 @@ function writeLSCache(path: string, data: any) {
 function clearLSCache() {
   if (typeof window === 'undefined') return
   localStorage.removeItem(LS_CACHE_KEY)
+}
+
+// Remove localStorage cache entries that match a path prefix.
+// Called after POST/PUT/DELETE so freshly-created/updated data is re-fetched.
+function clearLSCachePrefix(prefix: string) {
+  if (typeof window === 'undefined') return
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_CACHE_KEY) || '{}')
+    let changed = false
+    for (const key of Object.keys(all)) {
+      if (key.startsWith(prefix)) {
+        delete all[key]
+        changed = true
+      }
+    }
+    if (changed) localStorage.setItem(LS_CACHE_KEY, JSON.stringify(all))
+  } catch {}
 }
 
 // In-flight request deduplication — if the same URL is requested twice
@@ -180,13 +198,15 @@ export async function apiFetch<T = any>(
   } else {
     // Non-GET: just fetch
     const data = await doFetch<T>(path, headers, options)
-    // Invalidate cache entries that match the path prefix
+    // Invalidate cache entries that match the path prefix (in-memory + localStorage)
+    // so freshly-created/updated data is re-fetched on the next GET.
     const basePath = path.split('?')[0]
     for (const key of cache.keys()) {
       if (key.startsWith(basePath)) {
         cache.delete(key)
       }
     }
+    clearLSCachePrefix(basePath)
     return data
   }
 }
@@ -212,12 +232,14 @@ async function doFetch<T>(path: string, headers: Record<string, string>, options
 }
 
 // Manually invalidate a specific cache path (e.g. after complex mutations)
+// Clears both in-memory and localStorage cache entries.
 export function invalidateCache(pathPrefix: string) {
   for (const key of cache.keys()) {
     if (key.startsWith(pathPrefix)) {
       cache.delete(key)
     }
   }
+  clearLSCachePrefix(pathPrefix)
 }
 
 /**
