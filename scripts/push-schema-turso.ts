@@ -120,6 +120,18 @@ const statements = [
     FOREIGN KEY ("depositHeadId") REFERENCES "DepositHead"("id") ON UPDATE CASCADE ON DELETE SET NULL
   )`,
 
+  `CREATE TABLE IF NOT EXISTS "OpeningBalance" (
+    "id" TEXT PRIMARY KEY NOT NULL,
+    "label" TEXT NOT NULL,
+    "amount" REAL NOT NULL DEFAULT 0,
+    "asOfDate" DATETIME NOT NULL,
+    "note" TEXT,
+    "entityId" TEXT,
+    "subEntityId" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+  )`,
+
   `CREATE TABLE IF NOT EXISTS "Entity" (
     "id" TEXT PRIMARY KEY NOT NULL,
     "name" TEXT NOT NULL UNIQUE,

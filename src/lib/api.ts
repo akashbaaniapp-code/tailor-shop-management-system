@@ -475,6 +475,21 @@ export const api = {
     return apiFetch(`/api/reports/income${q.toString() ? `?${q}` : ''}`)
   },
 
+  // Cash Flow Chart Report
+  cashFlowReport: (params?: { period?: string; year?: number; month?: number }) => {
+    const q = new URLSearchParams()
+    if (params?.period) q.set('period', params.period)
+    if (params?.year) q.set('year', String(params.year))
+    if (params?.month !== undefined) q.set('month', String(params.month))
+    return apiFetch(`/api/reports/cash-flow${q.toString() ? `?${q}` : ''}`)
+  },
+
+  // Opening Balances
+  listOpeningBalances: () => apiFetch('/api/opening-balances'),
+  createOpeningBalance: (data: any) => apiFetch('/api/opening-balances', { method: 'POST', body: JSON.stringify(data) }),
+  updateOpeningBalance: (data: any) => apiFetch('/api/opening-balances', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteOpeningBalance: (id: string) => apiFetch(`/api/opening-balances?id=${id}`, { method: 'DELETE' }),
+
   // Money Receipts
   listMoneyReceipts: (params?: { from?: string; to?: string; search?: string }) => {
     const q = new URLSearchParams()

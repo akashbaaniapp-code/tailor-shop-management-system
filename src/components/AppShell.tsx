@@ -70,6 +70,8 @@ const ReportExpense = dynamic(() => import('@/components/views/ReportExpense'))
 const ReportDelivery = dynamic(() => import('@/components/views/ReportDelivery'))
 const ReportBillCollection = dynamic(() => import('@/components/views/ReportBillCollection'))
 const ReportIncome = dynamic(() => import('@/components/views/ReportIncome'))
+const ReportCashFlow = dynamic(() => import('@/components/views/ReportCashFlow'))
+const SetupOpeningBalance = dynamic(() => import('@/components/views/SetupOpeningBalance'))
 
 interface NavGroup {
   label: string
@@ -98,6 +100,7 @@ const navGroups: NavGroup[] = [
       { key: 'setup-delivery-info', label: 'Delivery Info', icon: FileText },
       { key: 'setup-expense-head', label: 'Heads Create', icon: Tag },
       { key: 'setup-bank', label: 'Bank', icon: Building2 },
+      { key: 'setup-opening-balance', label: 'Opening Balance', icon: Wallet },
       { key: 'setup-entity', label: 'Entities', icon: Layers },
       { key: 'setup-users', label: 'Users & Rights', icon: UserCog }
     ]
@@ -112,7 +115,8 @@ const navGroups: NavGroup[] = [
       { key: 'report-expense', label: 'Expense Report', icon: TrendingDown },
       { key: 'report-delivery', label: 'Delivery Report', icon: Truck },
       { key: 'report-bill-collection', label: 'Bill Collection', icon: Receipt },
-      { key: 'report-income', label: 'Income Report', icon: CircleDollarSign }
+      { key: 'report-income', label: 'Income Report', icon: CircleDollarSign },
+      { key: 'report-cash-flow', label: 'Cash Flow Chart', icon: BarChart3 }
     ]
   }
 ]
@@ -141,6 +145,7 @@ const viewTitles: Record<ViewKey, string> = {
   'setup-delivery-info': 'Setup - Delivery Information',
   'setup-expense-head': 'Setup - Heads Create',
   'setup-bank': 'Setup - Bank',
+  'setup-opening-balance': 'Setup - Opening Balance',
   'setup-users': 'Setup - Users & Access Rights',
   'setup-user-create': 'Add User',
   'setup-user-edit': 'Edit User',
@@ -152,7 +157,8 @@ const viewTitles: Record<ViewKey, string> = {
   'report-expense': 'Expense Report',
   'report-delivery': 'Delivery Report',
   'report-bill-collection': 'Bill Collection Report',
-  'report-income': 'Income Report'
+  'report-income': 'Income Report',
+  'report-cash-flow': 'Cash Flow Chart'
 }
 
 export default function AppShell() {
@@ -231,6 +237,7 @@ export default function AppShell() {
       case 'setup-delivery-info': return <SetupDeliveryInfo />
       case 'setup-expense-head': return <SetupExpenseHead />
       case 'setup-bank': return <SetupBank />
+      case 'setup-opening-balance': return <SetupOpeningBalance />
       case 'setup-users': return <SetupUsers />
       case 'setup-user-create': return <UserFormPage />
       case 'setup-user-edit': return <UserFormPage />
@@ -243,6 +250,7 @@ export default function AppShell() {
       case 'report-delivery': return <ReportDelivery />
       case 'report-bill-collection': return <ReportBillCollection />
       case 'report-income': return <ReportIncome />
+      case 'report-cash-flow': return <ReportCashFlow />
       default: return <Dashboard />
     }
   }
