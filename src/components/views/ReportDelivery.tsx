@@ -13,6 +13,7 @@ import {
   CheckCircle2, Clock, AlertCircle, Package, Calendar
 } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
+import ExportButtons from '@/components/ExportButtons'
 import { toast } from 'sonner'
 
 const PAGE_SIZE = 20
@@ -190,6 +191,26 @@ export default function ReportDelivery() {
       ) : null}
 
       {/* Detailed table */}
+      {orders.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <ExportButtons
+            filename="delivery-report"
+            title="Delivery Report"
+            columns={[
+              { key: 'orderId', label: 'Order ID' },
+              { key: 'orderDate', label: 'Order Date', format: (v: any) => formatDate(v) },
+              { key: 'deliveryDate', label: 'Delivery Date', format: (v: any) => (v ? formatDate(v) : '-') },
+              { key: 'customerName', label: 'Customer', format: (_v: any, row: any) => row.customer?.name || '' },
+              { key: 'status', label: 'Status' },
+              { key: 'itemCount', label: 'Items' },
+              { key: 'totalDeliveredQty', label: 'Delivered Qty' },
+              { key: 'grandTotal', label: 'Total', format: (v: any) => formatCurrency(Number(v || 0)) },
+            ]}
+            rows={orders}
+          />
+        </div>
+      )}
+
       <Card className="border-slate-200">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">

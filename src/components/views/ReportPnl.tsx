@@ -5,6 +5,7 @@ import { RefreshCw, Lightbulb } from 'lucide-react'
 import { api, formatCurrency } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
+import ExportButtons from '@/components/ExportButtons'
 
 export default function ReportPnl() {
   const setView = useAppStore((s) => s.setView)
@@ -233,10 +234,26 @@ export default function ReportPnl() {
               overflow: 'hidden',
             }}
           >
-            <div style={{ padding: '25px 25px 0' }}>
+            <div style={{ padding: '25px 25px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
               <div style={{ fontSize: 16, fontWeight: 500, color: '#e8eae9' }}>
                 Breakdown - {period === 'daily' ? 'Daily' : period === 'monthly' ? 'Monthly' : 'Yearly'}
               </div>
+              {data.rows.length > 0 && (
+                <ExportButtons
+                  filename={`pnl-report-${period}-${year}`}
+                  title={`P&L Report (${period === 'daily' ? 'Daily' : period === 'monthly' ? 'Monthly' : 'Yearly'} - ${year})`}
+                  columns={[
+                    { key: 'label', label: 'Period' },
+                    { key: 'sales', label: 'Sales', format: (v: any) => formatCurrency(Number(v || 0)) },
+                    { key: 'collected', label: 'Collected', format: (v: any) => formatCurrency(Number(v || 0)) },
+                    { key: 'otherIncome', label: 'Other Income', format: (v: any) => formatCurrency(Number(v || 0)) },
+                    { key: 'expense', label: 'Expense', format: (v: any) => formatCurrency(Number(v || 0)) },
+                    { key: 'payablePaid', label: 'Payable Paid', format: (v: any) => formatCurrency(Number(v || 0)) },
+                    { key: 'netProfit', label: 'Net Profit', format: (v: any) => formatCurrency(Number(v || 0)) },
+                  ]}
+                  rows={data.rows}
+                />
+              )}
             </div>
             <div style={{ overflowX: 'auto', marginTop: 20 }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>

@@ -32,6 +32,7 @@ export type ViewKey =
   | 'report-expense'
   | 'report-delivery'
   | 'report-bill-collection'
+  | 'report-income'
 
 // Map view keys to URL ?view= values (kept short for cleaner URLs)
 const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
@@ -64,7 +65,8 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'report-orders': 'report-orders',
   'report-expense': 'report-expense',
   'report-delivery': 'report-delivery',
-  'report-bill-collection': 'report-bill-collection'
+  'report-bill-collection': 'report-bill-collection',
+  'report-income': 'report-income'
 }
 
 const URL_TO_VIEW: Record<string, ViewKey> = Object.entries(VIEW_TO_URL).reduce(
@@ -120,15 +122,17 @@ interface AppState {
   setEntityContextConfirmed: (v: boolean) => void
 }
 
-// Read entity context from sessionStorage on initialization
-// This allows new tabs (right-click > Open in New Tab) to inherit
-// the entity context without showing the entity selection screen again
+// Read entity context from localStorage on initialization.
+// localStorage (not sessionStorage) is shared across tabs of the same origin,
+// so when a user right-clicks a sidebar menu → "Open in New Tab", the new tab
+// inherits the same entity context and goes straight to the requested page
+// (instead of showing the entity selection screen again).
 function getInitialEntityContext() {
   if (typeof window === 'undefined') {
     return { entity: null, subEntity: null, confirmed: false }
   }
   try {
-    const stored = sessionStorage.getItem('tsms_entity_context')
+    const stored = localStorage.getItem('tsms_entity_context')
     if (stored) {
       const ctx = JSON.parse(stored)
       // Restore window.__entityContext for API headers
@@ -186,8 +190,9 @@ export const useAppStore = create<AppState>((set) => ({
         entityId: entity?.id || null,
         subEntityId: subEntity?.id || null
       }
-      // Persist to sessionStorage so new tabs inherit the same entity
-      sessionStorage.setItem('tsms_entity_context', JSON.stringify({ entity, subEntity }))
+      // Persist to localStorage so new tabs (right-click > Open in New Tab)
+      // inherit the same entity context. localStorage is shared across tabs.
+      localStorage.setItem('tsms_entity_context', JSON.stringify({ entity, subEntity }))
     }
     set({ selectedEntity: entity, selectedSubEntity: subEntity })
   },

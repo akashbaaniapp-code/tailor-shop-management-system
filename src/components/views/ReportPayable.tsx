@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Trash2, Wallet } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
+import ExportButtons from '@/components/ExportButtons'
 import { toast } from 'sonner'
 
 export default function ReportPayable() {
@@ -106,6 +107,25 @@ export default function ReportPayable() {
           </CardContent>
         </Card>
       </div>
+
+      {data && data.rows.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <ExportButtons
+            filename="payable-report"
+            title="Payable Report"
+            columns={[
+              { key: 'payableId', label: 'Payable ID' },
+              { key: 'partyName', label: 'Party' },
+              { key: 'description', label: 'Description' },
+              { key: 'amount', label: 'Amount', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'paidAmount', label: 'Paid', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'dueAmount', label: 'Due', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'status', label: 'Status' },
+            ]}
+            rows={data.rows}
+          />
+        </div>
+      )}
 
       <Card className="border-slate-200">
         <CardHeader>

@@ -37,6 +37,7 @@ export default function EntitySelection() {
     setUser(null)
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('tsms_entity_context')
+      localStorage.removeItem('tsms_entity_context')
       sessionStorage.removeItem('tsms_sidebar_collapsed')
     }
     setAccessibleMenus(['*'])

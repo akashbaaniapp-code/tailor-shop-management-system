@@ -11,6 +11,7 @@ import {
   Receipt, Wallet, ChevronRight, ChevronDown, Printer, Calendar, User
 } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
+import ExportButtons from '@/components/ExportButtons'
 import { printMoneyReceipt } from '@/lib/money-receipt'
 import { toast } from 'sonner'
 
@@ -186,6 +187,24 @@ export default function ReportBillCollection() {
       )}
 
       {/* Receipts list */}
+      {receipts.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <ExportButtons
+            filename="bill-collection-report"
+            title="Bill Collection Report"
+            columns={[
+              { key: 'receiptId', label: 'Receipt ID' },
+              { key: 'receiptDate', label: 'Date', format: (v: any) => formatDate(v) },
+              { key: 'customerName', label: 'Customer' },
+              { key: 'customerPhone', label: 'Phone', format: (v: any) => v || '-' },
+              { key: 'totalAmount', label: 'Amount', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'method', label: 'Method' },
+            ]}
+            rows={receipts}
+          />
+        </div>
+      )}
+
       <Card className="border-slate-200">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">

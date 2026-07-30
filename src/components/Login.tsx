@@ -38,6 +38,22 @@ export default function Login({ onLogin }: { onLogin?: (u: any) => void }) {
       if (res.user?.accessibleEntities !== undefined) {
         setAccessibleEntities(res.user.accessibleEntities || [], res.user.accessibleSubEntities || [])
       }
+      // Clear any previously-stored entity context from a prior session.
+      // Every fresh login must go through the entity selection screen so the
+      // user explicitly picks which entity to work in (rather than silently
+      // inheriting the last-used entity from localStorage).
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('tsms_entity_context')
+        sessionStorage.removeItem('tsms_entity_context')
+        sessionStorage.removeItem('tsms_sidebar_collapsed')
+        // Reset the URL so the app doesn't restore the last-viewed page.
+        // The entity selection screen will show first; after the user picks
+        // an entity, they land on the dashboard.
+        window.history.replaceState({}, '', '/')
+      }
+      // Ensure the store shows entity selection (not the last view)
+      useAppStore.getState().setSelectedEntityContext(null, null)
+      useAppStore.getState().setEntityContextConfirmed(false)
       onLogin?.(res.user)
       toast.success('Login successful')
     } catch (err: any) {

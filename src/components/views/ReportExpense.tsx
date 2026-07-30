@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Receipt, TrendingDown, Layers, Calendar } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
+import ExportButtons from '@/components/ExportButtons'
 import { toast } from 'sonner'
 
 export default function ReportExpense() {
@@ -215,6 +216,23 @@ export default function ReportExpense() {
       )}
 
       {/* Detailed list */}
+      {data && data.expenses && data.expenses.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <ExportButtons
+            filename="expense-report"
+            title="Expense Report"
+            columns={[
+              { key: 'expenseDate', label: 'Date', format: (v: any) => formatDate(v) },
+              { key: 'title', label: 'Title' },
+              { key: 'headName', label: 'Head', format: (_v: any, row: any) => row.head?.name || 'No Head' },
+              { key: 'amount', label: 'Amount', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'note', label: 'Note' },
+            ]}
+            rows={data.expenses}
+          />
+        </div>
+      )}
+
       <Card className="border-slate-200">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">

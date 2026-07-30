@@ -4,9 +4,24 @@ import { useEffect, useState } from 'react'
 import Login from '@/components/Login'
 import AppShell from '@/components/AppShell'
 import EntitySelection from '@/components/EntitySelection'
-import { api, getToken, getUser, setUser } from '@/lib/api'
+import { api, getToken, getUser, setUser, prefetchAll } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { Skeleton } from '@/components/ui/skeleton'
+
+// Setup data endpoints to prefetch immediately after login/entity selection.
+// These power dropdowns across the app (items, tailors, customers, etc.).
+// With localStorage caching, subsequent loads feel INSTANT (0ms).
+const SETUP_ENDPOINTS = [
+  '/api/uom',
+  '/api/items',
+  '/api/tailors',
+  '/api/customers',
+  '/api/expense-heads',
+  '/api/income-heads',
+  '/api/delivery-info',
+  '/api/entities',
+  '/api/sub-entities',
+]
 
 export default function Home() {
   // Subscribe to user from store — this re-renders when logout sets it to null
@@ -93,6 +108,12 @@ export default function Home() {
   if (showEntitySelection) {
     return <EntitySelection />
   }
+
+  // AppShell is about to render — prefetch setup data in the background
+  // so all dropdowns (items, tailors, customers, etc.) are instantly available
+  // when the user opens forms. With localStorage caching, this is a no-op on
+  // subsequent page loads (data already cached for 30 min).
+  prefetchAll(SETUP_ENDPOINTS)
 
   return <AppShell />
 }

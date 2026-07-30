@@ -4,7 +4,7 @@ const TOKEN_KEY = 'tsms_token'
 const USER_KEY = 'tsms_user'
 
 // Multi-tier cache:
-// - Setup data (UoM, items, tailors, etc.): 5 minutes — changes rarely
+// - Setup data (UoM, items, tailors, etc.): 30 minutes — changes rarely, persisted to localStorage
 // - Transaction data (orders, deliveries, bills): 30 seconds — changes often
 // - Report data (dashboard, P&L): 60 seconds — heavy queries
 // - All cached responses serve stale data immediately while refreshing in background
@@ -12,12 +12,13 @@ const cache = new Map<string, { data: any; expires: number; refreshing?: boolean
 
 // Path-based TTL configuration
 function getCacheTTL(path: string): number {
-  // Setup data — long cache (5 min)
+  // Setup data — long cache (30 min) — these tables change very rarely
   if (path.includes('/api/uom') || path.includes('/api/items') ||
       path.includes('/api/tailors') || path.includes('/api/customers') ||
-      path.includes('/api/expense-heads') || path.includes('/api/delivery-info') ||
+      path.includes('/api/expense-heads') || path.includes('/api/income-heads') ||
+      path.includes('/api/delivery-info') ||
       path.includes('/api/entities') || path.includes('/api/sub-entities')) {
-    return 5 * 60 * 1000 // 5 minutes
+    return 30 * 60 * 1000 // 30 minutes
   }
   // Reports — medium cache (60s)
   if (path.includes('/api/reports/')) {
@@ -25,6 +26,43 @@ function getCacheTTL(path: string): number {
   }
   // Transaction data — short cache (30s)
   return 30 * 1000 // 30 seconds
+}
+
+// Check if a path is "setup data" (long-lived, can be persisted to localStorage)
+function isSetupData(path: string): boolean {
+  return path.includes('/api/uom') || path.includes('/api/items') ||
+    path.includes('/api/tailors') || path.includes('/api/customers') ||
+    path.includes('/api/expense-heads') || path.includes('/api/income-heads') ||
+    path.includes('/api/delivery-info') ||
+    path.includes('/api/entities') || path.includes('/api/sub-entities')
+}
+
+// localStorage-backed cache for setup data — survives page refresh.
+// This makes setup data feel INSTANT on subsequent page loads (0ms latency)
+// because it's read from localStorage instead of re-fetching from the server.
+const LS_CACHE_KEY = 'tsms_setup_cache'
+function readLSCache(path: string): any | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_CACHE_KEY) || '{}')
+    const entry = all[path]
+    if (entry && entry.expires > Date.now()) {
+      return entry.data
+    }
+  } catch {}
+  return null
+}
+function writeLSCache(path: string, data: any) {
+  if (typeof window === 'undefined') return
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_CACHE_KEY) || '{}')
+    all[path] = { data, expires: Date.now() + getCacheTTL(path) }
+    localStorage.setItem(LS_CACHE_KEY, JSON.stringify(all))
+  } catch {}
+}
+function clearLSCache() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(LS_CACHE_KEY)
 }
 
 // In-flight request deduplication — if the same URL is requested twice
@@ -47,6 +85,7 @@ export function clearToken() {
   localStorage.removeItem(USER_KEY)
   cache.clear()
   inflightRequests.clear()
+  clearLSCache()
 }
 
 export function setUser(user: any) {
@@ -86,6 +125,16 @@ export async function apiFetch<T = any>(
 
   // ===== CACHE CHECK (GET only) =====
   if (method === 'GET') {
+    // For setup data, also check localStorage cache (survives page refresh)
+    if (isSetupData(path)) {
+      const lsData = readLSCache(path)
+      if (lsData) {
+        // Populate in-memory cache with LS data so stale-while-revalidate works
+        cache.set(path, { data: lsData, expires: Date.now() + getCacheTTL(path) })
+        return lsData as T
+      }
+    }
+
     const cached = cache.get(path)
     if (cached) {
       if (cached.expires > Date.now()) {
@@ -99,6 +148,7 @@ export async function apiFetch<T = any>(
         // Fire-and-forget background refresh
         doFetch(path, headers).then(data => {
           cache.set(path, { data, expires: Date.now() + getCacheTTL(path) })
+          if (isSetupData(path)) writeLSCache(path, data)
         }).catch(() => {}).finally(() => {
           if (cached) cached.refreshing = false
         })
@@ -120,8 +170,9 @@ export async function apiFetch<T = any>(
     inflightRequests.set(path, promise)
     try {
       const data = await promise
-      // Cache the result
+      // Cache the result (in-memory + localStorage for setup data)
       cache.set(path, { data, expires: Date.now() + getCacheTTL(path) })
+      if (isSetupData(path)) writeLSCache(path, data)
       return data
     } finally {
       inflightRequests.delete(path)
@@ -349,6 +400,16 @@ export const api = {
     if (params?.status) q.set('status', params.status)
     if (params?.search) q.set('search', params.search)
     return apiFetch(`/api/reports/delivery${q.toString() ? `?${q}` : ''}`)
+  },
+
+  // Income Report
+  incomeReport: (params?: { from?: string; to?: string; source?: string; groupBy?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.from) q.set('from', params.from)
+    if (params?.to) q.set('to', params.to)
+    if (params?.source) q.set('source', params.source)
+    if (params?.groupBy) q.set('groupBy', params.groupBy)
+    return apiFetch(`/api/reports/income${q.toString() ? `?${q}` : ''}`)
   },
 
   // Money Receipts

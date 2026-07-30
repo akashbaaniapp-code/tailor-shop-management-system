@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Receipt } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
+import ExportButtons from '@/components/ExportButtons'
 import { toast } from 'sonner'
 
 export default function ReportReceivable() {
@@ -36,6 +37,24 @@ export default function ReportReceivable() {
           </CardContent>
         </Card>
       </div>
+
+      {data && data.rows.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <ExportButtons
+            filename="receivable-report"
+            title="Receivable Report"
+            columns={[
+              { key: 'orderId', label: 'Order ID' },
+              { key: 'customerName', label: 'Customer' },
+              { key: 'customerPhone', label: 'Phone' },
+              { key: 'grandTotal', label: 'Total', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'paidAmount', label: 'Paid', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'dueAmount', label: 'Due', format: (v: any) => formatCurrency(Number(v || 0)) },
+            ]}
+            rows={data.rows}
+          />
+        </div>
+      )}
 
       <Card className="border-slate-200">
         <CardHeader>

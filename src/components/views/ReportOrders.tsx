@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { BarChart3 } from 'lucide-react'
+import ExportButtons from '@/components/ExportButtons'
 import { api, formatCurrency, formatDate } from '@/lib/api'
 import { toast } from 'sonner'
 
@@ -96,6 +97,26 @@ export default function ReportOrders() {
           </CardContent>
         </Card>
       </div>
+
+      {data && data.rows.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <ExportButtons
+            filename="order-report"
+            title="Order Report"
+            columns={[
+              { key: 'orderId', label: 'Order ID' },
+              { key: 'orderDate', label: 'Date', format: (v: any) => formatDate(v) },
+              { key: 'customerName', label: 'Customer' },
+              { key: 'tailorName', label: 'Tailor' },
+              { key: 'grandTotal', label: 'Grand Total', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'paidAmount', label: 'Paid', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'dueAmount', label: 'Due', format: (v: any) => formatCurrency(Number(v || 0)) },
+              { key: 'status', label: 'Status' },
+            ]}
+            rows={data.rows}
+          />
+        </div>
+      )}
 
       <Card className="border-slate-200">
         <CardHeader>
