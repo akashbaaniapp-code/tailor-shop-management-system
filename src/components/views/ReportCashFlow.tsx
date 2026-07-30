@@ -43,12 +43,13 @@ export default function ReportCashFlow() {
   async function loadDetails() {
     setLoading(true)
     try {
-      const [billsRes, incomesRes, expensesRes, depositsRes, openingRes] = await Promise.all([
+      const [billsRes, incomesRes, expensesRes, depositsRes, openingRes, payablesRes] = await Promise.all([
         api.listBills(),
         api.listIncomes(),
         api.listExpenses(),
         api.listDeposits(),
         api.listOpeningBalances(),
+        api.listPayables(),
       ])
 
       // Filter incomes, expenses, deposits by date range
@@ -68,6 +69,24 @@ export default function ReportCashFlow() {
       const deposits = (depositsRes.items || []).filter((d: any) => {
         const d2 = new Date(d.depositDate)
         return d2 >= fromD && d2 <= toD
+      })
+
+      // Payable payments (Advances) — extract individual payment entries from payables
+      const advances: any[] = []
+      ;(payablesRes.items || []).forEach((p: any) => {
+        if (p.payments) {
+          p.payments.forEach((pay: any) => {
+            const d = new Date(pay.payDate)
+            if (d >= fromD && d <= toD) {
+              advances.push({
+                title: `Advance: ${p.partyName}`,
+                amount: Number(pay.amount || 0),
+                date: pay.payDate,
+                note: pay.note,
+              })
+            }
+          })
+        }
       })
 
       // Bill collections
@@ -91,6 +110,7 @@ export default function ReportCashFlow() {
         incomes,
         expenses,
         deposits,
+        advances,
         bills,
         openingBalance,
       })
@@ -122,7 +142,8 @@ export default function ReportCashFlow() {
 
   const expenses = (data?.expenses || []).reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
   const deposits = (data?.deposits || []).reduce((s: number, d: any) => s + Number(d.amount || 0), 0)
-  const totalExpense = expenses + deposits
+  const advances = (data?.advances || []).reduce((s: number, a: any) => s + Number(a.amount || 0), 0)
+  const totalExpense = expenses + deposits + advances
 
   const netBalance = openingBalance + totalIncome - totalExpense
 
@@ -144,6 +165,9 @@ export default function ReportCashFlow() {
     })
     ;(data?.deposits || []).forEach((d: any) => {
       csv += `${d.title} (Deposit),${Number(d.amount || 0).toFixed(2)}\n`
+    })
+    ;(data?.advances || []).forEach((a: any) => {
+      csv += `${a.title} (Advance),${Number(a.amount || 0).toFixed(2)}\n`
     })
     csv += `Total Expense,${totalExpense.toFixed(2)}\n\n`
     csv += `Opening Balance,${openingBalance.toFixed(2)}\n`
@@ -177,6 +201,7 @@ export default function ReportCashFlow() {
     const expenseRows = [
       ...(data?.expenses || []).map((e: any) => ({ desc: e.title, amount: Number(e.amount || 0) })),
       ...(data?.deposits || []).map((d: any) => ({ desc: `${d.title} (Deposit)`, amount: Number(d.amount || 0) })),
+      ...(data?.advances || []).map((a: any) => ({ desc: `${a.title} (Advance)`, amount: Number(a.amount || 0) })),
     ]
 
     const html = `<!DOCTYPE html>
@@ -521,6 +546,15 @@ export default function ReportCashFlow() {
                       >
                         <td style={{ padding: '10px 12px', color: '#888' }}>{dep.title} (Deposit)</td>
                         <td style={{ padding: '10px 12px', textAlign: 'right', color: '#ff6b6b' }}>{formatCurrency(Number(dep.amount || 0))}</td>
+                      </tr>
+                    ))}
+                    {(data?.advances || []).map((adv: any, idx: number) => (
+                      <tr key={`adv-${idx}`} style={{ borderBottom: '1px solid #1f2227' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                      >
+                        <td style={{ padding: '10px 12px', color: '#888' }}>{adv.title} (Advance)</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', color: '#ff6b6b' }}>{formatCurrency(Number(adv.amount || 0))}</td>
                       </tr>
                     ))}
                     <tr style={{ background: '#1f2227', borderTop: '1px solid #2a2d33', fontWeight: 600 }}>
