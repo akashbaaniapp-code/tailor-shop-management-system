@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, Receipt, Wallet, Edit } from 'lucide-react'
+import { Plus, Trash2, Receipt, Wallet, Edit, Search } from 'lucide-react'
 import { api, formatCurrency, formatDate } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
@@ -34,6 +34,7 @@ export default function ExpenseEntry() {
   const [heads, setHeads] = useState<ExpenseHead[]>([])
   const [loading, setLoading] = useState(true)
   const [filterHeadId, setFilterHeadId] = useState('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -64,7 +65,19 @@ export default function ExpenseEntry() {
     catch (err: any) { toast.error(err.message) }
   }
 
-  const filteredItems = filterHeadId === 'all' ? items : items.filter(it => it.expenseHeadId === filterHeadId)
+  // Filter by head AND search text (title, note, head name, date)
+  const searchLower = search.trim().toLowerCase()
+  const filteredItems = items.filter((it) => {
+    const headMatch = filterHeadId === 'all' || it.expenseHeadId === filterHeadId
+    if (!headMatch) return false
+    if (!searchLower) return true
+    return (
+      it.title?.toLowerCase().includes(searchLower) ||
+      it.note?.toLowerCase().includes(searchLower) ||
+      it.head?.name?.toLowerCase().includes(searchLower) ||
+      formatDate(it.expenseDate)?.toLowerCase().includes(searchLower)
+    )
+  })
   const totalAmount = filteredItems.reduce((s, it) => s + it.amount, 0)
   const totalAll = items.reduce((s, it) => s + it.amount, 0)
 
@@ -98,15 +111,30 @@ export default function ExpenseEntry() {
       {/* Filter + Add */}
       <div className="p-5" style={darkCard}>
         <div className="flex flex-wrap gap-4 items-center justify-between">
-          <div>
-            <p className="text-xs mb-1.5" style={{ color: '#666' }}>Filter by Head</p>
-            <Select value={filterHeadId} onValueChange={setFilterHeadId}>
-              <SelectTrigger style={{ ...darkInput, minWidth: '200px' }}><SelectValue /></SelectTrigger>
+          <div className="flex flex-wrap gap-4 items-center">
+            <div>
+              <p className="text-xs mb-1.5" style={{ color: '#666' }}>Search</p>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#666' }} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search title, note, head, date..."
+                  className="pl-9 pr-4 py-2 text-sm outline-none"
+                  style={{ ...darkInput, minWidth: '260px' }}
+                />
+              </div>
+            </div>
+            <div>
+              <p className="text-xs mb-1.5" style={{ color: '#666' }}>Filter by Head</p>
+              <Select value={filterHeadId} onValueChange={setFilterHeadId}>
+                <SelectTrigger style={{ ...darkInput, minWidth: '200px' }}><SelectValue /></SelectTrigger>
               <SelectContent style={{ background: '#1a1c1e', border: '1px solid #2a2d33' }}>
                 <SelectItem value="all">All Heads</SelectItem>
                 {heads.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
               </SelectContent>
             </Select>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
