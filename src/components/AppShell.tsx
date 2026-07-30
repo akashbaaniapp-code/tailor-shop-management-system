@@ -427,7 +427,7 @@ export default function AppShell() {
             </button>
           )}
         </div>
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2d33 transparent' }}>
           <div className={`p-3 ${collapsed ? 'space-y-3' : 'space-y-5'}`}>
             {navGroups.map(group => (
               <div key={group.label} className="space-y-1">
@@ -485,7 +485,7 @@ export default function AppShell() {
               </div>
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </>
     )
   }
