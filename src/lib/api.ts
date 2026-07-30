@@ -41,7 +41,28 @@ function isSetupData(path: string): boolean {
 // localStorage-backed cache for setup data — survives page refresh.
 // This makes setup data feel INSTANT on subsequent page loads (0ms latency)
 // because it's read from localStorage instead of re-fetching from the server.
-const LS_CACHE_KEY = 'tsms_setup_cache'
+//
+// VERSION: bumped whenever the cache schema changes or when we need to force
+// all users to re-fetch setup data (e.g. after fixing a cache bug that left
+// stale data in old localStorage keys). Old keys are auto-cleaned on load.
+const LS_CACHE_VERSION = 'v2'
+const LS_CACHE_KEY = `tsms_setup_cache_${LS_CACHE_VERSION}`
+
+// On module load, remove any old-version cache keys (one-time migration).
+// This prevents stale data from previous cache versions from being served.
+if (typeof window !== 'undefined') {
+  try {
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith('tsms_setup_cache') && key !== LS_CACHE_KEY) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k))
+  } catch {}
+}
+
 function readLSCache(path: string): any | null {
   if (typeof window === 'undefined') return null
   try {
