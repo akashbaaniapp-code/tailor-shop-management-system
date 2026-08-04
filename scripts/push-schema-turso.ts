@@ -132,6 +132,23 @@ const statements = [
     "updatedAt" DATETIME NOT NULL
   )`,
 
+  `CREATE TABLE IF NOT EXISTS "StockRecord" (
+    "id" TEXT PRIMARY KEY NOT NULL,
+    "itemId" TEXT NOT NULL,
+    "recordDate" DATETIME NOT NULL,
+    "opening" REAL NOT NULL DEFAULT 0,
+    "received" REAL NOT NULL DEFAULT 0,
+    "outQty" REAL NOT NULL DEFAULT 0,
+    "wasted" REAL NOT NULL DEFAULT 0,
+    "closing" REAL NOT NULL DEFAULT 0,
+    "note" TEXT,
+    "entityId" TEXT,
+    "subEntityId" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    FOREIGN KEY ("itemId") REFERENCES "Item"("id") ON UPDATE CASCADE ON DELETE CASCADE
+  )`,
+
   `CREATE TABLE IF NOT EXISTS "Entity" (
     "id" TEXT PRIMARY KEY NOT NULL,
     "name" TEXT NOT NULL UNIQUE,

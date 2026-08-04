@@ -499,6 +499,11 @@ export const api = {
   updateOpeningBalance: (data: any) => apiFetch('/api/opening-balances', { method: 'PUT', body: JSON.stringify(data) }),
   deleteOpeningBalance: (id: string) => apiFetch(`/api/opening-balances?id=${id}`, { method: 'DELETE' }),
 
+  // Stock Records
+  listStockRecords: (date?: string) => apiFetch(`/api/stock-records${date ? `?date=${date}` : ''}`),
+  saveStockRecord: (data: any) => apiFetch('/api/stock-records', { method: 'POST', body: JSON.stringify(data) }),
+  deleteStockRecord: (id: string) => apiFetch(`/api/stock-records?id=${id}`, { method: 'DELETE' }),
+
   // Money Receipts
   listMoneyReceipts: (params?: { from?: string; to?: string; search?: string }) => {
     const q = new URLSearchParams()

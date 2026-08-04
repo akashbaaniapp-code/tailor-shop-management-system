@@ -52,6 +52,7 @@ const ExpenseFormPage = dynamic(() => import('@/components/views/ExpenseFormPage
 const IncomeEntry = dynamic(() => import('@/components/views/IncomeEntry'))
 const IncomeFormPage = dynamic(() => import('@/components/views/IncomeFormPage'))
 const DepositFormPage = dynamic(() => import('@/components/views/DepositFormPage'))
+const StockRecord = dynamic(() => import('@/components/views/StockRecord'))
 const SetupBank = dynamic(() => import('@/components/views/SetupBank'))
 const SetupUom = dynamic(() => import('@/components/views/SetupUom'))
 const SetupItem = dynamic(() => import('@/components/views/SetupItem'))
@@ -87,6 +88,7 @@ const navGroups: NavGroup[] = [
       { key: 'delivery', label: 'Delivery', icon: Truck },
       { key: 'bill-collection', label: 'Bill Collection', icon: Wallet },
       { key: 'expense-entry', label: 'Expense Entry', icon: Receipt },
+      { key: 'stock-record', label: 'Stock Record', icon: Package },
       { key: 'income-entry', label: 'Income Entry', icon: CircleDollarSign }
     ]
   },
@@ -131,6 +133,7 @@ const viewTitles: Record<ViewKey, string> = {
   'delivery-create': 'Create Delivery',
   'bill-collection': 'Bill Collection',
   'expense-entry': 'Expense Entry',
+  'stock-record': 'Stock Record',
   'expense-create': 'Add Expense',
   'expense-edit': 'Edit Expense',
   'deposit-create': 'Add Deposit',
@@ -223,6 +226,7 @@ export default function AppShell() {
       case 'delivery-create': return <DeliveryFormPage />
       case 'bill-collection': return <BillCollection />
       case 'expense-entry': return <ExpenseEntry />
+      case 'stock-record': return <StockRecord />
       case 'expense-create': return <ExpenseFormPage />
       case 'expense-edit': return <ExpenseFormPage />
       case 'deposit-create': return <DepositFormPage />

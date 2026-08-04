@@ -252,6 +252,7 @@ const MODEL_CONFIG: Record<string, ModelConfig> = {
   depositHead: { name: 'DepositHead', dateFields: ['createdAt', 'updatedAt'] },
   bank: { name: 'Bank', dateFields: ['createdAt', 'updatedAt'] },
   deposit: { name: 'Deposit', dateFields: ['depositDate', 'createdAt'] },
+  stockRecord: { name: 'StockRecord', dateFields: ['recordDate', 'createdAt', 'updatedAt'] },
   openingBalance: { name: 'OpeningBalance', dateFields: ['asOfDate', 'createdAt', 'updatedAt'] },
   entity: { name: 'Entity', dateFields: ['createdAt', 'updatedAt'] },
   subEntity: { name: 'SubEntity', dateFields: ['createdAt', 'updatedAt'] },
@@ -558,6 +559,9 @@ const RELATIONS: Record<string, Record<string, { model: string; fk: string; isLi
     bank: { model: 'bank', fk: 'bankId', isList: false, isOptional: true },
     head: { model: 'depositHead', fk: 'depositHeadId', isList: false, isOptional: true }
   },
+  stockRecord: {
+    item: { model: 'item', fk: 'itemId', isList: false, isOptional: false }
+  },
   openingBalance: {},
   entity: { subEntities: { model: 'subEntity', fk: 'entityId', isList: true, isOptional: false } },
   subEntity: { entity: { model: 'entity', fk: 'entityId', isList: false, isOptional: false } },
@@ -744,6 +748,7 @@ export const db: any = {
   depositHead: makeModel('depositHead'),
   bank: makeModel('bank'),
   deposit: makeModel('deposit'),
+  stockRecord: makeModel('stockRecord'),
   openingBalance: makeModel('openingBalance'),
   entity: makeModel('entity'),
   subEntity: makeModel('subEntity'),

@@ -10,6 +10,7 @@ export type ViewKey =
   | 'delivery-create'
   | 'bill-collection'
   | 'expense-entry'
+  | 'stock-record'
   | 'expense-create'
   | 'expense-edit'
   | 'deposit-create'
@@ -49,6 +50,7 @@ const VIEW_TO_URL: Partial<Record<ViewKey, string>> = {
   'delivery-create': 'delivery-new',
   'bill-collection': 'bills',
   'expense-entry': 'expenses',
+  'stock-record': 'stock-record',
   'expense-create': 'expenses-new',
   'expense-edit': 'expenses-edit',
   'deposit-create': 'deposits-new',
