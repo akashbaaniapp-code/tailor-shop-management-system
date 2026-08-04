@@ -31,8 +31,10 @@ export async function GET(request: NextRequest) {
   const entityWhere = buildEntityWhere(ctx)
 
   // Fetch all stock records for this date
+  const dateObj = new Date(date + 'T00:00:00')
+  const dateIso = dateObj.toISOString()
   const records = await db.stockRecord.findMany({
-    where: { ...entityWhere, recordDate: new Date(date + 'T00:00:00') },
+    where: { ...entityWhere, recordDate: dateIso },
     include: { item: { include: { uom: true } } },
     orderBy: { createdAt: 'asc' as const },
   })
@@ -56,13 +58,13 @@ export async function GET(request: NextRequest) {
   const itemsNeedingCarry = allItems.filter((it: any) => !recordMap[it.id])
   if (itemsNeedingCarry.length > 0) {
     // Fetch the latest record before this date for each item
-    const beforeDate = new Date(date + 'T00:00:00')
+    const beforeDateIso = dateIso
     for (const item of itemsNeedingCarry) {
       const prevRecords = await db.stockRecord.findMany({
         where: {
           ...entityWhere,
           itemId: item.id,
-          recordDate: { lt: beforeDate },
+          recordDate: { lt: beforeDateIso },
         },
         orderBy: { recordDate: 'desc' as const },
         take: 1,
@@ -107,10 +109,11 @@ export async function POST(request: NextRequest) {
 
   // Find existing record for this item + date (or previous closing for opening)
   const dateObj = new Date(recordDate + 'T00:00:00')
+  const dateIso = dateObj.toISOString()
 
   // Check if a record already exists for this item + date
   const existing = await db.stockRecord.findMany({
-    where: { ...entityWhere, itemId, recordDate: dateObj },
+    where: { ...entityWhere, itemId, recordDate: dateIso },
     take: 1,
   })
 
@@ -125,7 +128,7 @@ export async function POST(request: NextRequest) {
       where: {
         ...entityWhere,
         itemId,
-        recordDate: { lt: dateObj },
+        recordDate: { lt: dateIso },
       },
       orderBy: { recordDate: 'desc' as const },
       take: 1,
@@ -192,12 +195,13 @@ export async function POST(request: NextRequest) {
 async function updateNextDayOpening(itemId: string, currentDate: Date, closing: number, entityWhere: any) {
   const nextDay = new Date(currentDate)
   nextDay.setDate(nextDay.getDate() + 1)
+  const nextDayIso = nextDay.toISOString()
 
   const nextRecords = await db.stockRecord.findMany({
     where: {
       ...entityWhere,
       itemId,
-      recordDate: { gte: nextDay },
+      recordDate: { gte: nextDayIso },
     },
     orderBy: { recordDate: 'asc' as const },
     take: 1,
